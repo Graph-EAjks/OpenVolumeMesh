@@ -37,6 +37,12 @@ add_subdirectory (src)
 if(${PROJECT_NAME} MATCHES "OpenVolumeMesh")
     add_subdirectory (examples)
     add_subdirectory (documentation)
+else()
+    set (OPENVOLUMEMESH_FOUND true PARENT_SCOPE)
+    set (OPENVOLUMEMESH_LIBRARIES OpenVolumeMesh PARENT_SCOPE)
+    set (OPENVOLUMEMESH_LIBRARY OpenVolumeMesh PARENT_SCOPE)
+    set (OPENVOLUMEMESH_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/" PARENT_SCOPE)
+    set (OPENVOLUMEMESH_LIBRARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE PATH "The directory where the OpenVolumeMesh libraries can be found.")
 endif()
 
 # ========================================================================
