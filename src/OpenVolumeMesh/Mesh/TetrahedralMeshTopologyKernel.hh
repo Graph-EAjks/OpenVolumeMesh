@@ -63,22 +63,17 @@ namespace OpenVolumeMesh {
 class TetrahedralMeshTopologyKernel : public TopologyKernel {
 public:
 
-    // Constructor
-    TetrahedralMeshTopologyKernel();
+    TetrahedralMeshTopologyKernel() = default;
+    ~TetrahedralMeshTopologyKernel() override = default;
 
-    // Destructor
-    ~TetrahedralMeshTopologyKernel();
+    FaceHandle add_face(const std::vector<HalfEdgeHandle>& _halfedges, bool _topologyCheck = false) override;
 
-    // Overridden function
-    virtual FaceHandle add_face(const std::vector<HalfEdgeHandle>& _halfedges, bool _topologyCheck = false);
+    FaceHandle add_face(const std::vector<VertexHandle>& _vertices) override;
 
-    // Overridden function
-    virtual FaceHandle add_face(const std::vector<VertexHandle>& _vertices);
-
-    // Overridden function
-    virtual CellHandle add_cell(const std::vector<HalfFaceHandle>& _halffaces, bool _topologyCheck = false);
+    CellHandle add_cell(const std::vector<HalfFaceHandle>& _halffaces, bool _topologyCheck = false) override;
 
     CellHandle add_cell(const std::vector<VertexHandle>& _vertices, bool _topologyCheck = false);
+
     CellHandle add_cell(VertexHandle _vh0, VertexHandle _vh1, VertexHandle _vh2, VertexHandle _vh3, bool _topologyCheck = false);
 
     HalfFaceHandle add_halfface(const std::vector<HalfEdgeHandle>& _halfedges, bool _topologyCheck = false);
@@ -94,6 +89,8 @@ public:
     std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh) const;
     std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh, VertexHandle vh) const;
     std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh, HalfEdgeHandle heh) const;
+
+    VertexHandle halfface_opposite_vertex(HalfFaceHandle hfh) const;
 
 
     VertexHandle collapse_edge(HalfEdgeHandle _heh);

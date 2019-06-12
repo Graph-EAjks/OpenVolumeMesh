@@ -37,6 +37,7 @@
 
 #include <string>
 
+#include "PropertyHandles.hh"
 #include "BaseProperty.hh"
 #include "OpenVolumeMeshHandle.hh"
 #include "../System/MemoryInclude.hh"
@@ -54,7 +55,7 @@ class ResourceManager;
  * as soon as the object is not used anymore.
  */
 
-template <class PropT, class HandleT>
+template <class PropT, typename Entity>
 class PropertyPtr : protected ptr::shared_ptr<PropT>, public BaseProperty {
 public:
 
@@ -66,28 +67,31 @@ public:
     typedef typename PropT::reference                   reference;
     typedef typename PropT::const_reference             const_reference;
 
-    typedef OpenVolumeMesh::HandleT<typename HandleT::Entity>  EntityHandleT;
+    using EntityHandleT = HandleT<Entity>;
 
     /// Constructor
-    PropertyPtr(PropT* _ptr, ResourceManager& _resMan, HandleT _handle);
+    PropertyPtr() : BaseProperty(nullptr) {}
+    /// Constructor
+    PropertyPtr(PropT* _ptr, ResourceManager& _resMan, PropHandleT<Entity> _handle);
 
     /// Destructor
-    virtual ~PropertyPtr();
+    ~PropertyPtr() override;
 
     using ptr::shared_ptr<PropT>::operator*;
     using ptr::shared_ptr<PropT>::operator->;
     using ptr::shared_ptr<PropT>::operator bool;
 
-    virtual const std::string& name() const;
+    const std::string& name() const override;
 
-    virtual void delete_element(size_t _idx);
+    void delete_element(size_t _idx) override;
 
-    virtual void swap_elements(size_t _idx0, size_t _idx1);
+    void swap_elements(size_t _idx0, size_t _idx1) override;
 
-    virtual void copy(size_t _src_idx, size_t _dst_idx);
+    void copy(size_t _src_idx, size_t _dst_idx) override;
 
     const_iterator begin() const { return ptr::shared_ptr<PropT>::get()->begin(); }
     iterator begin() { return ptr::shared_ptr<PropT>::get()->begin(); }
+    size_t size() const override { return ptr::shared_ptr<PropT>::get()->size(); }
 
     const_iterator end() const { return ptr::shared_ptr<PropT>::get()->end(); }
     iterator end() { return ptr::shared_ptr<PropT>::get()->end(); }
@@ -98,21 +102,28 @@ public:
     const_reference operator[](size_t _idx) const { return (*ptr::shared_ptr<PropT>::get())[_idx]; }
 
     reference operator[](const EntityHandleT& _h) { return (*ptr::shared_ptr<PropT>::get())[_h.idx()]; }
-    const_reference operator[](const EntityHandleT& _h) const { return (*ptr::shared_ptr<PropT>::get())[_h.idx()]; }
+    const_reference operator[](const EntityHandleT& _h) const { return (*ptr::shared_ptr<PropT>::get())[_h.uidx()]; }
 
-    virtual OpenVolumeMeshHandle handle() const;
+    void serialize(std::ostream& _ostr) const override { ptr::shared_ptr<PropT>::get()->serialize(_ostr); }
+    void deserialize(std::istream& _istr) override { ptr::shared_ptr<PropT>::get()->deserialize(_istr); }
 
-    virtual bool persistent() const { return ptr::shared_ptr<PropT>::get()->persistent(); }
+    OpenVolumeMeshHandle handle() const override;
 
-    virtual bool anonymous() const { return ptr::shared_ptr<PropT>::get()->name().empty(); }
+     bool persistent() const override { return ptr::shared_ptr<PropT>::get()->persistent(); }
+
+     bool anonymous() const override { return ptr::shared_ptr<PropT>::get()->name().empty(); }
 
 protected:
+    const std::string &internal_type_name() const override { return ptr::shared_ptr<PropT>::get()->internal_type_name(); }
 
-    virtual void delete_multiple_entries(const std::vector<bool>& _tags);
+    void assign_values_from(const BaseProperty *other) override;
+    void move_values_from(BaseProperty *other) override;
 
-    virtual void resize(size_t _size);
+    void delete_multiple_entries(const std::vector<bool>& _tags) override;
 
-    virtual void set_handle(const OpenVolumeMeshHandle& _handle);
+    void resize(size_t _size) override;
+
+    void set_handle(const OpenVolumeMeshHandle& _handle) override;
 };
 
 } // Namespace OpenVolumeMesh

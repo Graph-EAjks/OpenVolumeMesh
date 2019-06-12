@@ -82,16 +82,18 @@ template <> const std::string entityTypeName<Entity::Cell>();
 template <> const std::string entityTypeName<Entity::Mesh>();
 
 template<typename T, typename Entity>
-class PropertyTT : public PropertyPtr<OpenVolumeMeshPropertyT<T>, PropHandleT<Entity>> {
+class PropertyTT : public PropertyPtr<OpenVolumeMeshPropertyT<T>, Entity> {
 public:
+    template<typename MeshT>
+    PropertyTT(MeshT *mesh, const std::string& _name, const T &_def = T())
+        : PropertyTT(std::move(mesh->template request_property<T, Entity>(_name, _def)))
+    {}
     using PropertyHandleT = OpenVolumeMesh::PropHandleT<Entity>;
-    PropertyTT(const std::string& _name, ResourceManager& _resMan, PropertyHandleT _handle, const T _def = T());
-    virtual ~PropertyTT() = default;
-    virtual BaseProperty* clone(ResourceManager &_resMan, OpenVolumeMeshHandle _handle) const;
-    virtual void serialize(std::ostream& _ostr) const;
-    virtual void deserialize(std::istream& _istr);
-    virtual const std::string entityType() const { return entityTypeName<Entity>(); }
-    virtual const std::string typeNameWrapper() const { return typeName<T>(); }
+    PropertyTT(const std::string& _name, const std::string& _internal_type_name, ResourceManager& _resMan, PropertyHandleT _handle, const T &_def = T());
+    ~PropertyTT() override = default;
+    BaseProperty* clone(ResourceManager &_resMan, OpenVolumeMeshHandle _handle) const override;
+    const std::string entityType() const override { return entityTypeName<Entity>(); }
+    const std::string typeNameWrapper() const override { return typeName<T>(); }
 private:
     PropertyTT(OpenVolumeMeshPropertyT<T> *_prop, ResourceManager& _resMan, PropertyHandleT _handle);
 };

@@ -58,13 +58,10 @@ public:
         toVertex_(_toVertex) {
     }
 
-    virtual ~OpenVolumeMeshEdge() {
-    }
-
-    const VertexHandle& from_vertex() const {
+    const VertexHandle from_vertex() const {
         return fromVertex_;
     }
-    const VertexHandle& to_vertex() const {
+    const VertexHandle to_vertex() const {
         return toVertex_;
     }
 
@@ -92,9 +89,6 @@ friend class TopologyKernel;
 public:
     explicit OpenVolumeMeshFace(const std::vector<HalfEdgeHandle>& _halfedges) :
         halfedges_(_halfedges) {
-    }
-
-    virtual ~OpenVolumeMeshFace() {
     }
 
     const std::vector<HalfEdgeHandle>& halfedges() const & {
@@ -126,9 +120,6 @@ friend class TopologyKernel;
 public:
     explicit OpenVolumeMeshCell(const std::vector<HalfFaceHandle>& _halffaces) :
         halffaces_(_halffaces) {
-    }
-
-    virtual ~OpenVolumeMeshCell() {
     }
 
     const std::vector<HalfFaceHandle>& halffaces() const & {

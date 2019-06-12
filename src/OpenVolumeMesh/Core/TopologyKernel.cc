@@ -58,19 +58,6 @@ const FaceHandle        TopologyKernel::InvalidFaceHandle     = FaceHandle(-1);
 const HalfFaceHandle    TopologyKernel::InvalidHalfFaceHandle = HalfFaceHandle(-1);
 const CellHandle        TopologyKernel::InvalidCellHandle     = CellHandle(-1);
 
-TopologyKernel::TopologyKernel() :
-    n_vertices_(0u),
-    v_bottom_up_(true),
-    e_bottom_up_(true),
-    f_bottom_up_(true),
-    deferred_deletion(true),
-    fast_deletion(true)
-{
-}
-
-TopologyKernel::~TopologyKernel() {
-}
-
 //========================================================================================
 
 VertexHandle TopologyKernel::add_vertex() {
@@ -99,8 +86,8 @@ EdgeHandle TopologyKernel::add_edge(const VertexHandle& _fromVertex,
 
     // If the conditions are not fulfilled, assert will fail (instead
 	// of returning an invalid handle)
-    assert(_fromVertex.is_valid() && (size_t)_fromVertex.idx() < n_vertices());
-    assert(_toVertex.is_valid() && (size_t)_toVertex.idx() < n_vertices());
+    assert(_fromVertex.is_valid() && (size_t)_fromVertex.idx() < n_vertices() && !is_deleted(_fromVertex));
+    assert(_toVertex.is_valid() && (size_t)_toVertex.idx() < n_vertices() && !is_deleted(_toVertex));
 
     // Test if edge does not exist, yet
     if(!_allowDuplicates) {
@@ -164,7 +151,7 @@ FaceHandle TopologyKernel::add_face(const std::vector<HalfEdgeHandle>& _halfedge
     // Assert that halfedges are valid
     for(std::vector<HalfEdgeHandle>::const_iterator it = _halfedges.begin(),
             end = _halfedges.end(); it != end; ++it)
-        assert(it->is_valid() && (size_t)it->idx() < edges_.size() * 2u);
+        assert(it->is_valid() && (size_t)it->idx() < edges_.size() * 2u && !is_deleted(*it));
 #endif
 
     // Perform topology check
@@ -253,7 +240,7 @@ FaceHandle TopologyKernel::add_face(const std::vector<VertexHandle>& _vertices) 
     // Assert that all vertices have valid indices
     for(std::vector<VertexHandle>::const_iterator it = _vertices.begin(),
             end = _vertices.end(); it != end; ++it)
-        assert(it->is_valid() && (size_t)it->idx() < n_vertices());
+        assert(it->is_valid() && (size_t)it->idx() < n_vertices() && !is_deleted(*it));
 #endif
 
     // Add edge for each pair of vertices
@@ -265,14 +252,12 @@ FaceHandle TopologyKernel::add_face(const std::vector<VertexHandle>& _vertices) 
 
         // Swap halfedge if edge already existed and
         // has been initially defined in reverse orientation
-        int swap = 0;
-        if(edge(e_idx).to_vertex() == *it) swap = 1;
+        char swap = edge(e_idx).to_vertex() == *it;
 
         halfedges.push_back(halfedge_handle(e_idx, swap));
     }
     EdgeHandle e_idx = add_edge(*it, *_vertices.begin());
-    int swap = 0;
-    if(edge(e_idx).to_vertex() == *it) swap = 1;
+    char swap = edge(e_idx).to_vertex() == *it;
     halfedges.push_back(halfedge_handle(e_idx, swap));
 
     // Add face
@@ -329,7 +314,11 @@ void TopologyKernel::reorder_incident_halffaces(const EdgeHandle& _eh) {
                 cur_hf = adjacent_halfface_in_cell(cur_hf, cur_he);
 
                 if(cur_hf != InvalidHalfFaceHandle)
+                {
+                    if (is_deleted(incident_cell(cur_hf)))
+                      break; // pretend we ran into a boundary
                     cur_hf = opposite_halfface_handle(cur_hf);
+                }
 
                 // End when we're through
                 if(cur_hf == start_hf) break;
@@ -381,7 +370,7 @@ CellHandle TopologyKernel::add_cell(const std::vector<HalfFaceHandle>& _halfface
     // Assert that halffaces have valid indices
     for(std::vector<HalfFaceHandle>::const_iterator it = _halffaces.begin(),
             end = _halffaces.end(); it != end; ++it)
-        assert(it->is_valid() && ((size_t)it->idx() < faces_.size() * 2u));
+        assert(it->is_valid() && ((size_t)it->idx() < faces_.size() * 2u) && !is_deleted(*it));
 #endif
 
     // Perform topology check
@@ -481,7 +470,11 @@ CellHandle TopologyKernel::add_cell(const std::vector<HalfFaceHandle>& _halfface
 //========================================================================================
 
 /// Set the vertices of an edge
+// cppcheck-suppress unusedFunction ; public interface
 void TopologyKernel::set_edge(const EdgeHandle& _eh, const VertexHandle& _fromVertex, const VertexHandle& _toVertex) {
+
+    assert(_fromVertex.is_valid() && (size_t)_fromVertex.idx() < n_vertices() && !is_deleted(_fromVertex));
+    assert(_toVertex.is_valid() && (size_t)_toVertex.idx() < n_vertices() && !is_deleted(_toVertex));
 
     Edge& e = edge(_eh);
 
@@ -512,6 +505,7 @@ void TopologyKernel::set_edge(const EdgeHandle& _eh, const VertexHandle& _fromVe
 //========================================================================================
 
 /// Set the half-edges of a face
+// cppcheck-suppress unusedFunction ; public interface
 void TopologyKernel::set_face(const FaceHandle& _fh, const std::vector<HalfEdgeHandle>& _hes) {
 
     Face& f = face(_fh);
@@ -552,6 +546,7 @@ void TopologyKernel::set_face(const FaceHandle& _fh, const std::vector<HalfEdgeH
 //========================================================================================
 
 /// Set the half-faces of a cell
+// cppcheck-suppress unusedFunction ; public interface
 void TopologyKernel::set_cell(const CellHandle& _ch, const std::vector<HalfFaceHandle>& _hfs) {
 
     Cell& c = cell(_ch);
@@ -590,6 +585,8 @@ void TopologyKernel::set_cell(const CellHandle& _ch, const std::vector<HalfFaceH
  * @param _h The handle to the vertex to be deleted
  */
 VertexIter TopologyKernel::delete_vertex(const VertexHandle& _h) {
+
+    assert(!is_deleted(_h));
 
     std::vector<VertexHandle> vs;
     vs.push_back(_h);
@@ -650,6 +647,8 @@ VertexIter TopologyKernel::delete_vertex(const VertexHandle& _h) {
  */
 EdgeIter TopologyKernel::delete_edge(const EdgeHandle& _h) {
 
+    assert(!is_deleted(_h));
+
     std::vector<EdgeHandle> es;
     es.push_back(_h);
 
@@ -691,6 +690,8 @@ EdgeIter TopologyKernel::delete_edge(const EdgeHandle& _h) {
  */
 FaceIter TopologyKernel::delete_face(const FaceHandle& _h) {
 
+    assert(!is_deleted(_h));
+
     std::vector<FaceHandle> fs;
     fs.push_back(_h);
 
@@ -720,6 +721,7 @@ FaceIter TopologyKernel::delete_face(const FaceHandle& _h) {
  */
 CellIter TopologyKernel::delete_cell(const CellHandle& _h) {
 
+    assert(!is_deleted(_h));
     return delete_cell_core(_h);
 }
 
@@ -1240,6 +1242,8 @@ FaceIter TopologyKernel::delete_face_core(const FaceHandle& _h) {
                     std::remove(incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].begin(),
                                 incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].end(),
                                 halfface_handle(h, 1)), incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].end());
+
+            reorder_incident_halffaces(edge_handle(*he_it));
         }
     }
 
@@ -1400,6 +1404,15 @@ CellIter TopologyKernel::delete_cell_core(const CellHandle& _h) {
             if (incident_cell_per_hf_[hf_it->idx()] == h)
                 incident_cell_per_hf_[hf_it->idx()] = InvalidCellHandle;
         }
+        std::set<EdgeHandle> edges;
+        for(std::vector<HalfFaceHandle>::const_iterator hf_it = hfs.begin(),
+                hf_end = hfs.end(); hf_it != hf_end; ++hf_it) {
+          const auto& hf = halfface(*hf_it);
+          for (const auto&  heh : hf.halfedges())
+            edges.insert(edge_handle(heh));
+        }
+        for (auto eh : edges)
+          reorder_incident_halffaces(eh);
     }
 
     if (deferred_deletion_enabled())
@@ -1966,6 +1979,7 @@ void TopologyKernel::delete_multiple_cells(const std::vector<bool>& _tag) {
 
 //========================================================================================
 
+// cppcheck-suppress unusedFunction ; public interface
 CellIter TopologyKernel::delete_cell_range(const CellIter& _first, const CellIter& _last) {
 
     assert(_first >= cells_begin());
@@ -2084,7 +2098,7 @@ OpenVolumeMeshFace TopologyKernel::halfface(const HalfFaceHandle& _halfFaceHandl
     assert((size_t)_halfFaceHandle.idx() < (faces_.size() * 2));
     assert(_halfFaceHandle.idx() >= 0);
 
-    // In case the handle is not even, just return the corresponding face
+    // In case the handle is even, just return the corresponding face
     // Otherwise return the opposite halfface via opposite()
     if(_halfFaceHandle.idx() % 2 == 0)
         return faces_[(int)(_halfFaceHandle.idx() / 2)];
