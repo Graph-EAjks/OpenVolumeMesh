@@ -596,13 +596,22 @@ VertexIter TopologyKernel::delete_vertex(const VertexHandle& _h) {
 
     std::set<EdgeHandle> incidentEdges_s;
     get_incident_edges(vs, incidentEdges_s);
+//    std::cerr<<"\nedges: ";
+//    for(auto eh : incidentEdges_s)
+//        std::cerr<<" "<<eh;
 
     std::set<FaceHandle> incidentFaces_s;
     get_incident_faces(incidentEdges_s, incidentFaces_s);
 
+//        std::cerr<<"\nfaces: ";
+//        for(auto fh : incidentFaces_s)
+//            std::cerr<<" "<<fh;
+
     std::set<CellHandle> incidentCells_s;
     get_incident_cells(incidentFaces_s, incidentCells_s);
-
+//        std::cerr<<"\ncells: ";
+//        for(auto ch : incidentCells_s)
+//            std::cerr<<" "<<ch;
     // Delete cells
     for(std::set<CellHandle>::const_reverse_iterator c_it = incidentCells_s.rbegin(),
             c_end = incidentCells_s.rend(); c_it != c_end; ++c_it) {

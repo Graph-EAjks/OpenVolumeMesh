@@ -97,6 +97,8 @@ public:
 
 
     VertexHandle collapse_edge(HalfEdgeHandle _heh);
+    VertexHandle collapse_edge_clean(HalfEdgeHandle _heh);
+
 protected:
     void split_edge(HalfEdgeHandle _heh, VertexHandle _vh);
     void split_face(FaceHandle _fh, VertexHandle _vh);
