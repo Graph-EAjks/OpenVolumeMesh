@@ -436,8 +436,8 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
 
             std::vector<HalfFaceHandle> newHalffaces;
 
-            for (unsigned int i = 0; i < 4; ++i) {
-                Face hf = halfface(c.halffaces()[i]);
+            for (unsigned int ii = 0; ii < 4; ++ii) {
+                Face hf = halfface(c.halffaces()[ii]);
                 std::vector<HalfEdgeHandle> newHalfedges;
                 bool heReset = false;
                 for (unsigned int j = 0; j < 3; ++j) {
@@ -469,12 +469,12 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
                 if (!heReset) {
                     newHalffaces.push_back(hfh);//use original halfface
                 } else {
-                    if (hfh != c.halffaces()[i] && hfh.is_valid())
+                    if (hfh != c.halffaces()[ii] && hfh.is_valid())
                         newHalffaces.push_back(hfh);//use another valid halfface
                     else {
-                        FaceHandle fh = face_handle(c.halffaces()[i]);
+                        FaceHandle fh = face_handle(c.halffaces()[ii]);
                         //do not set the first halfface to the opposite
-                        if (c.halffaces()[i] == halfface_handle(fh, 1)) {
+                        if (c.halffaces()[ii] == halfface_handle(fh, 1)) {
                             std::vector<HalfEdgeHandle> oppNewHalfedges;
                             for (int k = 2; k >= 0; --k)
                                 oppNewHalfedges.push_back(opposite_halfedge_handle(newHalfedges[k]));
