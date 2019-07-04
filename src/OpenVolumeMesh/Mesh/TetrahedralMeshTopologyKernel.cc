@@ -307,99 +307,99 @@ void TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 //    swapPropertyElements(halfedge_props_begin(), halfedge_props_end(), source, destination);
 //}
 
-// cppcheck-suppress unusedFunction ; public interface
-VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
-{
-    bool deferred_deletion_tmp = deferred_deletion_enabled();
+//// cppcheck-suppress unusedFunction ; public interface
+//VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
+//{
+//    bool deferred_deletion_tmp = deferred_deletion_enabled();
+//
+//    if (!deferred_deletion_tmp)
+//        enable_deferred_deletion(true);
+//
+//    VertexHandle from_vh = halfedge(_heh).from_vertex();
+//    VertexHandle to_vh   = halfedge(_heh).to_vertex();
+//
+//
+//    // find cells that will collapse, i.e. are incident to the collapsing halfedge
+//    std::set<CellHandle> collapsingCells;
+//    for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it)
+//    {
+//        HalfFaceHandle hfh = *hehf_it;
+//        CellHandle ch = incident_cell(hfh);
+//        if (ch.is_valid())
+//            collapsingCells.insert(ch);
+//    }
+//
+//    std::vector<CellHandle> incidentCells;
+//    for (VertexCellIter vc_it = vc_iter(from_vh); vc_it.valid(); ++vc_it)
+//        incidentCells.push_back(*vc_it);
+//
+//    for (const CellHandle &ch: incidentCells)
+//    {
+//        if (collapsingCells.find(ch) != collapsingCells.end())
+//            continue;
+//
+//        Cell c = cell(ch);
+//
+//        std::vector<HalfFaceHandle> newHalffaces;
+//
+//        for (unsigned int hf_idx = 0; hf_idx < 4; ++hf_idx)
+//        {
+//            Face hf = halfface(c.halffaces()[hf_idx]);
+//            std::vector<HalfEdgeHandle> newHalfedges;
+//
+//            for (unsigned int j = 0; j < 3; ++j)
+//            {
+//                Edge e = halfedge(hf.halfedges()[j]);
+//                VertexHandle newStart = (e.from_vertex() == from_vh) ? to_vh: e.from_vertex();
+//                VertexHandle newEnd   = (e.to_vertex()   == from_vh) ? to_vh : e.to_vertex();
+//
+//                HalfEdgeHandle heh = add_halfedge(newStart, newEnd);
+//                newHalfedges.push_back(heh);
+//                swap_halfedge_properties(hf.halfedges()[j], heh);
+//            }
+//
+//            HalfFaceHandle hfh = add_halfface(newHalfedges);
+//            newHalffaces.push_back(hfh);
+//            swap_halfface_properties(c.halffaces()[hf_idx], hfh);
+//        }
+//
+//        delete_cell(ch);
+//
+//        CellHandle newCell = add_cell(newHalffaces);
+//
+//        swap_cell_properties(ch, newCell);
+//
+//    }
+//
+//
+//    VertexHandle survivingVertex = to_vh;
+//
+//    if (!deferred_deletion_tmp)
+//    {
+//        if (fast_deletion_enabled())
+//        {
+//            // from_vh is swapped with last vertex and then deleted
+//            if (to_vh.idx() == (int)n_vertices() - 1)
+//                survivingVertex = from_vh;
+//        }
+//        else
+//        {
+//            // from_vh is deleted and every vertex id larger than from_vh is reduced by one
+//            if (from_vh.idx() < to_vh.idx())
+//                survivingVertex = VertexHandle(to_vh.idx() - 1);
+//        }
+//    }
+//
+//    delete_vertex(from_vh);
+//
+//    enable_deferred_deletion(deferred_deletion_tmp);
+//
+//    return survivingVertex;
+//
+//}
 
-    if (!deferred_deletion_tmp)
-        enable_deferred_deletion(true);
 
-    VertexHandle from_vh = halfedge(_heh).from_vertex();
-    VertexHandle to_vh   = halfedge(_heh).to_vertex();
-
-
-    // find cells that will collapse, i.e. are incident to the collapsing halfedge
-    std::set<CellHandle> collapsingCells;
-    for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it)
-    {
-        HalfFaceHandle hfh = *hehf_it;
-        CellHandle ch = incident_cell(hfh);
-        if (ch.is_valid())
-            collapsingCells.insert(ch);
-    }
-
-    std::vector<CellHandle> incidentCells;
-    for (VertexCellIter vc_it = vc_iter(from_vh); vc_it.valid(); ++vc_it)
-        incidentCells.push_back(*vc_it);
-
-    for (const CellHandle &ch: incidentCells)
-    {
-        if (collapsingCells.find(ch) != collapsingCells.end())
-            continue;
-
-        Cell c = cell(ch);
-
-        std::vector<HalfFaceHandle> newHalffaces;
-
-        for (unsigned int hf_idx = 0; hf_idx < 4; ++hf_idx)
-        {
-            Face hf = halfface(c.halffaces()[hf_idx]);
-            std::vector<HalfEdgeHandle> newHalfedges;
-
-            for (unsigned int j = 0; j < 3; ++j)
-            {
-                Edge e = halfedge(hf.halfedges()[j]);
-                VertexHandle newStart = (e.from_vertex() == from_vh) ? to_vh: e.from_vertex();
-                VertexHandle newEnd   = (e.to_vertex()   == from_vh) ? to_vh : e.to_vertex();
-
-                HalfEdgeHandle heh = add_halfedge(newStart, newEnd);
-                newHalfedges.push_back(heh);
-                swap_halfedge_properties(hf.halfedges()[j], heh);
-            }
-
-            HalfFaceHandle hfh = add_halfface(newHalfedges);
-            newHalffaces.push_back(hfh);
-            swap_halfface_properties(c.halffaces()[hf_idx], hfh);
-        }
-
-        delete_cell(ch);
-
-        CellHandle newCell = add_cell(newHalffaces);
-
-        swap_cell_properties(ch, newCell);
-
-    }
-
-
-    VertexHandle survivingVertex = to_vh;
-
-    if (!deferred_deletion_tmp)
-    {
-        if (fast_deletion_enabled())
-        {
-            // from_vh is swapped with last vertex and then deleted
-            if (to_vh.idx() == (int)n_vertices() - 1)
-                survivingVertex = from_vh;
-        }
-        else
-        {
-            // from_vh is deleted and every vertex id larger than from_vh is reduced by one
-            if (from_vh.idx() < to_vh.idx())
-                survivingVertex = VertexHandle(to_vh.idx() - 1);
-        }
-    }
-
-    delete_vertex(from_vh);
-
-    enable_deferred_deletion(deferred_deletion_tmp);
-
-    return survivingVertex;
-
-}
-
-
-VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _heh) {
+VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh) {
     bool deferred_deletion_tmp = deferred_deletion_enabled();
 
     if (!deferred_deletion_tmp)
@@ -424,7 +424,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
     std::set<CellHandle> reusedCells;
     std::set<FaceHandle> reusedFaces;
     std::set<EdgeHandle> reusedEdges;
-    //3D
+    //collapse edge when there are incident cells
     if (!incidentCells.empty()) {
         for (unsigned int i = 0; i < incidentCells.size(); ++i) {
             CellHandle ch = incidentCells[i];
@@ -473,7 +473,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
                         newHalffaces.push_back(hfh);//use another valid halfface
                     else {
                         FaceHandle fh = face_handle(c.halffaces()[ii]);
-                        //do not set the first halfface to the opposite
+                        //keep the orientation of the reused face
                         if (c.halffaces()[ii] == halfface_handle(fh, 1)) {
                             std::vector<HalfEdgeHandle> oppNewHalfedges;
                             for (int k = 2; k >= 0; --k)
@@ -492,7 +492,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
             set_cell(ch, newHalffaces);
             reusedCells.insert(ch);
         }
-    } else//2D
+    } else//collapse edge when there is no incident cell
     {
         std::set<FaceHandle> collapsingFaces;
         for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it) {
@@ -546,7 +546,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
             }
 
             if (heReset) {
-                //do not set the first halfface to the opposite
+                //keep the orientation of the reused face
                 if (halfface(newHalfedges) == halfface_handle(fh, 1)) {
                     std::vector<HalfEdgeHandle> oppNewHalfedges;
                     for (int k = 2; k >= 0; --k)
@@ -574,7 +574,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
         }
     }
 
-    //3D
+    //when there are incident cells
     if (!incidentCells.empty()) {
         for (VertexOHalfEdgeIter voh_it = voh_iter(from_vh); voh_it.valid(); ++voh_it) {
             for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(*voh_it); hehf_it.valid(); ++hehf_it) {
@@ -587,7 +587,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
                     incident_cell_per_hf_[opposite_halfface_handle(*hehf_it).idx()] = InvalidCellHandle;
             }
         }
-    } else {//2D
+    } else {//when there is no incident cell
         for (VertexOHalfEdgeIter voh_it = voh_iter(from_vh); voh_it.valid(); ++voh_it) {
             for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(*voh_it); hehf_it.valid(); ++hehf_it) {
                 FaceHandle fh = face_handle(*hehf_it);
@@ -608,26 +608,6 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge_clean(HalfEdgeHandle _
     }
 
     delete_vertex(from_vh);
-
-//    for (unsigned int i = 0; i < incidentCells.size(); ++i) {
-//        CellHandle ch = incidentCells[i];
-//std::cerr<<"\ncell "<<ch;
-//        if (collapsingCells.find(ch) != collapsingCells.end())
-//            continue;
-//
-//        Cell c = cell(ch);
-//
-//        std::vector<HalfFaceHandle> newHalffaces;
-//        for (unsigned int i = 0; i < 4; ++i) {
-//            std::cerr<<"\n  hf: "<< c.halffaces()[i];
-//            Face hf = halfface(c.halffaces()[i]);
-//            std::cerr<<"\n  hes: ";
-//            for (unsigned int j = 0; j < 3; ++j) {
-//                auto e = halfedge(hf.halfedges()[j]);
-//std::cerr<<" "<<hf.halfedges()[j]<<" "<<e.from_vertex()<<"->"<<e.to_vertex();
-//            }
-//        }
-//    }
 
     enable_deferred_deletion(deferred_deletion_tmp);
 
