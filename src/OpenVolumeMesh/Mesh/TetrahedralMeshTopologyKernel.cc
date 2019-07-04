@@ -307,7 +307,7 @@ void TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 //    swapPropertyElements(halfedge_props_begin(), halfedge_props_end(), source, destination);
 //}
 
-//// cppcheck-suppress unusedFunction ; public interface
+// cppcheck-suppress unusedFunction ; public interface
 //VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 //{
 //    bool deferred_deletion_tmp = deferred_deletion_enabled();
@@ -399,6 +399,7 @@ void TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 //}
 
 
+// cppcheck-suppress unusedFunction ; public interface
 VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh) {
     bool deferred_deletion_tmp = deferred_deletion_enabled();
 
@@ -778,6 +779,7 @@ std::vector<VertexHandle> TetrahedralMeshTopologyKernel::get_halfface_vertices(H
     return vertices;
 }
 
+// cppcheck-suppress unusedFunction ; public interface
 VertexHandle TetrahedralMeshTopologyKernel::halfface_opposite_vertex(HalfFaceHandle hfh) const
 {
     if (is_boundary(hfh)) {
