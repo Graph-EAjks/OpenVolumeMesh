@@ -64,17 +64,17 @@ public:
 
     template <class PropT, class Entity> friend class PropertyPtr;
 
-	typedef T 										Value;
-	typedef std::vector<T> 				            vector_type;
-	typedef T 										value_type;
-	typedef typename vector_type::reference 		reference;
-	typedef typename vector_type::const_reference 	const_reference;
+    typedef T                                         Value;
+    typedef typename std::vector<T>                   vector_type;
+    typedef T                                         value_type;
+    typedef typename vector_type::reference           reference;
+    typedef typename vector_type::const_reference     const_reference;
 
 public:
 
 	explicit OpenVolumeMeshPropertyT(
-            const std::string& _name = "<unknown>",
-            const std::string& _internal_type_name = "<unknown>",
+            const std::string& _name,
+            const std::string& _internal_type_name,
             const T &_def = T())
         : OpenVolumeMeshBaseProperty(_name, _internal_type_name),
           def_(_def)
@@ -109,7 +109,7 @@ public:
 		data_[_dst_idx] = data_[_src_idx];
 	}
 	void delete_element(size_t _idx) override {
-		data_.erase(data_.begin() + _idx);
+		data_.erase(data_.begin() + static_cast<long>(_idx));
 	}
 
 public:

@@ -54,6 +54,8 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "OpenVolumeMesh/Config/Export.hh"
+
 namespace OpenVolumeMesh {
 
 namespace Geometry {
@@ -676,7 +678,7 @@ auto operator<<(std::ostream& os, const VectorT<Scalar, DIM> &_vec) ->
         sizeof(decltype(os << _vec[0])) >= 0, std::ostream&>::type {
 
     os << _vec[0];
-    for (int i = 1; i < DIM; ++i) {
+    for (size_t i = 1; i < DIM; ++i) {
         os << " " << _vec[i];
     }
     return os;
@@ -687,7 +689,7 @@ template<typename Scalar, int DIM>
 auto operator>> (std::istream& is, VectorT<Scalar, DIM> &_vec) ->
     typename std::enable_if<
         sizeof(decltype(is >> _vec[0])) >= 0, std::istream &>::type {
-    for (int i = 0; i < DIM; ++i)
+    for (size_t i = 0; i < DIM; ++i)
         is >> _vec[i];
     return is;
 }
@@ -830,20 +832,20 @@ using namespace Geometry;
 template <class T>
 const std::string typeName();
 
-template <> const std::string typeName<Vec2f>();
-template <> const std::string typeName<Vec2d>();
-template <> const std::string typeName<Vec2i>();
-template <> const std::string typeName<Vec2ui>();
+template <> OVM_EXPORT const std::string typeName<Vec2f>();
+template <> OVM_EXPORT const std::string typeName<Vec2d>();
+template <> OVM_EXPORT const std::string typeName<Vec2i>();
+template <> OVM_EXPORT const std::string typeName<Vec2ui>();
 
-template <> const std::string typeName<Vec3f>();
-template <> const std::string typeName<Vec3d>();
-template <> const std::string typeName<Vec3i>();
-template <> const std::string typeName<Vec3ui>();
+template <> OVM_EXPORT const std::string typeName<Vec3f>();
+template <> OVM_EXPORT const std::string typeName<Vec3d>();
+template <> OVM_EXPORT const std::string typeName<Vec3i>();
+template <> OVM_EXPORT const std::string typeName<Vec3ui>();
 
-template <> const std::string typeName<Vec4f>();
-template <> const std::string typeName<Vec4d>();
-template <> const std::string typeName<Vec4i>();
-template <> const std::string typeName<Vec4ui>();
+template <> OVM_EXPORT const std::string typeName<Vec4f>();
+template <> OVM_EXPORT const std::string typeName<Vec4d>();
+template <> OVM_EXPORT const std::string typeName<Vec4i>();
+template <> OVM_EXPORT const std::string typeName<Vec4ui>();
 
 } // namespace OpenVolumeMesh
 

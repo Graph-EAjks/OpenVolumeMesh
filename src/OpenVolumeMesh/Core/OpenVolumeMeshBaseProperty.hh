@@ -40,6 +40,7 @@
 #include <vector>
 
 #include "OpenVolumeMeshHandle.hh"
+#include "OpenVolumeMesh/Config/Export.hh"
 
 namespace OpenVolumeMesh {
 
@@ -49,7 +50,7 @@ namespace OpenVolumeMesh {
 
  **/
 
-class OpenVolumeMeshBaseProperty {
+class OVM_EXPORT OpenVolumeMeshBaseProperty {
 public:
 
     friend class ResourceManager;
@@ -61,8 +62,8 @@ public:
 public:
 
 	explicit OpenVolumeMeshBaseProperty(
-            const std::string& _name = "<unknown>",
-            const std::string& _internal_type_name = "<unknown>")
+            const std::string& _name,
+            const std::string& _internal_type_name)
         : name_(_name),
           internal_type_name_(_internal_type_name),
           persistent_(false),
