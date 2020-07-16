@@ -19,6 +19,7 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Mesh/HexahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.cc
     OpenVolumeMesh/Mesh/HexahedralMeshTopologyKernel.cc
+    OpenVolumeMesh/Mesh/PolyhedralMeshLaplacian.cc
 )
 
 set(OVM_ENABLE_DEPRECATED_APIS OFF CACHE BOOL "Support deprecated OpenVolumeMesh APIs")

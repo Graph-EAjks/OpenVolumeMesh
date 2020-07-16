@@ -5,7 +5,8 @@ SET(SOURCE_FILES
     unittests_common.cc
     unittests.cc
     unittests_iterators.cc
-    unittests_properties.cc)
+    unittests_properties.cc
+    unittests_laplacians.cc)
 
 if (NOT TARGET OpenVolumeMesh::OpenVolumeMesh)
     find_package(OpenVolumeMesh REQUIRED)
