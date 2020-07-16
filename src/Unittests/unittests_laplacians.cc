@@ -1,0 +1,279 @@
+#include "unittests_common.hh"
+#include <OpenVolumeMesh/DifferentialOperators/PolyhedralMeshLaplacians.hh>
+
+using namespace OpenVolumeMesh;
+
+
+#ifndef M_PI
+#define M_PI 3.14159265358979311599796346854
+#endif
+
+class PolyhedralMeshLaplacianTest : public PolyhedralMeshBase{
+
+public:
+
+    //generate a basic mesh for further tests
+    void SetUp() override{
+        generatePolyhedralMesh(mesh_);
+    }
+
+private:
+
+};
+
+TEST_F(PolyhedralMeshLaplacianTest, CreateEdgeWeightEvaluator){
+
+    Laplacian::UniformEdgeWeightEvaluator<PolyhedralMesh> weight_evaluator;
+
+}
+
+
+
+TEST_F(PolyhedralMeshLaplacianTest, HalfEdgeUniformLaplacianEqualsOneEverywhere){
+
+    ASSERT_GT(mesh_.n_halfedges(), 0);
+
+    for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
+        ASSERT_EQ(Laplacian::UniformEdgeWeightEvaluator<PolyhedralMesh>::halfedge_weight(mesh_, *h_it), 1);
+
+    }
+}
+
+
+TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
+
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+
+    ASSERT_GT(mesh_.n_halfedges(), 0);
+
+    for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
+        ASSERT_EQ(laplacian[*h_it], 1);
+    }
+
+}
+
+
+
+TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsVertexDegree){
+
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+
+    ASSERT_GT(mesh_.n_vertices(), 0);
+
+    for(const auto& v_it: mesh_.vertices()){
+
+        double vertex_degree(0);
+        auto vv_it = mesh_.vv_iter(v_it);
+        while(vv_it.valid()){
+            vertex_degree++;
+            vv_it++;
+        }
+
+        ASSERT_EQ(laplacian[v_it], vertex_degree);
+
+    }
+}
+
+
+
+template<class _polyhedral_mesh>
+class CustomEdgeWeightEvaluator {
+public:
+
+
+    using Scalar = typename _polyhedral_mesh::PointT::value_type;
+
+    static Scalar halfedge_weight(_polyhedral_mesh& mesh,
+                                  const HalfEdgeHandle& edge){return 0.f;}
+};
+
+
+//conveniency alias
+template<class _polyhedral_mesh>
+using CustomVertexLaplacian = VertexLaplacian<CustomEdgeWeightEvaluator, PolyhedralMesh>;
+
+
+TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
+
+    //laplacian declaration
+    CustomVertexLaplacian<TetrahedralMesh> laplacian(mesh_);
+
+    laplacian[VertexHandle(0)];
+}
+
+
+
+TEST_F(PolyhedralMeshLaplacianTest, CreatePrecomputedLaplacian){
+
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+
+}
+
+
+
+TEST_F(PolyhedralMeshLaplacianTest, SameEdgeWeightsAsOnTheFlyComputedVersion){
+
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> precomputed_laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> on_the_fly_laplacian(mesh_);
+
+
+    for(const auto& edge: mesh_.halfedges()){
+        ASSERT_EQ(precomputed_laplacian[edge], on_the_fly_laplacian[edge]);
+    }
+
+}
+
+
+TEST_F(PolyhedralMeshLaplacianTest, SameVertexWeightsAsOnTheFlyComputedVersion){
+
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> precomputed_laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> on_the_fly_laplacian(mesh_);
+
+
+    for(const auto& vertex: mesh_.vertices()){
+        ASSERT_EQ(precomputed_laplacian[vertex], on_the_fly_laplacian[vertex]);
+    }
+}
+
+
+
+class DualLaplacianTest : public TetrahedralMeshBase{
+
+public:
+
+    //generate a basic mesh for further tests
+    void SetUp() override{
+        generateMinimalPentaPyramidTetrahedralMesh(mesh_);
+    }
+
+private:
+
+    void generateMinimalPentaPyramidTetrahedralMesh(TetrahedralMesh& mesh){
+
+        mesh.clear();
+
+        double two_pi_5 = 2 * M_PI / 5.f;
+        //pentagon shape
+        Vec3d p0 = {cos(0 * two_pi_5) , sin(0 * two_pi_5), 0};
+        Vec3d p1 = {cos(1 * two_pi_5) , sin(1 * two_pi_5), 0};
+        Vec3d p2 = {cos(2 * two_pi_5) , sin(2 * two_pi_5), 0};
+        Vec3d p3 = {cos(3 * two_pi_5) , sin(3 * two_pi_5), 0};
+        Vec3d p4 = {cos(4 * two_pi_5) , sin(4 * two_pi_5), 0};
+
+        Vec3d p5 = {0,0,1};
+        Vec3d p6 = {0,0,0};
+
+        VertexHandle v0 = mesh.add_vertex(p0);
+        VertexHandle v1 = mesh.add_vertex(p1);
+        VertexHandle v2 = mesh.add_vertex(p2);
+        VertexHandle v3 = mesh.add_vertex(p3);
+        VertexHandle v4 = mesh.add_vertex(p4);
+        VertexHandle v5 = mesh.add_vertex(p5);
+        VertexHandle v6 = mesh.add_vertex(p6);
+
+
+        //'top faces
+        FaceHandle f0 = mesh.add_face({v0, v1, v5});
+        FaceHandle f1 = mesh.add_face({v1, v2, v5});
+        FaceHandle f2 = mesh.add_face({v2, v3, v5});
+        FaceHandle f3 = mesh.add_face({v3, v4, v5});
+        FaceHandle f4 = mesh.add_face({v4, v0, v5});
+
+        //bottom faces
+        FaceHandle f5 = mesh.add_face({v0, v1, v6});
+        FaceHandle f6 = mesh.add_face({v1, v2, v6});
+        FaceHandle f7 = mesh.add_face({v2, v3, v6});
+        FaceHandle f8 = mesh.add_face({v3, v4, v6});
+        FaceHandle f9 = mesh.add_face({v4, v0, v6});
+
+        //interior faces
+        FaceHandle f10 = mesh.add_face({v0, v5, v6});
+        FaceHandle f11 = mesh.add_face({v1, v5, v6});
+        FaceHandle f12 = mesh.add_face({v2, v5, v6});
+        FaceHandle f13 = mesh.add_face({v3, v5, v6});
+        FaceHandle f14 = mesh.add_face({v4, v5, v6});
+
+        //and cells
+        mesh.add_cell({mesh.halfface_handle(f0, 0),
+                       mesh.halfface_handle(f5, 1),
+                       mesh.halfface_handle(f10,0),
+                       mesh.halfface_handle(f11,1)});
+
+        mesh.add_cell({mesh.halfface_handle(f1, 0),
+                       mesh.halfface_handle(f6, 1),
+                       mesh.halfface_handle(f11,0),
+                       mesh.halfface_handle(f12,1)});
+
+        mesh.add_cell({mesh.halfface_handle(f2, 0),
+                       mesh.halfface_handle(f7, 1),
+                       mesh.halfface_handle(f12,0),
+                       mesh.halfface_handle(f13,1)});
+
+        mesh.add_cell({mesh.halfface_handle(f3, 0),
+                       mesh.halfface_handle(f8, 1),
+                       mesh.halfface_handle(f13,0),
+                       mesh.halfface_handle(f14,1)});
+
+        mesh.add_cell({mesh.halfface_handle(f4, 0),
+                       mesh.halfface_handle(f9, 1),
+                       mesh.halfface_handle(f14,0),
+                       mesh.halfface_handle(f10,1)});
+
+        ASSERT_EQ(mesh.n_cells(), 5);
+
+    }
+
+};
+
+
+
+TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
+
+
+    double beta(M_PI / 4.);
+    double alpha(M_PI / 4.);
+    double theta(2. * M_PI / 5.); //fifth of a circle
+    double edge_length(1.); //vol(i,j) in paper
+
+    double cot_alpha = cos(alpha) / sin(alpha);
+    double cot_beta = cos(beta) / sin(beta);
+    double cot_theta = cos(theta) / sin(theta);
+
+
+    double expected_per_tet_result = (edge_length / 8.) * cot_theta * (2. * cot_alpha * cot_beta / cos(theta) - cot_alpha * cot_alpha - cot_beta * cot_beta);
+    double expected_result = expected_per_tet_result * 5.;
+
+    //both results won't exactly be the same because they're computed slightly differently
+    ASSERT_NEAR(Laplacian::DualEdgeWeightEvaluator<TetrahedralMesh>::halfedge_weight(mesh_, HalfEdgeHandle(30)),
+                expected_result,
+                1e-15);
+}
+
+
+
+TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
+
+    DualVertexLaplacian<TetrahedralMesh> laplacian(mesh_);
+
+    for(const auto& v_it: mesh_.vertices()){
+        auto lap = laplacian[v_it];
+    }
+}
+
+
+TEST_F(DualLaplacianTest, PrecomputedDualLaplacianGivesSameResults){
+
+    PrecomputedDualVertexLaplacian<TetrahedralMesh> precomputed_laplacian(mesh_);
+    DualVertexLaplacian<TetrahedralMesh> on_demand_laplacian(mesh_);
+
+
+    for(const auto& edge: mesh_.halfedges()){
+        ASSERT_EQ(precomputed_laplacian[edge], on_demand_laplacian[edge]);
+    }
+
+    for(const auto& vertex: mesh_.vertices()){
+        auto precomp = precomputed_laplacian[vertex];
+        auto on_the_fly = on_demand_laplacian[vertex];
+    }
+}
+
