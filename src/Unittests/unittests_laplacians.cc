@@ -20,29 +20,39 @@ private:
 
 TEST_F(PolyhedralMeshLaplacianTest, CreateLaplacian){
 
-    PolyhedralMeshLaplacian<PolyhedralMesh> laplacian(mesh_);
+    UniformLaplacian<PolyhedralMesh> laplacian(mesh_);
 
 }
 
 
 
-TEST_F(PolyhedralMeshLaplacianTest, EdgeUniformLaplacianEqualsOneEverywhere){
+TEST_F(PolyhedralMeshLaplacianTest, HalfEdgeUniformLaplacianEqualsOneEverywhere){
 
-    PolyhedralMeshLaplacian<PolyhedralMesh> laplacian(mesh_);
-    ASSERT_GT(mesh_.e_vertices(), 0);
+    UniformLaplacian<PolyhedralMesh> laplacian(mesh_);
+    ASSERT_GT(mesh_.n_halfedges(), 0);
 
-    for(auto e_it = mesh_.edges_begin(); e_it != mesh_.edges_end(); e_it++){
-        ASSERT_EQ(laplacian[*e_it], 1);
+    for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
+        ASSERT_EQ(laplacian.halfedge_weight(*h_it), 1);
+
+    }
+}
+
+TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
+
+    Laplacian<UniformLaplacian, PolyhedralMesh> laplacian(mesh_);
+    ASSERT_GT(mesh_.n_halfedges(), 0);
+
+    for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
+        ASSERT_EQ(laplacian[*h_it], 1);
 
     }
 
 }
 
 
-
 TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighborsPositions){
 
-    PolyhedralMeshLaplacian<PolyhedralMesh> laplacian(mesh_);
+    Laplacian<UniformLaplacian, PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_vertices(), 0);
 
     for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
@@ -62,5 +72,22 @@ TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighbo
         ASSERT_EQ(laplacian[*v_it], average_position);
 
     }
-
 }
+
+
+
+template<class _polyhedral_mesh>
+class CustomLaplacian : BaseLaplacian<_polyhedral_mesh>{
+public:
+    CustomLaplacian(_polyhedral_mesh& mesh) : BaseLaplacian<_polyhedral_mesh>(mesh){}
+
+    double halfedge_weight(const HalfEdgeHandle& edge) const { return 0;}
+};
+
+
+
+TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
+
+    Laplacian<CustomLaplacian, PolyhedralMesh> laplacian(mesh_);
+}
+
