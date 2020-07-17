@@ -195,7 +195,7 @@ TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
     Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
-   ASSERT_FLOAT_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.908178);
+   ASSERT_DOUBLE_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.908178);
 }
 
 
