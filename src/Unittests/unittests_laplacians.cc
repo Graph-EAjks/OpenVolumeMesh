@@ -91,3 +91,27 @@ TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
     Laplacian<CustomLaplacian, PolyhedralMesh> laplacian(mesh_);
 }
 
+
+
+
+
+class TetrahedralMeshLaplacianTest : public TetrahedralMeshBase{
+
+public:
+
+    //generate a basic mesh for further tests
+    void SetUp() override{
+        generateTetrahedralMesh(mesh_);
+    }
+
+private:
+
+};
+
+
+
+TEST_F(TetrahedralMeshLaplacianTest, CreateDualLaplacian){
+
+    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+
+}
