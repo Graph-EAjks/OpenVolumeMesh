@@ -105,32 +105,87 @@ public:
 
     DualLaplacian(_tetrahedral_mesh& mesh) : BaseLaplacian<_tetrahedral_mesh>(mesh) {}
 
+
+    /** See [Alexa 2020] Properties of Laplace Operators for Tetrahedral Meshes
+        for the detail of the computations and naming
+*/
     Scalar halfedge_weight(const HalfEdgeHandle& edge) const{
 
+        Scalar weight(0);
 
-        return 1;
+        double alpha, beta, theta;
+
+        auto hehf_iter = this->mesh_.hehf_iter(edge);
+
+        /*the idea is to iterate through the halffaces around the halfedge to
+         * compute the successive beta angles and then use them as alpha angles
+         * for the next iteration. */
+        VertexHandle xi = this->mesh_.halfedge_vertices(edge)[0];
+        VertexHandle xj = this->mesh_.halfedge_vertices(edge)[1];
+
+        VertexHandle xk = *(this->mesh_.halfface_vertices(*hehf_iter).first);
+
+        VecT xk_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xk)).normalized();
+        VecT xk_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xk)).normalized();
+
+        VecT nijk = xk_xi.cross(xk_xj).normalized();
+
+        alpha = acos(xk_xi.dot(xk_xj));
+
+        double first_alpha = alpha;
+        VecT first_nijk = nijk;
+
+        hehf_iter++;
+        int cell_count(0);
+
+        while(hehf_iter.valid()){
+
+            VertexHandle xl = *(this->mesh_.halfface_vertices(*hehf_iter).first);
+
+            VecT xl_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xl)).normalized();
+            VecT xl_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xl)).normalized();
+
+            VecT nijl = xl_xi.cross(xl_xj).normalized();
+
+            beta = acos(xl_xi.dot(xl_xj));
+            theta = acos(nijk.dot(nijl));
+
+            double cotan_alpha = cot(alpha);
+            double cotan_beta  = cot(beta);
+
+            weight += cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);
+
+            //setting-up next iteration
+            xk = xl;
+            alpha = beta;
+            nijk = nijl;
+
+            hehf_iter++;
+            cell_count++;
+        }
+
+        //compute the weight contribution of the last cell, which consists of the
+        //last halfface and the first one
+        beta = first_alpha;
+        theta = acos(nijk.dot(first_nijk));
+
+        double cotan_alpha = cot(alpha);
+        double cotan_beta  = cot(beta);
+
+        weight += cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);
+
+        weight *= (this->mesh_.vertex(xi) - this->mesh_.vertex(xj)).norm() / 8.;
+
+        return weight;
     }
 
 
 private:
 
-    VecT circumcenter(const VecT& a,
-                      const VecT& b,
-                      const VecT& c){
-
-        VecT cc;
-
-        const double l[3]{
-            (b - c).squaredNorm(),
-            (a - c).squaredNorm(),
-            (a - b).squaredNorm()
-        };
-
-        const double ba[3]{l[0] * (l[1] + l[2] - l[0]), l[1] * (l[2] + l[0] - l[1]), l[2] * (l[0] + l[1] - l[2])};
-        const double sum = ba[0] + ba[1] + ba[2];
-
-        cc = (ba[0] / sum) * a + (ba[1] / sum) * b + (ba[2] / sum) * c;
+    double cot(Scalar x) const{
+        return cos(x)/sin(x);
     }
+
 
 };
 

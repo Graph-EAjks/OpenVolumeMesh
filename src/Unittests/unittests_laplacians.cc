@@ -1,10 +1,6 @@
 #include "unittests_common.hh"
 #include <OpenVolumeMesh/Mesh/PolyhedralMeshLaplacians.hh>
 
-#warning to remove
-#include <OpenVolumeMesh/FileManager/FileManager.hh>
-
-
 using namespace OpenVolumeMesh;
 
 
@@ -98,7 +94,7 @@ TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
 
 
 
-class TetrahedralMeshLaplacianTest : public TetrahedralMeshBase{
+class DualLaplacianTest : public TetrahedralMeshBase{
 
 public:
 
@@ -121,8 +117,8 @@ private:
         Vec3d p3 = {cos(3 * two_pi_5) , sin(3 * two_pi_5), 0};
         Vec3d p4 = {cos(4 * two_pi_5) , sin(4 * two_pi_5), 0};
 
-        Vec3d p5 = {0,0, 1};
-        Vec3d p6 = {0,0,-1};
+        Vec3d p5 = {0,0,1};
+        Vec3d p6 = {0,0,0};
 
         VertexHandle v0 = mesh.add_vertex(p0);
         VertexHandle v1 = mesh.add_vertex(p1);
@@ -180,13 +176,7 @@ private:
                        mesh.halfface_handle(f14,0),
                        mesh.halfface_handle(f10,1)});
 
-        std::cout<<"cell count : "<<mesh.n_cells()<<std::endl;
-
-        OpenVolumeMesh::IO::FileManager fileManager;
-
-        // Write file
-        ASSERT_TRUE(fileManager.writeFile("diamond.ovm", mesh_));
-
+        ASSERT_EQ(mesh.n_cells(), 5);
 
     }
 
@@ -194,8 +184,32 @@ private:
 
 
 
-TEST_F(TetrahedralMeshLaplacianTest, CreateDualLaplacian){
+TEST_F(DualLaplacianTest, CreateDualLaplacian){
 
     Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
 }
+
+
+TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
+
+    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+
+   ASSERT_FLOAT_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.908178);
+}
+
+
+#if 0
+TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
+
+    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+
+    for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
+
+        std::cout<<" laplacian for vertex "<<*v_it<<" : "<<laplacian[*v_it]<<std::endl;
+    }
+
+}
+
+#endif
+
