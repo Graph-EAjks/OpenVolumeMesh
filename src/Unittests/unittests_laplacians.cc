@@ -23,7 +23,7 @@ private:
 
 TEST_F(PolyhedralMeshLaplacianTest, CreateLaplacian){
 
-    UniformLaplacian<PolyhedralMesh> laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
 
 }
 
@@ -31,7 +31,7 @@ TEST_F(PolyhedralMeshLaplacianTest, CreateLaplacian){
 
 TEST_F(PolyhedralMeshLaplacianTest, HalfEdgeUniformLaplacianEqualsOneEverywhere){
 
-    UniformLaplacian<PolyhedralMesh> laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_halfedges(), 0);
 
     for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
@@ -42,7 +42,7 @@ TEST_F(PolyhedralMeshLaplacianTest, HalfEdgeUniformLaplacianEqualsOneEverywhere)
 
 TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 
-    Laplacian<UniformLaplacian, PolyhedralMesh> laplacian(mesh_);
+    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_halfedges(), 0);
 
     for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
@@ -55,7 +55,7 @@ TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 
 TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighborsPositions){
 
-    Laplacian<UniformLaplacian, PolyhedralMesh> laplacian(mesh_);
+    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_vertices(), 0);
 
     for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
@@ -80,9 +80,9 @@ TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighbo
 
 
 template<class _polyhedral_mesh>
-class CustomLaplacian : BaseLaplacian<_polyhedral_mesh>{
+class CustomLaplacian : BaseVertexLaplacian<_polyhedral_mesh>{
 public:
-    CustomLaplacian(_polyhedral_mesh& mesh) : BaseLaplacian<_polyhedral_mesh>(mesh){}
+    CustomLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian<_polyhedral_mesh>(mesh){}
 
     double halfedge_weight(const HalfEdgeHandle& edge) const { return 0;}
 };
@@ -91,10 +91,15 @@ public:
 
 TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
 
-    Laplacian<CustomLaplacian, PolyhedralMesh> laplacian(mesh_);
+    VertexLaplacian<CustomLaplacian, PolyhedralMesh> laplacian(mesh_);
 }
 
 
+
+TEST_F(PolyhedralMeshLaplacianTest, CreatePrecomputedLaplacian){
+
+    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
+}
 
 
 
@@ -190,14 +195,14 @@ private:
 
 TEST_F(DualLaplacianTest, CreateDualLaplacian){
 
-    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
 }
 
 
 TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
-    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
    ASSERT_DOUBLE_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.90817816000670082);
 }
@@ -206,7 +211,7 @@ TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
 TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
 
-    Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
     for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
 

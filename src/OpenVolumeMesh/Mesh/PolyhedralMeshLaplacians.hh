@@ -5,6 +5,7 @@
 #include <cfloat>
 
 
+#pragma message("replace with static const")
 #define ZERO_SIN_THETA_THRESHOLD DBL_EPSILON
 
 namespace OpenVolumeMesh{
@@ -13,20 +14,20 @@ namespace OpenVolumeMesh{
 /** \brief generic template for all Laplacians
  *  _base_laplacian should extend the BaseLaplacian template (see below)
 */
-template< template<class> class _base_laplacian, class _polyhedral_mesh>
-class Laplacian : public _base_laplacian<_polyhedral_mesh>{
+template< template<class> class _base_vertex_laplacian, class _polyhedral_mesh>
+class VertexLaplacian : public _base_vertex_laplacian<_polyhedral_mesh>{
 
 public:
 
-    using BaseLaplacian = _base_laplacian<_polyhedral_mesh>;
+    using BaseVertexLaplacian = _base_vertex_laplacian<_polyhedral_mesh>;
     using VecT   = typename _polyhedral_mesh::PointT;
     using Scalar = typename VecT::value_type;
 
-    Laplacian(_polyhedral_mesh& mesh) : BaseLaplacian(mesh) {}
+    VertexLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian(mesh) {}
 
 
     Scalar operator[](const HalfEdgeHandle& half_edge) const {
-        return BaseLaplacian::halfedge_weight(half_edge);
+        return BaseVertexLaplacian::halfedge_weight(half_edge);
     }
 
 
@@ -38,7 +39,7 @@ public:
         auto voh_it = this->mesh_.voh_iter(vertex);
         while(voh_it.valid()){
 
-            double he_weight = BaseLaplacian::halfedge_weight(*voh_it);
+            double he_weight = BaseVertexLaplacian::halfedge_weight(*voh_it);
 
             weighted_sum += he_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh_it));
             weight_sum += he_weight;
@@ -72,13 +73,13 @@ private:
  * See UniformLaplacian for an example
 */
 template<class _polyhedral_mesh>
-class BaseLaplacian{
+class BaseVertexLaplacian{
 
 public:
 
     using Scalar = typename _polyhedral_mesh::PointT::value_type;
 
-    BaseLaplacian(_polyhedral_mesh& mesh) : mesh_(mesh){}
+    BaseVertexLaplacian(_polyhedral_mesh& mesh) : mesh_(mesh){}
 
 
     virtual Scalar halfedge_weight(const HalfEdgeHandle& edge) const = 0;
@@ -93,12 +94,12 @@ protected:
 
 /** \brief Gives all-1 halfedge weights*/
 template<class _polyhedral_mesh>
-class UniformLaplacian : public BaseLaplacian<_polyhedral_mesh>{
+class UniformVertexLaplacian : public BaseVertexLaplacian<_polyhedral_mesh>{
 
 public:
 
 
-    UniformLaplacian(_polyhedral_mesh& mesh) : BaseLaplacian<_polyhedral_mesh>(mesh) {}
+    UniformVertexLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian<_polyhedral_mesh>(mesh) {}
 
     double halfedge_weight(const HalfEdgeHandle& edge) const{
         return 1.;
@@ -113,7 +114,7 @@ public:
 /** \brief Laplacian based on the "Dual Face" of edges.
  * See [Alexa 2020] Properties of Laplace Operators for Tetrahedral Meshes. */
 template<class _tetrahedral_mesh>
-class DualLaplacian : public BaseLaplacian<_tetrahedral_mesh>{
+class DualLaplacian : public BaseVertexLaplacian<_tetrahedral_mesh>{
 
 
 public:
@@ -121,7 +122,7 @@ public:
     using VecT   = typename _tetrahedral_mesh::PointT;
     using Scalar = typename VecT::value_type;
 
-    DualLaplacian(_tetrahedral_mesh& mesh) : BaseLaplacian<_tetrahedral_mesh>(mesh) {}
+    DualLaplacian(_tetrahedral_mesh& mesh) : BaseVertexLaplacian<_tetrahedral_mesh>(mesh) {}
 
 
     /** See paper mentioned above for computations and naming detail */
@@ -230,6 +231,42 @@ private:
 
 };
 
+
+
+
+template< template<class> class _base_laplacian, class _polyhedral_mesh>
+class PrecomputedLaplacian : public _base_laplacian<_polyhedral_mesh>{
+
+public:
+
+    using BaseLaplacian = _base_laplacian<_polyhedral_mesh>;
+    using VecT   = typename _polyhedral_mesh::PointT;
+    using Scalar = typename VecT::value_type;
+
+    PrecomputedLaplacian(_polyhedral_mesh& mesh) :
+        BaseLaplacian(mesh),
+        vertex_laplacians_(mesh. template request_vertex_property<VecT>("laplacians")),
+        edge_weights_(mesh. template request_halfedge_property<Scalar>("laplacian weights")){
+        //pre-computations
+
+
+    }
+
+    Scalar operator[](const HalfEdgeHandle& edge) const{
+        return 0.f;
+    }
+
+    VecT operator[](const VertexHandle& vertex) const{
+        return {0,0,0};
+
+    }
+
+
+private:
+
+    VertexPropertyT<VecT> vertex_laplacians_;
+    HalfEdgePropertyT<Scalar> edge_weights_;
+};
 
 
 
