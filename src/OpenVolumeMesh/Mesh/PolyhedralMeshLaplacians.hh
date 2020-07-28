@@ -5,8 +5,6 @@
 #include <cfloat>
 
 
-#pragma message("replace with static const")
-#define ZERO_SIN_THETA_THRESHOLD DBL_EPSILON
 
 namespace OpenVolumeMesh{
 
@@ -213,10 +211,10 @@ private:
 
 
     double tet_weight(double alpha, double beta, double theta) const {
-        if(abs(sin(alpha)) > ZERO_SIN_THETA_THRESHOLD  &&
-                abs(sin(beta)) > ZERO_SIN_THETA_THRESHOLD &&
-                abs(sin(theta)) > ZERO_SIN_THETA_THRESHOLD &&
-                abs(cos(theta)) > ZERO_SIN_THETA_THRESHOLD){
+        if(abs(sin(alpha)) > std::numeric_limits<Scalar>::epsilon()  &&
+                abs(sin(beta)) > std::numeric_limits<Scalar>::epsilon() &&
+                abs(sin(theta)) > std::numeric_limits<Scalar>::epsilon() &&
+                abs(cos(theta)) > std::numeric_limits<Scalar>::epsilon()){
 
             double cotan_alpha = cot(alpha);
             double cotan_beta  = cot(beta);
@@ -233,6 +231,10 @@ private:
 
 
 
+
+/** \brief this template is equivalent to its _base_laplacian template argument.
+ * The only difference being that the weights and laplacians are computed at construction
+ * and can thus be accessed fast */
 template< template<class> class _base_laplacian, class _polyhedral_mesh>
 class PrecomputedLaplacian : public _base_laplacian<_polyhedral_mesh>{
 
@@ -270,7 +272,7 @@ public:
                 voh++;
             }
 
-            vertex_laplacians_[vertex] = weight_sum ? weighted_sum / weight_sum : VecT({0,0,0});
+            vertex_laplacians_[vertex] = weighted_sum / weight_sum;
         }
 
     }

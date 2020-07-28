@@ -244,3 +244,25 @@ TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
     }
 }
 
+
+
+TEST_F(DualLaplacianTest, PrecomputedDualLaplacianGivesSameResults){
+
+    PrecomputedLaplacian<DualLaplacian, TetrahedralMesh> precomputed_laplacian(mesh_);
+    VertexLaplacian<DualLaplacian, TetrahedralMesh> on_the_fly_laplacian(mesh_);
+
+
+    for(const auto& edge: mesh_.halfedges()){
+        ASSERT_EQ(precomputed_laplacian[edge], on_the_fly_laplacian[edge]);
+    }
+
+    for(const auto& vertex: mesh_.vertices()){
+        auto precomp = precomputed_laplacian[vertex];
+        auto on_the_fly = on_the_fly_laplacian[vertex];
+        std::cout<<" VERTEX "<<vertex<<std::endl;
+        std::cout<<" -- precomputed : "<<precomp<<std::endl;
+        std::cout<<" -- on-the-fly : "<<on_the_fly<<std::endl;
+
+    }
+}
+
