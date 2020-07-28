@@ -47,7 +47,6 @@ TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 
     for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
         ASSERT_EQ(laplacian[*h_it], 1);
-
     }
 
 }
@@ -99,8 +98,34 @@ TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
 TEST_F(PolyhedralMeshLaplacianTest, CreatePrecomputedLaplacian){
 
     PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
+
 }
 
+
+
+TEST_F(PolyhedralMeshLaplacianTest, SameEdgeWeightsAsOnTheFlyComputedVersion){
+
+    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> precomputed_laplacian(mesh_);
+    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> on_the_fly_laplacian(mesh_);
+
+
+    for(const auto& edge: mesh_.halfedges()){
+        ASSERT_EQ(precomputed_laplacian[edge], on_the_fly_laplacian[edge]);
+    }
+
+}
+
+
+TEST_F(PolyhedralMeshLaplacianTest, SameVertexWeightsAsOnTheFlyComputedVersion){
+
+    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> precomputed_laplacian(mesh_);
+    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> on_the_fly_laplacian(mesh_);
+
+
+    for(const auto& vertex: mesh_.vertices()){
+        ASSERT_EQ(precomputed_laplacian[vertex], on_the_fly_laplacian[vertex]);
+    }
+}
 
 
 class DualLaplacianTest : public TetrahedralMeshBase{

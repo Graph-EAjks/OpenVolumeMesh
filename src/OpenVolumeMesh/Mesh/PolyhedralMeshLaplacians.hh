@@ -12,8 +12,7 @@ namespace OpenVolumeMesh{
 
 
 /** \brief generic template for all Laplacians
- *  _base_laplacian should extend the BaseLaplacian template (see below)
-*/
+ *  _base_laplacian should extend the BaseLaplacian template (see below) */
 template< template<class> class _base_vertex_laplacian, class _polyhedral_mesh>
 class VertexLaplacian : public _base_vertex_laplacian<_polyhedral_mesh>{
 
@@ -246,26 +245,49 @@ public:
     PrecomputedLaplacian(_polyhedral_mesh& mesh) :
         BaseLaplacian(mesh),
         vertex_laplacians_(mesh. template request_vertex_property<VecT>("laplacians")),
-        edge_weights_(mesh. template request_halfedge_property<Scalar>("laplacian weights")){
+        edge_weights_(mesh. template request_edge_property<Scalar>("laplacian weights")){
+
         //pre-computations
 
+        //per edge
+        for(const auto& edge: this->mesh_.edges()){
+            edge_weights_[edge] = BaseLaplacian::halfedge_weight(this->mesh_.halfedge_handle(edge, 0));
+        }
+
+        //and per vertex
+        for(const auto& vertex: this->mesh_.vertices()){
+            VecT weighted_sum = {0,0,0};
+            Scalar weight_sum = 0;
+
+            auto voh = this->mesh_.voh_iter(vertex);
+
+            while(voh.valid()){
+                Scalar edge_weight = edge_weights_[this->mesh_.edge_handle(*voh)];
+
+                weighted_sum += edge_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh));
+                weight_sum += edge_weight;
+
+                voh++;
+            }
+
+            vertex_laplacians_[vertex] = weight_sum ? weighted_sum / weight_sum : VecT({0,0,0});
+        }
 
     }
 
     Scalar operator[](const HalfEdgeHandle& edge) const{
-        return 0.f;
+        return edge_weights_[this->mesh_.edge_handle(edge)];
     }
 
     VecT operator[](const VertexHandle& vertex) const{
-        return {0,0,0};
-
+        return vertex_laplacians_[vertex];
     }
 
 
 private:
 
     VertexPropertyT<VecT> vertex_laplacians_;
-    HalfEdgePropertyT<Scalar> edge_weights_;
+    EdgePropertyT<Scalar> edge_weights_;
 };
 
 
