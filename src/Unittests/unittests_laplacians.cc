@@ -4,6 +4,10 @@
 using namespace OpenVolumeMesh;
 
 
+#ifndef M_PI
+#define M_PI 3.14159265358979311599796346854
+#endif
+
 class PolyhedralMeshLaplacianTest : public PolyhedralMeshBase{
 
 public:
@@ -195,21 +199,18 @@ TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
     Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
-   ASSERT_DOUBLE_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.908178);
+   ASSERT_DOUBLE_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.90817816000670082);
 }
 
 
-#if 0
+
 TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
 
     Laplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
     for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
 
-        std::cout<<" laplacian for vertex "<<*v_it<<" : "<<laplacian[*v_it]<<std::endl;
+        auto lap = laplacian[*v_it];
     }
-
 }
-
-#endif
 

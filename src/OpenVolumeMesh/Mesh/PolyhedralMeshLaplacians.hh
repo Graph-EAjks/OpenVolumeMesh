@@ -2,6 +2,10 @@
 
 #include <OpenVolumeMesh/Core/GeometryKernel.hh>
 #include <OpenVolumeMesh/Mesh/TetrahedralMesh.hh>
+#include <cfloat>
+
+
+#define ZERO_SIN_THETA_THRESHOLD DBL_EPSILON
 
 namespace OpenVolumeMesh{
 
@@ -25,9 +29,10 @@ public:
         return BaseLaplacian::halfedge_weight(half_edge);
     }
 
+
     VecT operator[](const VertexHandle& vertex) const{
 
-        VecT weighted_average({0,0,0});
+        VecT weighted_sum = {0,0,0};
         double weight_sum(0);
 
         auto voh_it = this->mesh_.voh_iter(vertex);
@@ -35,12 +40,17 @@ public:
 
             double he_weight = BaseLaplacian::halfedge_weight(*voh_it);
 
-            weighted_average += he_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh_it));
+            weighted_sum += he_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh_it));
             weight_sum += he_weight;
+
+            if(weight_sum != weight_sum){
+                exit(1);
+            }
 
             voh_it++;
         }
-        return weighted_average / weight_sum;
+
+        return weighted_sum / weight_sum;
     }
 
 
@@ -48,6 +58,10 @@ private:
 
 
 };
+
+
+
+
 
 /** \brief base class for all Laplacians
  *
@@ -76,6 +90,8 @@ protected:
 };
 
 
+
+/** \brief Gives all-1 halfedge weights*/
 template<class _polyhedral_mesh>
 class UniformLaplacian : public BaseLaplacian<_polyhedral_mesh>{
 
@@ -85,7 +101,7 @@ public:
     UniformLaplacian(_polyhedral_mesh& mesh) : BaseLaplacian<_polyhedral_mesh>(mesh) {}
 
     double halfedge_weight(const HalfEdgeHandle& edge) const{
-        return 1;
+        return 1.;
     }
 
 };
@@ -93,10 +109,12 @@ public:
 
 
 
+
+/** \brief Laplacian based on the "Dual Face" of edges.
+ * See [Alexa 2020] Properties of Laplace Operators for Tetrahedral Meshes. */
 template<class _tetrahedral_mesh>
 class DualLaplacian : public BaseLaplacian<_tetrahedral_mesh>{
 
-    //static_assert(_tetrahedral_mesh::)
 
 public:
 
@@ -106,9 +124,7 @@ public:
     DualLaplacian(_tetrahedral_mesh& mesh) : BaseLaplacian<_tetrahedral_mesh>(mesh) {}
 
 
-    /** See [Alexa 2020] Properties of Laplace Operators for Tetrahedral Meshes
-        for the detail of the computations and naming
-*/
+    /** See paper mentioned above for computations and naming detail */
     Scalar halfedge_weight(const HalfEdgeHandle& edge) const{
 
         Scalar weight(0);
@@ -123,7 +139,14 @@ public:
         VertexHandle xi = this->mesh_.halfedge_vertices(edge)[0];
         VertexHandle xj = this->mesh_.halfedge_vertices(edge)[1];
 
-        VertexHandle xk = *(this->mesh_.halfface_vertices(*hehf_iter).first);
+        VertexHandle xk;
+        for(auto v_it = this->mesh_.halfface_vertices(*hehf_iter).first;
+            v_it != this->mesh_.halfface_vertices(*hehf_iter).second;
+            v_it++){
+            if(*v_it != xi && *v_it != xj){
+                xk = *v_it;
+            }
+        }
 
         VecT xk_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xk)).normalized();
         VecT xk_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xk)).normalized();
@@ -140,7 +163,14 @@ public:
 
         while(hehf_iter.valid()){
 
-            VertexHandle xl = *(this->mesh_.halfface_vertices(*hehf_iter).first);
+            VertexHandle xl;
+            for(auto v_it = this->mesh_.halfface_vertices(*hehf_iter).first;
+                v_it != this->mesh_.halfface_vertices(*hehf_iter).second;
+                v_it++){
+                if(*v_it != xi && *v_it != xj){
+                    xl = *v_it;
+                }
+            }
 
             VecT xl_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xl)).normalized();
             VecT xl_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xl)).normalized();
@@ -150,10 +180,7 @@ public:
             beta = acos(xl_xi.dot(xl_xj));
             theta = acos(nijk.dot(nijl));
 
-            double cotan_alpha = cot(alpha);
-            double cotan_beta  = cot(beta);
-
-            weight += cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);
+            weight += tet_weight(alpha, beta, theta);
 
             //setting-up next iteration
             xk = xl;
@@ -169,11 +196,9 @@ public:
         beta = first_alpha;
         theta = acos(nijk.dot(first_nijk));
 
-        double cotan_alpha = cot(alpha);
-        double cotan_beta  = cot(beta);
+        weight += tet_weight(alpha, beta, theta);
 
-        weight += cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);
-
+        //multiply by Vol(i,j) (edge length)
         weight *= (this->mesh_.vertex(xi) - this->mesh_.vertex(xj)).norm() / 8.;
 
         return weight;
@@ -186,6 +211,22 @@ private:
         return cos(x)/sin(x);
     }
 
+
+    double tet_weight(double alpha, double beta, double theta) const {
+        if(abs(sin(alpha)) > ZERO_SIN_THETA_THRESHOLD  &&
+                abs(sin(beta)) > ZERO_SIN_THETA_THRESHOLD &&
+                abs(sin(theta)) > ZERO_SIN_THETA_THRESHOLD &&
+                abs(cos(theta)) > ZERO_SIN_THETA_THRESHOLD){
+
+            double cotan_alpha = cot(alpha);
+            double cotan_beta  = cot(beta);
+
+            //weight computation following the paper's formula
+            return cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);;
+        }else{
+            return 0.f;
+        }
+    }
 
 };
 
