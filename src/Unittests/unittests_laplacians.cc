@@ -57,11 +57,11 @@ TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighbo
     VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_vertices(), 0);
 
-    for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
+    for(const auto& v_it: mesh_.vertices()){
 
         Vec3d average_position({0,0,0});
         double vertex_degree(0);
-        auto vv_it = mesh_.vv_iter(*v_it);
+        auto vv_it = mesh_.vv_iter(v_it);
         while(vv_it.valid()){
             average_position += mesh_.vertex(*vv_it);
             vertex_degree++;
@@ -71,7 +71,7 @@ TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighbo
         average_position /= vertex_degree;
 
 
-        ASSERT_EQ(laplacian[*v_it], average_position);
+        ASSERT_EQ(laplacian[v_it], average_position);
 
     }
 }
@@ -238,9 +238,9 @@ TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
 
     VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
-    for(auto v_it = mesh_.vertices_begin(); v_it != mesh_.vertices_end(); v_it++){
+    for(const auto& v_it: mesh_.vertices()){
 
-        auto lap = laplacian[*v_it];
+        auto lap = laplacian[v_it];
     }
 }
 
@@ -259,10 +259,6 @@ TEST_F(DualLaplacianTest, PrecomputedDualLaplacianGivesSameResults){
     for(const auto& vertex: mesh_.vertices()){
         auto precomp = precomputed_laplacian[vertex];
         auto on_the_fly = on_the_fly_laplacian[vertex];
-        std::cout<<" VERTEX "<<vertex<<std::endl;
-        std::cout<<" -- precomputed : "<<precomp<<std::endl;
-        std::cout<<" -- on-the-fly : "<<on_the_fly<<std::endl;
-
     }
 }
 

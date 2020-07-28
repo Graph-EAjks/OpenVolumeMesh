@@ -138,11 +138,9 @@ public:
         VertexHandle xj = this->mesh_.halfedge_vertices(edge)[1];
 
         VertexHandle xk;
-        for(auto v_it = this->mesh_.halfface_vertices(*hehf_iter).first;
-            v_it != this->mesh_.halfface_vertices(*hehf_iter).second;
-            v_it++){
-            if(*v_it != xi && *v_it != xj){
-                xk = *v_it;
+        for(const auto& v_it: this->mesh_.halfface_vertices(*hehf_iter)){
+            if(v_it != xi && v_it != xj){
+                xk = v_it;
             }
         }
 
@@ -162,11 +160,9 @@ public:
         while(hehf_iter.valid()){
 
             VertexHandle xl;
-            for(auto v_it = this->mesh_.halfface_vertices(*hehf_iter).first;
-                v_it != this->mesh_.halfface_vertices(*hehf_iter).second;
-                v_it++){
-                if(*v_it != xi && *v_it != xj){
-                    xl = *v_it;
+            for(const auto& v_it: this->mesh_.halfface_vertices(*hehf_iter)){
+                if(v_it != xi && v_it != xj){
+                    xl = v_it;
                 }
             }
 
