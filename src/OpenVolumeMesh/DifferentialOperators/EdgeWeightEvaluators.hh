@@ -47,7 +47,7 @@ public:
 
         Scalar weight(0);
 
-        double alpha, beta, theta;
+        double alpha(0), beta(0), theta(0);
 
         auto hehf_iter = mesh.hehf_iter(edge);
 
@@ -126,10 +126,10 @@ private:
 
     static Scalar tet_weight(Scalar alpha, Scalar beta, Scalar theta) {
 
-        if(abs(sin(alpha)) > std::numeric_limits<Scalar>::epsilon()  &&
-                abs(sin(beta)) > std::numeric_limits<Scalar>::epsilon() &&
-                abs(sin(theta)) > std::numeric_limits<Scalar>::epsilon() &&
-                abs(cos(theta)) > std::numeric_limits<Scalar>::epsilon()){
+        if(fabs(sin(alpha)) > std::numeric_limits<Scalar>::epsilon()  &&
+                fabs(sin(beta)) > std::numeric_limits<Scalar>::epsilon() &&
+                fabs(sin(theta)) > std::numeric_limits<Scalar>::epsilon() &&
+                fabs(cos(theta)) > std::numeric_limits<Scalar>::epsilon()){
 
             double cotan_alpha = cot(alpha);
             double cotan_beta  = cot(beta);
