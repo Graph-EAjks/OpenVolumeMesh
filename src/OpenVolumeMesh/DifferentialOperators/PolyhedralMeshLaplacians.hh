@@ -155,7 +155,6 @@ public:
         VecT first_nijk = nijk;
 
         hehf_iter++;
-        int cell_count(0);
 
         while(hehf_iter.valid()){
 
@@ -182,7 +181,6 @@ public:
             nijk = nijl;
 
             hehf_iter++;
-            cell_count++;
         }
 
         //compute the weight contribution of the last cell, which consists of the
@@ -192,7 +190,7 @@ public:
 
         weight += tet_weight(alpha, beta, theta);
 
-        //multiply by Vol(i,j) (edge length)
+        //multiply by Vol(i,j) (i.e. edge length)
         weight *= (this->mesh_.vertex(xi) - this->mesh_.vertex(xj)).norm() / 8.;
 
         return weight;

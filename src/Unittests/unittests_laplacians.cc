@@ -1,5 +1,5 @@
 #include "unittests_common.hh"
-#include <OpenVolumeMesh/Mesh/PolyhedralMeshLaplacians.hh>
+#include <OpenVolumeMesh/DifferentialOperators/PolyhedralMeshLaplacians.hh>
 
 using namespace OpenVolumeMesh;
 
@@ -134,12 +134,12 @@ public:
 
     //generate a basic mesh for further tests
     void SetUp() override{
-        generateMinimalDiamondTetrahedralMesh(mesh_);
+        generateMinimalPentaPyramidTetrahedralMesh(mesh_);
     }
 
 private:
 
-    void generateMinimalDiamondTetrahedralMesh(TetrahedralMesh& mesh){
+    void generateMinimalPentaPyramidTetrahedralMesh(TetrahedralMesh& mesh){
 
         mesh.clear();
 
@@ -229,19 +229,35 @@ TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
     VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
-   ASSERT_DOUBLE_EQ(laplacian.halfedge_weight(HalfEdgeHandle(30)), 0.90817816000670082);
+    double beta(M_PI / 4.);
+    double alpha(M_PI / 4.);
+    double theta(2. * M_PI / 5.); //fifth of a circle
+    double edge_length(1.); //vol(i,j) in paper
+
+    double cot_alpha = cos(alpha) / sin(alpha);
+    double cot_beta = cos(beta) / sin(beta);
+    double cot_theta = cos(theta) / sin(theta);
+
+
+    double expected_per_tet_result = (edge_length / 8.) * cot_theta * (2. * cot_alpha * cot_beta / cos(theta) - cot_alpha * cot_alpha - cot_beta * cot_beta);
+    double expected_result = expected_per_tet_result * 5.;
+
+    //both results won't exactly be the same because they're computed slightly differently
+    ASSERT_NEAR(laplacian.halfedge_weight(HalfEdgeHandle(30)),
+                expected_result,
+                1e-15);
 }
 
 
-
+#
 TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
 
-    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
-    for(const auto& v_it: mesh_.vertices()){
+for(const auto& v_it: mesh_.vertices()){
 
-        auto lap = laplacian[v_it];
-    }
+    auto lap = laplacian[v_it];
+}
 }
 
 
@@ -261,4 +277,3 @@ TEST_F(DualLaplacianTest, PrecomputedDualLaplacianGivesSameResults){
         auto on_the_fly = on_the_fly_laplacian[vertex];
     }
 }
-
