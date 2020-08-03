@@ -28,27 +28,19 @@ public:
     }
 
 
-    VecT operator[](const VertexHandle& vertex) const{
+    Scalar operator[](const VertexHandle& vertex) const{
 
-        VecT weighted_sum = {0,0,0};
         double weight_sum(0);
 
         auto voh_it = this->mesh_.voh_iter(vertex);
         while(voh_it.valid()){
 
-            double he_weight = BaseVertexLaplacian::halfedge_weight(*voh_it);
-
-            weighted_sum += he_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh_it));
-            weight_sum += he_weight;
-
-            if(weight_sum != weight_sum){
-                exit(1);
-            }
+            weight_sum += BaseVertexLaplacian::halfedge_weight(*voh_it);;
 
             voh_it++;
         }
 
-        return weighted_sum / weight_sum;
+        return weight_sum;
     }
 
 
@@ -240,7 +232,7 @@ public:
 
     PrecomputedLaplacian(_polyhedral_mesh& mesh) :
         BaseLaplacian(mesh),
-        vertex_laplacians_(mesh. template request_vertex_property<VecT>("laplacians")),
+        vertex_weights_(mesh. template request_vertex_property<Scalar>("laplacians")),
         edge_weights_(mesh. template request_edge_property<Scalar>("laplacian weights")){
 
         //pre-computations
@@ -252,21 +244,15 @@ public:
 
         //and per vertex
         for(const auto& vertex: this->mesh_.vertices()){
-            VecT weighted_sum = {0,0,0};
             Scalar weight_sum = 0;
 
             auto voh = this->mesh_.voh_iter(vertex);
-
             while(voh.valid()){
-                Scalar edge_weight = edge_weights_[this->mesh_.edge_handle(*voh)];
-
-                weighted_sum += edge_weight * this->mesh_.vertex(this->mesh_.to_vertex_handle(*voh));
-                weight_sum += edge_weight;
-
+                weight_sum += edge_weights_[this->mesh_.edge_handle(*voh)];;
                 voh++;
             }
 
-            vertex_laplacians_[vertex] = weighted_sum / weight_sum;
+            vertex_weights_[vertex] = weight_sum;
         }
 
     }
@@ -275,15 +261,15 @@ public:
         return edge_weights_[this->mesh_.edge_handle(edge)];
     }
 
-    VecT operator[](const VertexHandle& vertex) const{
-        return vertex_laplacians_[vertex];
+    Scalar operator[](const VertexHandle& vertex) const{
+        return vertex_weights_[vertex];
     }
 
 
 private:
 
-    VertexPropertyT<VecT> vertex_laplacians_;
-    EdgePropertyT<Scalar> edge_weights_;
+    VertexPropertyT<Scalar> vertex_weights_;
+    EdgePropertyT<Scalar>   edge_weights_;
 };
 
 

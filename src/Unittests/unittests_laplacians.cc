@@ -52,26 +52,21 @@ TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 }
 
 
-TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsAverageOfNeighborsPositions){
+TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsVertexDegree){
 
     VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_vertices(), 0);
 
     for(const auto& v_it: mesh_.vertices()){
 
-        Vec3d average_position({0,0,0});
         double vertex_degree(0);
         auto vv_it = mesh_.vv_iter(v_it);
         while(vv_it.valid()){
-            average_position += mesh_.vertex(*vv_it);
             vertex_degree++;
-
             vv_it++;
         }
-        average_position /= vertex_degree;
 
-
-        ASSERT_EQ(laplacian[v_it], average_position);
+        ASSERT_EQ(laplacian[v_it], vertex_degree);
 
     }
 }
