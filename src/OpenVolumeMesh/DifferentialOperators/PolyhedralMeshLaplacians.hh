@@ -1,30 +1,27 @@
 #pragma once
 
-#include <OpenVolumeMesh/Core/GeometryKernel.hh>
-#include <OpenVolumeMesh/Mesh/TetrahedralMesh.hh>
-#include <cfloat>
-
-
+#include <OpenVolumeMesh/DifferentialOperators/EdgeWeightEvaluators.hh>
 
 namespace OpenVolumeMesh{
 
 
+
+
 /** \brief generic template for all Laplacians
  *  _base_laplacian should extend the BaseLaplacian template (see below) */
-template< template<class> class _base_vertex_laplacian, class _polyhedral_mesh>
-class VertexLaplacian : public _base_vertex_laplacian<_polyhedral_mesh>{
+template<template <class> class _edge_weight_evaluator, class _polyhedral_mesh>
+class VertexLaplacian {
 
 public:
 
-    using BaseVertexLaplacian = _base_vertex_laplacian<_polyhedral_mesh>;
     using VecT   = typename _polyhedral_mesh::PointT;
     using Scalar = typename VecT::value_type;
 
-    VertexLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian(mesh) {}
+    VertexLaplacian(_polyhedral_mesh& mesh) : mesh_(mesh) {}
 
 
     Scalar operator[](const HalfEdgeHandle& half_edge) const {
-        return BaseVertexLaplacian::halfedge_weight(half_edge);
+        return _edge_weight_evaluator<_polyhedral_mesh>::halfedge_weight(mesh_, half_edge);
     }
 
 
@@ -35,7 +32,7 @@ public:
         auto voh_it = this->mesh_.voh_iter(vertex);
         while(voh_it.valid()){
 
-            weight_sum += BaseVertexLaplacian::halfedge_weight(*voh_it);;
+            weight_sum += _edge_weight_evaluator<_polyhedral_mesh>::halfedge_weight(mesh_, *voh_it);
 
             voh_it++;
         }
@@ -43,35 +40,6 @@ public:
         return weight_sum;
     }
 
-
-private:
-
-
-};
-
-
-
-
-
-/** \brief base class for all Laplacians
- *
- * To create your own Laplacian, make it inherit from this base class and
- * implement the 'half_edge_weight' function with the desired weight computation
- *
- * You can then use it as template argument for the 'Laplacian' template.
- * See UniformLaplacian for an example
-*/
-template<class _polyhedral_mesh>
-class BaseVertexLaplacian{
-
-public:
-
-    using Scalar = typename _polyhedral_mesh::PointT::value_type;
-
-    BaseVertexLaplacian(_polyhedral_mesh& mesh) : mesh_(mesh){}
-
-
-    virtual Scalar halfedge_weight(const HalfEdgeHandle& edge) const = 0;
 
 protected:
 
@@ -81,156 +49,22 @@ protected:
 
 
 
-/** \brief Gives all-1 halfedge weights*/
-template<class _polyhedral_mesh>
-class UniformVertexLaplacian : public BaseVertexLaplacian<_polyhedral_mesh>{
-
-public:
-
-
-    UniformVertexLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian<_polyhedral_mesh>(mesh) {}
-
-    double halfedge_weight(const HalfEdgeHandle& edge) const{
-        return 1.;
-    }
-
-};
-
-
-
-
-
-/** \brief Laplacian based on the "Dual Face" of edges.
- * See [Alexa 2020] Properties of Laplace Operators for Tetrahedral Meshes. */
-template<class _tetrahedral_mesh>
-class DualLaplacian : public BaseVertexLaplacian<_tetrahedral_mesh>{
-
-
-public:
-
-    using VecT   = typename _tetrahedral_mesh::PointT;
-    using Scalar = typename VecT::value_type;
-
-    DualLaplacian(_tetrahedral_mesh& mesh) : BaseVertexLaplacian<_tetrahedral_mesh>(mesh) {}
-
-
-    /** See paper mentioned above for computations and naming detail */
-    Scalar halfedge_weight(const HalfEdgeHandle& edge) const{
-
-        Scalar weight(0);
-
-        double alpha, beta, theta;
-
-        auto hehf_iter = this->mesh_.hehf_iter(edge);
-
-        /*the idea is to iterate through the halffaces around the halfedge to
-         * compute the successive beta angles and then use them as alpha angles
-         * for the next iteration. */
-        VertexHandle xi = this->mesh_.halfedge_vertices(edge)[0];
-        VertexHandle xj = this->mesh_.halfedge_vertices(edge)[1];
-
-        VertexHandle xk;
-        for(const auto& v_it: this->mesh_.halfface_vertices(*hehf_iter)){
-            if(v_it != xi && v_it != xj){
-                xk = v_it;
-            }
-        }
-
-        VecT xk_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xk)).normalized();
-        VecT xk_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xk)).normalized();
-
-        VecT nijk = xk_xi.cross(xk_xj).normalized();
-
-        alpha = acos(xk_xi.dot(xk_xj));
-
-        double first_alpha = alpha;
-        VecT first_nijk = nijk;
-
-        hehf_iter++;
-
-        while(hehf_iter.valid()){
-
-            VertexHandle xl;
-            for(const auto& v_it: this->mesh_.halfface_vertices(*hehf_iter)){
-                if(v_it != xi && v_it != xj){
-                    xl = v_it;
-                }
-            }
-
-            VecT xl_xi = (this->mesh_.vertex(xi) - this->mesh_.vertex(xl)).normalized();
-            VecT xl_xj = (this->mesh_.vertex(xj) - this->mesh_.vertex(xl)).normalized();
-
-            VecT nijl = xl_xi.cross(xl_xj).normalized();
-
-            beta = acos(xl_xi.dot(xl_xj));
-            theta = acos(nijk.dot(nijl));
-
-            weight += tet_weight(alpha, beta, theta);
-
-            //setting-up next iteration
-            xk = xl;
-            alpha = beta;
-            nijk = nijl;
-
-            hehf_iter++;
-        }
-
-        //compute the weight contribution of the last cell, which consists of the
-        //last halfface and the first one
-        beta = first_alpha;
-        theta = acos(nijk.dot(first_nijk));
-
-        weight += tet_weight(alpha, beta, theta);
-
-        //multiply by Vol(i,j) (i.e. edge length)
-        weight *= (this->mesh_.vertex(xi) - this->mesh_.vertex(xj)).norm() / 8.;
-
-        return weight;
-    }
-
-
-private:
-
-    double cot(Scalar x) const{
-        return cos(x)/sin(x);
-    }
-
-
-    double tet_weight(double alpha, double beta, double theta) const {
-        if(abs(sin(alpha)) > std::numeric_limits<Scalar>::epsilon()  &&
-                abs(sin(beta)) > std::numeric_limits<Scalar>::epsilon() &&
-                abs(sin(theta)) > std::numeric_limits<Scalar>::epsilon() &&
-                abs(cos(theta)) > std::numeric_limits<Scalar>::epsilon()){
-
-            double cotan_alpha = cot(alpha);
-            double cotan_beta  = cot(beta);
-
-            //weight computation following the paper's formula
-            return cot(theta) * (2. * (cotan_alpha * cotan_beta)/cos(theta) - cotan_alpha*cotan_alpha - cotan_beta*cotan_beta);;
-        }else{
-            return 0.f;
-        }
-    }
-
-};
-
-
-
-
 
 /** \brief this template is equivalent to its _base_laplacian template argument.
  * The only difference being that the weights and laplacians are computed at construction
  * and can thus be accessed fast */
-template< template<class> class _base_laplacian, class _polyhedral_mesh>
-class PrecomputedLaplacian : public _base_laplacian<_polyhedral_mesh>{
+template< template<class> class _edge_weight_evaluator, class _polyhedral_mesh>
+class PrecomputedVertexLaplacian : public VertexLaplacian<_edge_weight_evaluator, _polyhedral_mesh>{
 
 public:
 
-    using BaseLaplacian = _base_laplacian<_polyhedral_mesh>;
+    using EdgeWeightEvaluator = _edge_weight_evaluator<_polyhedral_mesh>;
+    using BaseLaplacian = VertexLaplacian<_edge_weight_evaluator, _polyhedral_mesh>;
+
     using VecT   = typename _polyhedral_mesh::PointT;
     using Scalar = typename VecT::value_type;
 
-    PrecomputedLaplacian(_polyhedral_mesh& mesh) :
+    PrecomputedVertexLaplacian(_polyhedral_mesh& mesh) :
         BaseLaplacian(mesh),
         vertex_weights_(mesh. template request_vertex_property<Scalar>("laplacians")),
         edge_weights_(mesh. template request_edge_property<Scalar>("laplacian weights")){
@@ -239,7 +73,8 @@ public:
 
         //per edge
         for(const auto& edge: this->mesh_.edges()){
-            edge_weights_[edge] = BaseLaplacian::halfedge_weight(this->mesh_.halfedge_handle(edge, 0));
+            edge_weights_[edge] = EdgeWeightEvaluator::halfedge_weight(this->mesh_,
+                                                                       this->mesh_.halfedge_handle(edge, 0));
         }
 
         //and per vertex
@@ -272,6 +107,16 @@ private:
     EdgePropertyT<Scalar>   edge_weights_;
 };
 
+/* Laplacian aliases */
+template<class _polyhedral_mesh>
+using UniformVertexLaplacian = VertexLaplacian<Laplacian::UniformEdgeWeightEvaluator, _polyhedral_mesh>;
+template<class _polyhedral_mesh>
+using DualVertexLaplacian = VertexLaplacian<Laplacian::DualEdgeWeightEvaluator, _polyhedral_mesh>;
 
+/* Pre-computed Laplacian aliases */
+template<class _polyhedral_mesh>
+using PrecomputedUniformVertexLaplacian = PrecomputedVertexLaplacian<Laplacian::UniformEdgeWeightEvaluator, _polyhedral_mesh>;
+template<class _polyhedral_mesh>
+using PrecomputedDualVertexLaplacian = PrecomputedVertexLaplacian<Laplacian::DualEdgeWeightEvaluator, _polyhedral_mesh>;
 
 }

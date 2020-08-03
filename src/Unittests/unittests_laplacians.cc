@@ -21,9 +21,9 @@ private:
 
 };
 
-TEST_F(PolyhedralMeshLaplacianTest, CreateLaplacian){
+TEST_F(PolyhedralMeshLaplacianTest, CreateEdgeWeightEvaluator){
 
-    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+    Laplacian::UniformEdgeWeightEvaluator<PolyhedralMesh> weight_evaluator;
 
 }
 
@@ -31,18 +31,19 @@ TEST_F(PolyhedralMeshLaplacianTest, CreateLaplacian){
 
 TEST_F(PolyhedralMeshLaplacianTest, HalfEdgeUniformLaplacianEqualsOneEverywhere){
 
-    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
     ASSERT_GT(mesh_.n_halfedges(), 0);
 
     for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
-        ASSERT_EQ(laplacian.halfedge_weight(*h_it), 1);
+        ASSERT_EQ(Laplacian::UniformEdgeWeightEvaluator<PolyhedralMesh>::halfedge_weight(mesh_, *h_it), 1);
 
     }
 }
 
+
 TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 
-    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+
     ASSERT_GT(mesh_.n_halfedges(), 0);
 
     for(auto h_it = mesh_.halfedges_begin(); h_it != mesh_.halfedges_end(); h_it++){
@@ -52,9 +53,11 @@ TEST_F(PolyhedralMeshLaplacianTest, AccessHaldedgeWeightWithSubscriptOperator){
 }
 
 
+
 TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsVertexDegree){
 
-    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
+
     ASSERT_GT(mesh_.n_vertices(), 0);
 
     for(const auto& v_it: mesh_.vertices()){
@@ -74,25 +77,35 @@ TEST_F(PolyhedralMeshLaplacianTest, VertexUniformLaplacianEqualsVertexDegree){
 
 
 template<class _polyhedral_mesh>
-class CustomLaplacian : BaseVertexLaplacian<_polyhedral_mesh>{
+class CustomEdgeWeightEvaluator {
 public:
-    CustomLaplacian(_polyhedral_mesh& mesh) : BaseVertexLaplacian<_polyhedral_mesh>(mesh){}
 
-    double halfedge_weight(const HalfEdgeHandle& edge) const { return 0;}
+
+    using Scalar = typename _polyhedral_mesh::PointT::value_type;
+
+    static Scalar halfedge_weight(_polyhedral_mesh& mesh,
+                                  const HalfEdgeHandle& edge){return 0.f;}
 };
 
+
+//conveniency alias
+template<class _polyhedral_mesh>
+using CustomVertexLaplacian = VertexLaplacian<CustomEdgeWeightEvaluator, PolyhedralMesh>;
 
 
 TEST_F(PolyhedralMeshLaplacianTest, CreateCustomLaplacians){
 
-    VertexLaplacian<CustomLaplacian, PolyhedralMesh> laplacian(mesh_);
+    //laplacian declaration
+    CustomVertexLaplacian<TetrahedralMesh> laplacian(mesh_);
+
+    laplacian[VertexHandle(0)];
 }
 
 
 
 TEST_F(PolyhedralMeshLaplacianTest, CreatePrecomputedLaplacian){
 
-    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> laplacian(mesh_);
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> laplacian(mesh_);
 
 }
 
@@ -100,8 +113,8 @@ TEST_F(PolyhedralMeshLaplacianTest, CreatePrecomputedLaplacian){
 
 TEST_F(PolyhedralMeshLaplacianTest, SameEdgeWeightsAsOnTheFlyComputedVersion){
 
-    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> precomputed_laplacian(mesh_);
-    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> on_the_fly_laplacian(mesh_);
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> precomputed_laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> on_the_fly_laplacian(mesh_);
 
 
     for(const auto& edge: mesh_.halfedges()){
@@ -113,14 +126,15 @@ TEST_F(PolyhedralMeshLaplacianTest, SameEdgeWeightsAsOnTheFlyComputedVersion){
 
 TEST_F(PolyhedralMeshLaplacianTest, SameVertexWeightsAsOnTheFlyComputedVersion){
 
-    PrecomputedLaplacian<UniformVertexLaplacian, PolyhedralMesh> precomputed_laplacian(mesh_);
-    VertexLaplacian<UniformVertexLaplacian, PolyhedralMesh> on_the_fly_laplacian(mesh_);
+    PrecomputedUniformVertexLaplacian<PolyhedralMesh> precomputed_laplacian(mesh_);
+    UniformVertexLaplacian<PolyhedralMesh> on_the_fly_laplacian(mesh_);
 
 
     for(const auto& vertex: mesh_.vertices()){
         ASSERT_EQ(precomputed_laplacian[vertex], on_the_fly_laplacian[vertex]);
     }
 }
+
 
 
 class DualLaplacianTest : public TetrahedralMeshBase{
@@ -213,16 +227,8 @@ private:
 
 
 
-TEST_F(DualLaplacianTest, CreateDualLaplacian){
-
-    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
-
-}
-
-
 TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
 
-    VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
 
     double beta(M_PI / 4.);
     double alpha(M_PI / 4.);
@@ -238,37 +244,36 @@ TEST_F(DualLaplacianTest, GetPerHalfedgeWeight){
     double expected_result = expected_per_tet_result * 5.;
 
     //both results won't exactly be the same because they're computed slightly differently
-    ASSERT_NEAR(laplacian.halfedge_weight(HalfEdgeHandle(30)),
+    ASSERT_NEAR(Laplacian::DualEdgeWeightEvaluator<TetrahedralMesh>::halfedge_weight(mesh_, HalfEdgeHandle(30)),
                 expected_result,
                 1e-15);
 }
 
 
-#
+
 TEST_F(DualLaplacianTest, GetPerVertexLaplacian){
 
-VertexLaplacian<DualLaplacian, TetrahedralMesh> laplacian(mesh_);
+    DualVertexLaplacian<TetrahedralMesh> laplacian(mesh_);
 
-for(const auto& v_it: mesh_.vertices()){
-
-    auto lap = laplacian[v_it];
+    for(const auto& v_it: mesh_.vertices()){
+        auto lap = laplacian[v_it];
+    }
 }
-}
-
 
 
 TEST_F(DualLaplacianTest, PrecomputedDualLaplacianGivesSameResults){
 
-    PrecomputedLaplacian<DualLaplacian, TetrahedralMesh> precomputed_laplacian(mesh_);
-    VertexLaplacian<DualLaplacian, TetrahedralMesh> on_the_fly_laplacian(mesh_);
+    PrecomputedDualVertexLaplacian<TetrahedralMesh> precomputed_laplacian(mesh_);
+    DualVertexLaplacian<TetrahedralMesh> on_demand_laplacian(mesh_);
 
 
     for(const auto& edge: mesh_.halfedges()){
-        ASSERT_EQ(precomputed_laplacian[edge], on_the_fly_laplacian[edge]);
+        ASSERT_EQ(precomputed_laplacian[edge], on_demand_laplacian[edge]);
     }
 
     for(const auto& vertex: mesh_.vertices()){
         auto precomp = precomputed_laplacian[vertex];
-        auto on_the_fly = on_the_fly_laplacian[vertex];
+        auto on_the_fly = on_demand_laplacian[vertex];
     }
 }
+
