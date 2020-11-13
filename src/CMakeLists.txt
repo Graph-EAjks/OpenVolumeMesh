@@ -21,7 +21,7 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Mesh/HexahedralMeshTopologyKernel.cc
 )
 
-set(OVM_ENABLE_DEPRECATED_APIS ON CACHE BOOL "Support deprecated OpenVolumeMesh APIs")
+set(OVM_ENABLE_DEPRECATED_APIS OFF CACHE BOOL "Support deprecated OpenVolumeMesh APIs")
 
 configure_file (
     "${CMAKE_CURRENT_SOURCE_DIR}/OpenVolumeMesh/Config/DeprecationConfig.hh.in"
@@ -69,12 +69,9 @@ generate_export_header(OpenVolumeMesh
 set_target_properties (OpenVolumeMesh PROPERTIES
     VERSION ${OpenVolumeMesh_VERSION_MAJOR}.${OpenVolumeMesh_VERSION_MINOR}
     SOVERSION ${OpenVolumeMesh_VERSION_MAJOR}.${OpenVolumeMesh_VERSION_MINOR}
-    CXX_STANDARD ${OVM_CXX_STANDARD}
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
     POSITION_INDEPENDENT_CODE ON
     # TODO: turn this on once we have OVM_EXPORT macros in all required places:
-    #CXX_VISIBILITY_PRESET hidden
+     #CXX_VISIBILITY_PRESET hidden
     )
 
 
