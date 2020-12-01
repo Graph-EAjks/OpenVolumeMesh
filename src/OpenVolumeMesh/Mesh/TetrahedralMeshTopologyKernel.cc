@@ -496,18 +496,14 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh) {
     } else//collapse edge when there is no incident cell
     {
         std::set<FaceHandle> collapsingFaces;
-        for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it) {
-            FaceHandle fh = face_handle(*hehf_it);
-            if (fh.is_valid())
-                collapsingFaces.insert(fh);
+        for (HalfEdgeFaceIter hef_it = hef_iter(_heh); hef_it.valid(); ++hef_it) {
+            if ((*hef_it).is_valid())
+                collapsingFaces.insert(*hef_it);
         }
 
         std::set<FaceHandle> incidentFaces;
-        for (VertexOHalfEdgeIter voh_it = voh_iter(from_vh); voh_it.valid(); ++voh_it) {
-            for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(*voh_it); hehf_it.valid(); ++hehf_it) {
-                FaceHandle fh = face_handle(*hehf_it);
-                incidentFaces.insert(fh);
-            }
+        for (VertexFaceIter vf_it = vf_iter(from_vh); vf_it.valid(); ++vf_it) {
+            incidentFaces.insert(*vf_it);
         }
 
         std::vector<FaceHandle> survivingFaces;
@@ -610,10 +606,101 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh) {
 
     delete_vertex(from_vh);
 
+    if(has_edge_bottom_up_incidences()) {
+        std::set<EdgeHandle > edges;
+        for(auto vc_it = vc_iter(to_vh); vc_it.valid(); ++vc_it)
+            for(auto ce_it = ce_iter(*vc_it); ce_it.valid(); ++ce_it)
+                edges.insert(*ce_it);
+        for(const auto& eh : edges)
+            reorder_incident_halffaces(eh);
+    }
+
     enable_deferred_deletion(deferred_deletion_tmp);
 
     return survivingVertex;
 }
+
+
+//// cppcheck-suppress unusedFunction ; public interface
+//void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle _vh)
+//{
+//    bool deferred_deletion_tmp = deferred_deletion_enabled();
+//
+//    if (!deferred_deletion_tmp)
+//        enable_deferred_deletion(true);
+//
+//    VertexHandle from_vh = halfedge(_heh).from_vertex();
+//    std::cerr<<"from vh: "<<from_vh<<" to: "<<halfedge(_heh).to_vertex();
+//
+//    std::vector<HalfFaceHandle> incident_halffaces_with_cells;
+//    for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it)
+//    {
+//        CellHandle ch = incident_cell(*hehf_it);
+//        if (ch.is_valid())
+//            incident_halffaces_with_cells.push_back(*hehf_it);
+//    }
+//
+//    for(auto hfh : incident_halffaces_with_cells) {
+//        CellHandle ch = incident_cell(hfh);
+//        Cell c = cell(ch);
+//        std::vector<HalfFaceHandle> newHalffaces;
+//
+//        auto vh_left = halfedge(next_halfedge_in_halfface(_heh, hfh)).to_vertex();
+//        auto vh_right = halfedge(prev_halfedge_in_halfface(opposite_halfedge_handle(_heh),
+//                                                           adjacent_halfface_in_cell(hfh, _heh))).from_vertex();
+//        std::cerr<<"left: "<<vh_left<<" right: "<<vh_right;
+//
+//        std::vector<HalfFaceHandle> hfhs;
+//        for (unsigned int ii = 0; ii < 4; ++ii) {
+//            Face hf = halfface(c.halffaces()[ii]);
+//            std::vector<HalfEdgeHandle > hehs;
+//            for (unsigned int j = 0; j < 3; ++j) {
+//                Edge e = halfedge(hf.halfedges()[j]);
+//                VertexHandle newStart = (e.from_vertex() == from_vh) ? _vh : e.from_vertex();
+//                VertexHandle newEnd = (e.to_vertex() == from_vh) ? _vh : e.to_vertex();
+//
+//                EdgeHandle eh = edge_handle(hf.halfedges()[j]);
+//                set_edge(eh, newStart, newEnd);
+//
+//                hehs.push_back(halfedge(newStart, newEnd));
+//            }
+//
+//            set_face(face_handle(c.halffaces()[ii]), hehs);
+//
+//            hfhs.push_back(c.halffaces()[ii]);
+//        }
+//
+//        set_cell(ch, hfhs);
+//
+//        add_cell(std::vector<VertexHandle >{_vh, vh_right, vh_left, from_vh});
+//
+////        std::vector<HalfEdgeHandle> hehs;
+////        hehs.reserve(3);
+////        hehs.push_back(halfedge(_vh, vh_left));
+////        hehs.push_back(halfedge(vh_left, vh_right));
+////        hehs.push_back(halfedge(vh_right, _vh));
+////
+////        auto hfh_vab = halfface(hehs);
+////        set_face(face_handle(hfh_vab), hehs);
+////        hfh_vab = halfface(hehs);
+////
+////
+////        std::vector<HalfFaceHandle> halffaces;
+////        halffaces.reserve(4);
+////        halffaces.push_back(add_halfface(_vh, vh_left, from_vh));
+////        halffaces.push_back(add_halfface(_vh, from_vh, vh_right));
+////        auto hfh_rfl = add_halfface(vh_right, from_vh, vh_left);
+////        halffaces.push_back(hfh_rfl);
+////        halffaces.push_back(opposite_halfface_handle(hfh_vab));
+////
+////        add_cell(halffaces);
+////
+////        swap_face_indices(face_handle(hfh_rfl), face_handle(hfh_vab));
+//    }
+//
+//    enable_deferred_deletion(deferred_deletion_tmp);
+//
+//}
 
 
 // cppcheck-suppress unusedFunction ; public interface
