@@ -113,9 +113,12 @@ using UniformVertexLaplacian = VertexLaplacian<Laplacian::UniformEdgeWeightEvalu
 template<class _polyhedral_mesh>
 using DualVertexLaplacian = VertexLaplacian<Laplacian::DualEdgeWeightEvaluator, _polyhedral_mesh>;
 
+
 /* Pre-computed Laplacian aliases */
 template<class _polyhedral_mesh>
 using PrecomputedUniformVertexLaplacian = PrecomputedVertexLaplacian<Laplacian::UniformEdgeWeightEvaluator, _polyhedral_mesh>;
+template<class _polyhedral_mesh>
+using PrecomputedCotanVertexLaplacian = PrecomputedVertexLaplacian<Laplacian::CotanBoundaryEdgeWeightEvaluator, _polyhedral_mesh>;
 template<class _polyhedral_mesh>
 using PrecomputedDualVertexLaplacian = PrecomputedVertexLaplacian<Laplacian::DualEdgeWeightEvaluator, _polyhedral_mesh>;
 
