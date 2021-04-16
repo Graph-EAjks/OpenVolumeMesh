@@ -69,15 +69,12 @@ public:
         vertex_weights_(mesh. template request_vertex_property<Scalar>("laplacians")),
         edge_weights_(mesh. template request_edge_property<Scalar>("laplacian weights")){
 
-        std::cout<<" CALLED LAPLACIAN CTOR"<<std::endl;
-
         //pre-computations
 
         //per edge
         for(const auto& edge: this->mesh_.edges()){
             edge_weights_[edge] = EdgeWeightEvaluator::halfedge_weight(this->mesh_,
                                                                        this->mesh_.halfedge_handle(edge, 0));
-            std::cout<<" -- weight for edge "<<edge<<" = "<<edge_weights_[edge]<<std::endl;
         }
 
         //and per vertex
@@ -92,6 +89,7 @@ public:
 
             vertex_weights_[vertex] = weight_sum;
         }
+
     }
 
     Scalar operator[](const HalfEdgeHandle& edge) const{
