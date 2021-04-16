@@ -87,7 +87,7 @@ public:
 
                 //auto cotan_ab = clamp_cotan(cotan(vec_a, vec_b));
 
-                auto cotan_ab = clamp_cotan(positive_cotan(vec_a, vec_b));
+                auto cotan_ab = clamp_cotan(cotan(vec_a, vec_b));
 
                 //std::cout<<" --> cotan = "<<cotan_ab<<std::endl;
 
