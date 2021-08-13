@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,19 +33,9 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
 
-#ifndef HEXAHEDRALMESHITERATORS_HH
-#define HEXAHEDRALMESHITERATORS_HH
-
-#include "../Core/Iterators.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/Iterators.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -233,4 +224,3 @@ private:
 
 } // Namespace OpenVolumeMesh
 
-#endif /* HEXAHEDRALMESHITERATORS_HH */

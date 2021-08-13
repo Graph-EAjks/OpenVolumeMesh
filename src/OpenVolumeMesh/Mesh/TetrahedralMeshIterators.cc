@@ -34,9 +34,9 @@
 
 #include <set>
 
-#include "TetrahedralMeshIterators.hh"
-#include "TetrahedralMeshTopologyKernel.hh"
-#include "../Core/Iterators.hh"
+#include <OpenVolumeMesh/Mesh/TetrahedralMeshIterators.hh>
+#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
+#include <OpenVolumeMesh/Core/Iterators.hh>
 
 namespace OpenVolumeMesh {
 
@@ -45,7 +45,7 @@ namespace OpenVolumeMesh {
 //================================================================================================
 
 
-TetVertexIter::TetVertexIter(const CellHandle& _ref_h,
+TetVertexIter::TetVertexIter(CellHandle _ref_h,
         const TetrahedralMeshTopologyKernel* _mesh, int _max_laps) :
 BaseIter(_mesh, _ref_h, _max_laps) {
 
@@ -56,7 +56,7 @@ BaseIter(_mesh, _ref_h, _max_laps) {
     assert(cell.halffaces().size() == 4);
 
     // Get first half-face
-    HalfFaceHandle curHF = *cell.halffaces().begin();
+    HalfFaceHandle curHF = cell.halffaces()[0];
     assert(curHF.is_valid());
 
     // Get first half-edge
@@ -74,12 +74,14 @@ BaseIter(_mesh, _ref_h, _max_laps) {
 
     vertices_[2] = _mesh->halfedge(curHE).to_vertex();
 
-    curHF = _mesh->adjacent_halfface_in_cell(curHF, curHE);
-    curHE = _mesh->opposite_halfedge_handle(curHE);
-    curHE = _mesh->next_halfedge_in_halfface(curHE, curHF);
 
-    vertices_[3] = _mesh->halfedge(curHE).to_vertex();
-
+    HalfFaceHandle other_hf = cell.halffaces()[1];
+    for (const auto vh: _mesh->halfface_vertices(other_hf)) {
+        if (vh == vertices_[0]) continue;
+        if (vh == vertices_[1]) continue;
+        if (vh == vertices_[2]) continue;
+        vertices_[3] = vh;
+    }
     cur_index_ = 0;
     BaseIter::cur_handle(vertices_[cur_index_]);
 }

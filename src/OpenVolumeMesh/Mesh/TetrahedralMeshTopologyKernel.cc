@@ -32,13 +32,13 @@
  *                                                                           *
 \*===========================================================================*/
 
-#include "TetrahedralMeshTopologyKernel.hh"
+#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
 
 #include <iostream>
 
 namespace OpenVolumeMesh {
 
-FaceHandle TetrahedralMeshTopologyKernel::add_face(const std::vector<HalfEdgeHandle>& _halfedges, bool _topologyCheck) {
+FaceHandle TetrahedralMeshTopologyKernel::add_face(std::vector<HalfEdgeHandle> _halfedges, bool _topologyCheck) {
 
     if(_halfedges.size() != 3) {
 #ifndef NDEBUG
@@ -48,7 +48,7 @@ FaceHandle TetrahedralMeshTopologyKernel::add_face(const std::vector<HalfEdgeHan
         return TopologyKernel::InvalidFaceHandle;
     }
 
-    return TopologyKernel::add_face(_halfedges, _topologyCheck);
+    return TopologyKernel::add_face(std::move(_halfedges), _topologyCheck);
 }
 
 //========================================================================================
@@ -72,7 +72,7 @@ TetrahedralMeshTopologyKernel::add_face(const std::vector<VertexHandle>& _vertic
 
 
 CellHandle
-TetrahedralMeshTopologyKernel::add_cell(const std::vector<HalfFaceHandle>& _halffaces, bool _topologyCheck) {
+TetrahedralMeshTopologyKernel::add_cell(std::vector<HalfFaceHandle> _halffaces, bool _topologyCheck) {
 
     if(_halffaces.size() != 4) {
 // To make this consistent with add_face
@@ -81,21 +81,21 @@ TetrahedralMeshTopologyKernel::add_cell(const std::vector<HalfFaceHandle>& _half
 #endif
         return TopologyKernel::InvalidCellHandle;
     }
-    for(std::vector<HalfFaceHandle>::const_iterator it = _halffaces.begin();
-            it != _halffaces.end(); ++it) {
-        if(TopologyKernel::halfface(*it).halfedges().size() != 3) {
+    for(const auto &hfh: _halffaces) {
+        auto n_halfedges = TopologyKernel::valence(TopologyKernel::face_handle(hfh));
+        if (n_halfedges != 3) {
 #ifndef NDEBUG
-            std::cerr << "Incident face does not have valence three! Aborting." << std::endl;
+            std::cerr << "TetrahedralMeshTopologyKernel::add_cell(): Incident face " << hfh.idx() << " does not have valence three: " << n_halfedges << "; not adding cell." << std::endl;
 #endif
             return TopologyKernel::InvalidCellHandle;
         }
     }
 
-    return TopologyKernel::add_cell(_halffaces, _topologyCheck);
+    return TopologyKernel::add_cell(std::move(_halffaces), _topologyCheck);
 }
 
 
-HalfEdgeHandle TetrahedralMeshTopologyKernel::add_halfedge(const VertexHandle& _fromVertex, const VertexHandle& _toVertex)
+HalfEdgeHandle TetrahedralMeshTopologyKernel::add_halfedge(VertexHandle _fromVertex, VertexHandle _toVertex)
 {
     HalfEdgeHandle he = halfedge(_fromVertex, _toVertex);
     if (he != InvalidHalfEdgeHandle)
@@ -333,6 +333,8 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
     for (VertexCellIter vc_it = vc_iter(from_vh); vc_it.valid(); ++vc_it)
         incidentCells.push_back(*vc_it);
 
+    std::vector<std::pair<CellHandle, std::vector<HalfFaceHandle>>> new_cells;
+
     for (const CellHandle &ch: incidentCells)
     {
         if (collapsingCells.find(ch) != collapsingCells.end())
@@ -341,6 +343,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
         Cell c = cell(ch);
 
         std::vector<HalfFaceHandle> newHalffaces;
+        newHalffaces.reserve(4);
 
         for (unsigned int hf_idx = 0; hf_idx < 4; ++hf_idx)
         {
@@ -364,14 +367,9 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
         }
 
         delete_cell(ch);
-
-        CellHandle newCell = add_cell(newHalffaces);
-
-        swap_cell_properties(ch, newCell);
+        new_cells.emplace_back(ch, newHalffaces);
 
     }
-
-
     VertexHandle survivingVertex = to_vh;
 
     if (!deferred_deletion_tmp)
@@ -391,6 +389,12 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
     }
 
     delete_vertex(from_vh);
+
+    for (const auto &n: new_cells) {
+        CellHandle newCell = add_cell(std::move(n.second));
+        swap_cell_properties(n.first, newCell);
+    }
+
 
     enable_deferred_deletion(deferred_deletion_tmp);
 
@@ -414,6 +418,8 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
             incident_halffaces_with_cells.push_back(*hehf_it);
     }
 
+    std::vector<std::pair<CellHandle, std::array<VertexHandle, 4>>> new_cells;
+
     for (auto hfh : incident_halffaces_with_cells)
     {
         CellHandle ch = incident_cell(hfh);
@@ -422,11 +428,17 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
 
         delete_cell(ch);
 
-        add_cell(vertices[0], _vh, vertices[2], vertices[3]);
-        add_cell(_vh, vertices[1], vertices[2], vertices[3]);
+        new_cells.emplace_back(ch, std::array<VertexHandle, 4>{vertices[0], _vh, vertices[2], vertices[3]});
+        new_cells.emplace_back(ch, std::array<VertexHandle, 4>{_vh, vertices[1], vertices[2], vertices[3]});
     }
 
     delete_edge(edge_handle(_heh));
+
+    for (const auto &n: new_cells) {
+        CellHandle newCell = add_cell(n.second);
+        copy_cell_properties(n.first, newCell);
+    }
+
 
     enable_deferred_deletion(deferred_deletion_tmp);
 
@@ -440,6 +452,8 @@ void TetrahedralMeshTopologyKernel::split_face(FaceHandle _fh, VertexHandle _vh)
     if (!deferred_deletion_tmp)
         enable_deferred_deletion(true);
 
+    std::vector<std::pair<CellHandle, std::array<VertexHandle, 4>>> new_cells;
+
     for (char i = 0; i < 2; ++i)
     {
         HalfFaceHandle hfh = halfface_handle(_fh, i);
@@ -449,14 +463,18 @@ void TetrahedralMeshTopologyKernel::split_face(FaceHandle _fh, VertexHandle _vh)
             std::vector<VertexHandle> vertices = get_cell_vertices(hfh);
 
             delete_cell(ch);
-
-            add_cell(vertices[0], vertices[1], _vh, vertices[3]);
-            add_cell(vertices[0], _vh, vertices[2], vertices[3]);
-            add_cell(_vh, vertices[1], vertices[2], vertices[3]);
+            new_cells.emplace_back(ch, std::array<VertexHandle, 4>{vertices[0], vertices[1], _vh, vertices[3]});
+            new_cells.emplace_back(ch, std::array<VertexHandle, 4>{vertices[0], _vh, vertices[2], vertices[3]});
+            new_cells.emplace_back(ch, std::array<VertexHandle, 4>{_vh, vertices[1], vertices[2], vertices[3]});
         }
     }
 
     delete_face(_fh);
+
+    for (const auto &n: new_cells) {
+        CellHandle newCell = add_cell(n.second);
+        copy_cell_properties(n.first, newCell);
+    }
 
     enable_deferred_deletion(deferred_deletion_tmp);
 
@@ -582,20 +600,28 @@ VertexHandle TetrahedralMeshTopologyKernel::halfface_opposite_vertex(HalfFaceHan
 //========================================================================================
 
 CellHandle
-TetrahedralMeshTopologyKernel::add_cell(const std::vector<VertexHandle>& _vertices, bool _topologyCheck) {
+TetrahedralMeshTopologyKernel::add_cell(const std::vector<VertexHandle>& _vertices, bool _topologyCheck)
+{
+    if(_vertices.size() != 4) {
+        return CellHandle(-1);
+    }
+    std::array<VertexHandle, 4> verts;
+    std::copy(_vertices.begin(), _vertices.end(), verts.begin());
+    return add_cell(verts, _topologyCheck);
+}
+
+CellHandle
+TetrahedralMeshTopologyKernel::add_cell(const std::array<VertexHandle, 4>& _vertices, bool _topologyCheck)
+{
 
     // debug mode checks
     assert(TopologyKernel::has_full_bottom_up_incidences());
-    assert(_vertices.size() == 4);
 
     // release mode checks
     if(!TopologyKernel::has_full_bottom_up_incidences()) {
         return CellHandle(-1);
     }
 
-    if(_vertices.size() != 4) {
-        return CellHandle(-1);
-    }
 
     HalfFaceHandle hf0, hf1, hf2, hf3;
 

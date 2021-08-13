@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,17 +33,6 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision: 236 $                                                         *
- *   $Date: 2013-02-19 12:32:33 +0100 (Tue, 19 Feb 2013) $                    *
- *   $LastChangedBy: kremer $                                                *
- *                                                                           *
-\*===========================================================================*/
-
-
-#ifndef SERIALIZERS_HH
-#define SERIALIZERS_HH
 
 #include <iostream>
 #include <map>
@@ -52,7 +42,7 @@
 #include <string>
 
 #include <iterator>
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh
 {
@@ -86,8 +76,4 @@ std::istream& operator>>(std::istream& is, std::vector< bool >& rhs);
 
 }
 
-#if defined(INCLUDE_TEMPLATES) && !defined(SERIALIZERST_CC)
-#include "SerializersT_impl.hh"
-#endif
-
-#endif // SERIALIZERS_HH
+#include <OpenVolumeMesh/Core/SerializersT_impl.hh>

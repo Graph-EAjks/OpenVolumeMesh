@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,21 +33,11 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
-
-#ifndef BASEENTITIES_HH_
-#define BASEENTITIES_HH_
 
 #include <vector>
 
-#include "OpenVolumeMesh/Config/Export.hh"
-#include "OpenVolumeMeshHandle.hh"
+#include <OpenVolumeMesh/Config/Export.hh>
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
 
 namespace OpenVolumeMesh {
 
@@ -88,8 +79,8 @@ std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshEdge& _edge);
 class OVM_EXPORT OpenVolumeMeshFace {
 friend class TopologyKernel;
 public:
-    explicit OpenVolumeMeshFace(const std::vector<HalfEdgeHandle>& _halfedges) :
-        halfedges_(_halfedges) {
+    explicit OpenVolumeMeshFace(std::vector<HalfEdgeHandle> _halfedges) :
+        halfedges_(std::move(_halfedges)) {
     }
 
     const std::vector<HalfEdgeHandle>& halfedges() const & {
@@ -119,8 +110,8 @@ std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshFace& _face);
 class OVM_EXPORT OpenVolumeMeshCell {
 friend class TopologyKernel;
 public:
-    explicit OpenVolumeMeshCell(const std::vector<HalfFaceHandle>& _halffaces) :
-        halffaces_(_halffaces) {
+    explicit OpenVolumeMeshCell(std::vector<HalfFaceHandle> _halffaces) :
+        halffaces_(std::move(_halffaces)) {
     }
 
     const std::vector<HalfFaceHandle>& halffaces() const & {
@@ -145,6 +136,4 @@ private:
 // Stream operator for cells
 std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshCell& _cell);
 
-} // Namespace OpenVolumeMesh
-
-#endif /* BASEENTITIES_HH_ */
+} // namespace OpenVolumeMesh

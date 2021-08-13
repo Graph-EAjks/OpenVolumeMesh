@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,23 +33,13 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision: 36 $                                                         *
- *   $Date: 2012-01-10 18:00:06 +0100 (Di, 10 Jan 2012) $                    *
- *   $LastChangedBy: kremer $                                                *
- *                                                                           *
-\*===========================================================================*/
-
-#ifndef COLORATTRIB_HH_
-#define COLORATTRIB_HH_
 
 #include <cassert>
 
-#include "../Core/OpenVolumeMeshHandle.hh"
-#include "OpenVolumeMeshStatus.hh"
-#include "../Core/PropertyDefines.hh"
-#include "../Core/TopologyKernel.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Attribs/OpenVolumeMeshStatus.hh>
+#include <OpenVolumeMesh/Core/PropertyDefines.hh>
+#include <OpenVolumeMesh/Core/TopologyKernel.hh>
 
 namespace OpenVolumeMesh {
 
@@ -186,8 +177,4 @@ private:
 
 } // Namespace OpenVolumeMesh
 
-#if defined(INCLUDE_TEMPLATES) && !defined(COLORATTRIBT_CC)
-#include "ColorAttribT_impl.hh"
-#endif
-
-#endif /* COLORATTRIB_HH_ */
+#include <OpenVolumeMesh/Attribs/ColorAttribT_impl.hh>

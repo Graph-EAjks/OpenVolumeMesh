@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,22 +33,13 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
 
-#ifndef FILEMANAGER_HH_
-#define FILEMANAGER_HH_
 
 #include <string>
 #include <fstream>
 #include <istream>
 #include <ostream>
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -184,8 +176,4 @@ private:
 
 } // Namespace FileManager
 
-#if defined(INCLUDE_TEMPLATES) && !defined(FILEMANAGERT_CC)
-#include "FileManagerT_impl.hh"
-#endif
-
-#endif /* FILEMANAGER_HH_ */
+#include <OpenVolumeMesh/FileManager/FileManagerT_impl.hh>

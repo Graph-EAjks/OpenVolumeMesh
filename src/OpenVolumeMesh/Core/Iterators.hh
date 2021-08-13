@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,17 +33,8 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
 
-#ifndef ITERATORS_HH_
-#define ITERATORS_HH_
-
+#include <type_traits>
 #include <iterator>
 #include <set>
 #include <vector>
@@ -51,8 +43,8 @@
 #include <iostream>
 #endif
 
-#include "OpenVolumeMeshHandle.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -133,9 +125,6 @@ private:
 };
 
 
-#if __cplusplus >= 201103L || _MSC_VER >= 1800 // an older MSVC version might be sufficient, didn't test
-
-#include <type_traits>
 
 template<class I>
 using is_ovm_iterator = std::is_base_of<BaseIterator<typename std::remove_const<typename I::value_type>::type>, I>;
@@ -156,7 +145,6 @@ end(const std::pair<I, I>& iterpair)
     return iterpair.second;
 }
 
-#endif // C++11
 
 template <
 class IH /*  Input handle type */,
@@ -1275,6 +1263,9 @@ public:
     HalfFaceHalfEdgeIterImpl& operator--();
 
 private:
+    // TODO PERF: instead of making a copy, always iterate over the original
+    //            halfedges vector, just backwards + with opposite() for subidx 1
+    std::vector<HalfEdgeHandle> halfedges_;
     size_t cur_index_;
 };
 
@@ -1307,22 +1298,36 @@ public:
 
 //===========================================================================
 
-class OVM_EXPORT FaceHalfEdgeIterImpl : public HalfFaceHalfEdgeIterImpl {
+class OVM_EXPORT FaceHalfEdgeIterImpl : public BaseCirculator<FaceHandle, HalfEdgeHandle> {
 public:
-
+    using BaseIter = BaseCirculator<FaceHandle, HalfEdgeHandle>;
     typedef FaceHandle CenterEntityHandle;
+
     FaceHalfEdgeIterImpl(const FaceHandle& _ref_h, const TopologyKernel* _mesh, int _max_laps = 1);
+    FaceHalfEdgeIterImpl& operator++();
+    FaceHalfEdgeIterImpl& operator--();
+
+private:
+    std::vector<HalfEdgeHandle> const& halfedges_;
+    size_t cur_index_ = 0;
 
 };
 
 //===========================================================================
 
-class OVM_EXPORT FaceEdgeIterImpl : public HalfFaceEdgeIterImpl {
+class OVM_EXPORT FaceEdgeIterImpl : public BaseCirculator<FaceHandle, EdgeHandle> {
 public:
+    using BaseIter = BaseCirculator<FaceHandle, EdgeHandle>;
 
     typedef FaceHandle CenterEntityHandle;
-    FaceEdgeIterImpl(const FaceHandle& _ref_h, const TopologyKernel* _mesh, int _max_laps = 1);
 
+    FaceEdgeIterImpl(const FaceHandle& _ref_h, const TopologyKernel* _mesh, int _max_laps = 1);
+    FaceEdgeIterImpl& operator++();
+    FaceEdgeIterImpl& operator--();
+
+private:
+    std::vector<HalfEdgeHandle> const& halfedges_;
+    size_t cur_index_ = 0;
 };
 
 //===========================================================================
@@ -1375,7 +1380,7 @@ public:
     CellHalfFaceIterImpl& operator--();
 
 private:
-    std::vector<HalfFaceHandle>::const_iterator hf_iter_;
+    std::vector<HalfFaceHandle>::const_iterator hf_begin_, hf_iter_, hf_end_;
 };
 
 //===========================================================================
@@ -1625,5 +1630,3 @@ typedef BoundaryItemIter<CellIter, CellHandle> BoundaryCellIter;
 //===========================================================================
 
 } // Namespace OpenVolumeMesh
-
-#endif /* ITERATORS_HH_ */

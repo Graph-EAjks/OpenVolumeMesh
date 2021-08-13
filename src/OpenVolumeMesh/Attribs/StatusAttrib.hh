@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,24 +33,15 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
 
-#ifndef STATUSATTRIB_HH_
-#define STATUSATTRIB_HH_
 
 #include <cassert>
 
-#include "../Core/OpenVolumeMeshProperty.hh"
-#include "../Core/OpenVolumeMeshHandle.hh"
-#include "OpenVolumeMeshStatus.hh"
-#include "../Core/PropertyDefines.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshProperty.hh>
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Attribs/OpenVolumeMeshStatus.hh>
+#include <OpenVolumeMesh/Core/PropertyDefines.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -281,8 +273,6 @@ private:
 
 } // Namespace OpenVolumeMesh
 
-#if defined(INCLUDE_TEMPLATES) && !defined(STATUSATTRIBT_CC)
-#include "StatusAttribT_impl.hh"
-#endif
 
-#endif /* STATUSATTRIB_HH_ */
+#include <OpenVolumeMesh/Attribs/StatusAttribT_impl.hh>
+

@@ -32,17 +32,10 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                   *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
 
 #include <limits>
 
-#include "OpenVolumeMeshBaseProperty.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshBaseProperty.hh>
 
 namespace OpenVolumeMesh {
 

@@ -40,10 +40,10 @@
 #include <cassert>
 #include <limits>
 
-#include "Entities.hh"
-#include "../System/FunctionalInclude.hh"
-#include "../System/Deprecation.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/Entities.hh>
+#include <functional>
+#include <OpenVolumeMesh/System/Deprecation.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -53,29 +53,24 @@ public:
     // Default constructor
     explicit constexpr OpenVolumeMeshHandle(int _idx) : idx_(_idx) {}
 
-	OpenVolumeMeshHandle& operator=(int _idx) {
-		idx_ = _idx;
-		return *this;
-	}
+	inline constexpr bool is_valid() const {
+        // cppcheck-suppress syntaxError ; broken parser in cppcheck 2.3
+        return idx_ != -1;
+    }
 
-    OpenVolumeMeshHandle(const OpenVolumeMeshHandle& _idx) = default;
-    OpenVolumeMeshHandle& operator=(const OpenVolumeMeshHandle& _idx) = default;
+	inline constexpr bool operator<(const OpenVolumeMeshHandle& _idx) const { return (this->idx_ < _idx.idx_); }
 
-	inline bool is_valid() const { return idx_ != -1; }
+	inline constexpr bool operator<(int _idx) const { return idx_ < _idx; }
 
-	inline bool operator<(const OpenVolumeMeshHandle& _idx) const { return (this->idx_ < _idx.idx_); }
+	inline constexpr bool operator>(const OpenVolumeMeshHandle& _idx) const { return (this->idx_ > _idx.idx_); }
 
-	inline bool operator<(int _idx) const { return idx_ < _idx; }
+    inline constexpr bool operator>(int _idx) const { return idx_ > _idx; }
 
-	inline bool operator>(const OpenVolumeMeshHandle& _idx) const { return (this->idx_ > _idx.idx_); }
+	inline constexpr bool operator==(const OpenVolumeMeshHandle& _h) const { return _h.idx_ == this->idx_; }
 
-    inline bool operator>(int _idx) const { return idx_ > _idx; }
+	inline constexpr bool operator!=(const OpenVolumeMeshHandle& _h) const { return _h.idx_ != this->idx_; }
 
-	inline bool operator==(const OpenVolumeMeshHandle& _h) const { return _h.idx_ == this->idx_; }
-
-	inline bool operator!=(const OpenVolumeMeshHandle& _h) const { return _h.idx_ != this->idx_; }
-
-	inline const int& idx() const { return idx_; }
+	inline constexpr const int& idx() const { return idx_; }
 
     /// return unsigned idx - handle must be valid
     inline size_t uidx() const { assert(is_valid()); return static_cast<size_t>(idx_); }
@@ -110,9 +105,10 @@ class HandleT : public OpenVolumeMeshHandle
 {
 public:
     using Entity = EntityTag;
-    explicit constexpr HandleT(int _idx = -1) : OpenVolumeMeshHandle(_idx) {}
+    constexpr HandleT() : OpenVolumeMeshHandle(-1) {}
+    explicit constexpr HandleT(int _idx) : OpenVolumeMeshHandle(_idx) {}
 
-    static HandleT<EntityTag>
+  static HandleT<EntityTag>
     from_unsigned(size_t _idx)
     {
         if (_idx <= static_cast<size_t>(std::numeric_limits<int>::max())) {
@@ -163,7 +159,7 @@ public:
             correctValue(*it);
         }
 #else
-        std::for_each(_vec.begin(), _vec.end(), fun::bind(&HEHandleCorrection::correctValue, this, fun::placeholders::_1));
+        std::for_each(_vec.begin(), _vec.end(), std::bind(&HEHandleCorrection::correctValue, this, std::placeholders::_1));
 #endif
     }
     void correctValue(HalfEdgeHandle& _h) {
@@ -181,7 +177,7 @@ public:
             correctValue(*it);
         }
 #else
-        std::for_each(_vec.begin(), _vec.end(), fun::bind(&HFHandleCorrection::correctValue, this, fun::placeholders::_1));
+        std::for_each(_vec.begin(), _vec.end(), std::bind(&HFHandleCorrection::correctValue, this, std::placeholders::_1));
 #endif
     }
     void correctValue(HalfFaceHandle& _h) {

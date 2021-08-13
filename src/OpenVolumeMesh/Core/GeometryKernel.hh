@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,15 +33,12 @@
  *                                                                           *
 \*===========================================================================*/
 
-#ifndef GEOMETRYKERNEL_HH_
-#define GEOMETRYKERNEL_HH_
-
 #include <cassert>
 #include <iostream>
 #include <type_traits>
 
-#include "../Geometry/VectorT.hh"
-#include "TopologyKernel.hh"
+#include <OpenVolumeMesh/Geometry/VectorT.hh>
+#include <OpenVolumeMesh/Core/TopologyKernel.hh>
 
 namespace OpenVolumeMesh {
 
@@ -56,6 +54,12 @@ public:
 
     /// Destructor
     ~GeometryKernel() override = default;
+
+    void reserve_vertices(size_t n) {
+        TopologyKernelT::reserve_vertices(n);
+        vertices_.reserve(n);
+    }
+
 
     template<class OtherTopoKernel>
     void assign(const GeometryKernel<VecT, OtherTopoKernel> *other) {
@@ -77,7 +81,7 @@ public:
     }
 
     /// Set the coordinates of point _vh
-    void set_vertex(const VertexHandle& _vh, const VecT& _p) {
+    void set_vertex(VertexHandle _vh, const VecT& _p) {
 
         assert(_vh.idx() < (int)vertices_.size());
 
@@ -85,11 +89,11 @@ public:
     }
 
     /// Get point _vh's coordinates
-    const VecT& vertex(const VertexHandle& _vh) const {
+    const VecT& vertex(VertexHandle _vh) const {
         return vertices_[_vh.uidx()];
     }
 
-    VertexIter delete_vertex(const VertexHandle& _h) override {
+    VertexIter delete_vertex(VertexHandle _h) override {
         assert(_h.idx() < (int)TopologyKernelT::n_vertices());
 
         VertexIter nV = TopologyKernelT::delete_vertex(_h);
@@ -170,32 +174,32 @@ public:
         TopologyKernelT::clear(_clearProps);
     }
 
-    typename PointT::value_type length(const HalfEdgeHandle& _heh) const {
+    typename PointT::value_type length(HalfEdgeHandle _heh) const {
         return vector(_heh).length();
     }
 
-    typename PointT::value_type length(const EdgeHandle& _eh) const {
+    typename PointT::value_type length(EdgeHandle _eh) const {
         return vector(_eh).length();
     }
 
-    PointT vector(const HalfEdgeHandle& _heh) const {
+    PointT vector(HalfEdgeHandle _heh) const {
 
         const typename TopologyKernelT::Edge& e = TopologyKernelT::halfedge(_heh);
         return (vertex(e.to_vertex()) - vertex(e.from_vertex()));
     }
 
-    PointT vector(const EdgeHandle& _eh) const {
+    PointT vector(EdgeHandle _eh) const {
 
         const typename TopologyKernelT::Edge& e = TopologyKernelT::edge(_eh);
         return (vertex(e.to_vertex()) - vertex(e.from_vertex()));
     }
 
-    PointT barycenter(const EdgeHandle& _eh) const {
+    PointT barycenter(EdgeHandle _eh) const {
         return PointT(0.5 * vertex(TopologyKernelT::edge(_eh).from_vertex()) +
                       0.5 * vertex(TopologyKernelT::edge(_eh).to_vertex()));
     }
 
-    PointT barycenter(const FaceHandle& _fh) const {
+    PointT barycenter(FaceHandle _fh) const {
         PointT p(typename PointT::value_type(0));
         typename PointT::value_type valence = 0;
         HalfFaceVertexIter hfv_it =
@@ -207,7 +211,7 @@ public:
         return p;
     }
 
-    PointT barycenter(const CellHandle& _ch) const {
+    PointT barycenter(CellHandle _ch) const {
         PointT p(typename PointT::value_type(0));
         typename PointT::value_type valence = 0;
         CellVertexIter cv_it = TopologyKernelT::cv_iter(_ch);
@@ -220,7 +224,7 @@ public:
 
     /// Compute halfface normal assuming planarity (just uses first 2 edges)
     /// Note: NormalAttrib provides fast access to precomputed normals.
-    PointT normal(const HalfFaceHandle& _hfh) const
+    PointT normal(HalfFaceHandle _hfh) const
     {
         if(TopologyKernelT::halfface(_hfh).halfedges().size() < 3) {
             std::cerr << "Warning: Degenerate face: "
@@ -262,4 +266,3 @@ private:
 
 } // Namespace OpenVolumeMesh
 
-#endif /* GEOMETRYKERNEL_HH_ */

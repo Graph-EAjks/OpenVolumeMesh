@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -33,15 +34,14 @@
 \*===========================================================================*/
 
 
-#pragma once
 
 #include <string>
 
-#include "PropertyHandles.hh"
-#include "BaseProperty.hh"
-#include "OpenVolumeMeshHandle.hh"
-#include "../System/MemoryInclude.hh"
-#include "../System/Deprecation.hh"
+#include <OpenVolumeMesh/Core/PropertyHandles.hh>
+#include <OpenVolumeMesh/Core/BaseProperty.hh>
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/System/MemoryInclude.hh>
+#include <OpenVolumeMesh/System/Deprecation.hh>
 
 namespace OpenVolumeMesh {
 
@@ -121,7 +121,10 @@ public:
      bool anonymous() const override { return ptr::shared_ptr<PropT>::get()->name().empty(); }
 
 protected:
-    const std::string &internal_type_name() const override { return ptr::shared_ptr<PropT>::get()->internal_type_name(); }
+    const std::string &internal_type_name() const override {
+        // cppcheck-suppress returnTempReference ; false positive, lifetimes are okay
+        return ptr::shared_ptr<PropT>::get()->internal_type_name();
+    }
 
     void assign_values_from(const BaseProperty *other) override;
     void move_values_from(BaseProperty *other) override;
@@ -129,13 +132,12 @@ protected:
     void delete_multiple_entries(const std::vector<bool>& _tags) override;
 
     void resize(size_t _size) override;
+    void reserve(size_t _size) override;
 
     void set_handle(const OpenVolumeMeshHandle& _handle) override;
 };
 
 } // Namespace OpenVolumeMesh
 
-#if defined(INCLUDE_TEMPLATES) && !defined(PROPERTYPTRT_CC)
-#include "PropertyPtrT_impl.hh"
-#endif
+#include <OpenVolumeMesh/Core/PropertyPtrT_impl.hh>
 

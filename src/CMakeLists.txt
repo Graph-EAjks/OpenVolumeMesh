@@ -15,6 +15,7 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Core/Serializers.cc
     OpenVolumeMesh/Core/Iterators.cc
     OpenVolumeMesh/Core/OpenVolumeMeshBaseProperty.cc
+    OpenVolumeMesh/Core/TypeName.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/HexahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.cc
@@ -86,8 +87,6 @@ target_compile_options(OpenVolumeMesh PUBLIC
     "$<$<CXX_COMPILER_ID:MSVC>:/wd4710>"
     "$<$<CXX_COMPILER_ID:MSVC>:/wd4711>"
     )
-
-target_compile_definitions(OpenVolumeMesh PUBLIC "INCLUDE_TEMPLATES")
 
 target_include_directories(OpenVolumeMesh
     PUBLIC

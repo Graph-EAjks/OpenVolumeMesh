@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,11 +33,9 @@
  *                                                                           *
 \*===========================================================================*/
 
-#define PROPERTYPTRT_CC
-
-#include "PropertyPtr.hh"
-#include "ResourceManager.hh"
-#include "PropertyDefines.hh"
+#include <OpenVolumeMesh/Core/PropertyPtr.hh>
+#include <OpenVolumeMesh/Core/ResourceManager.hh>
+#include <OpenVolumeMesh/Core/PropertyDefines.hh>
 
 namespace OpenVolumeMesh {
 
@@ -79,7 +78,13 @@ void PropertyPtr<PropT,Entity>::resize(size_t _size) {
 }
 
 template <class PropT, typename Entity>
+void PropertyPtr<PropT,Entity>::reserve(size_t _size) {
+    ptr::shared_ptr<PropT>::get()->reserve(_size);
+}
+
+template <class PropT, typename Entity>
 const std::string& PropertyPtr<PropT,Entity>::name() const {
+    // cppcheck-suppress returnTempReference ; false positive, lifetimes are okay
     return ptr::shared_ptr<PropT>::get()->name();
 }
 

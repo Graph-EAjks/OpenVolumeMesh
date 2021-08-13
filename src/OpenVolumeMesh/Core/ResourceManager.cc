@@ -32,8 +32,8 @@
  *                                                                           *
 \*===========================================================================*/
 
-#include "ResourceManager.hh"
-#include "BaseProperty.hh"
+#include <OpenVolumeMesh/Core/ResourceManager.hh>
+#include <OpenVolumeMesh/Core/BaseProperty.hh>
 
 namespace OpenVolumeMesh {
 
@@ -101,6 +101,22 @@ void ResourceManager::resize_cprops(size_t _nc) {
     resize_props(cell_props_, _nc);
 }
 
+void ResourceManager::reserve_vprops(size_t _n) {
+    reserve_props(vertex_props_, _n);
+}
+void ResourceManager::reserve_eprops(size_t _n) {
+    reserve_props(halfedge_props_, _n);
+    reserve_props(edge_props_, _n);
+}
+void ResourceManager::reserve_fprops(size_t _n) {
+    reserve_props(halfface_props_, _n);
+    reserve_props(face_props_, _n);
+}
+void ResourceManager::reserve_cprops(size_t _n) {
+    reserve_props(cell_props_, _n);
+}
+
+
 void ResourceManager::vertex_deleted(const VertexHandle& _h) {
 
     entity_deleted(vertex_props_, _h);
@@ -128,6 +144,12 @@ void ResourceManager::cell_deleted(const CellHandle& _h) {
 void ResourceManager::swap_cell_properties(CellHandle _h1, CellHandle _h2){
 
     swap_property_elements(cell_props_begin(), cell_props_end(), _h1, _h2);
+}
+
+void ResourceManager::copy_cell_properties(CellHandle _h1, CellHandle _h2){
+    // TODO: implement for other entities too
+
+    copy_property_elements(cell_props_begin(), cell_props_end(), _h1, _h2);
 }
 
 void ResourceManager::swap_face_properties(FaceHandle _h1, FaceHandle _h2){

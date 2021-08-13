@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,12 +33,10 @@
  *                                                                           *
 \*===========================================================================*/
 
-#define PROPERTYDEFINEST_CC
-
 #include <istream>
 #include <ostream>
 
-#include "PropertyDefines.hh"
+#include <OpenVolumeMesh/Core/PropertyDefines.hh>
 
 namespace OpenVolumeMesh {
 

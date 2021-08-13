@@ -1,4 +1,5 @@
-#include "OpenVolumeMesh/Config/Version.hh"
+#pragma once
+#include <OpenVolumeMesh/Config/Version.hh>
 
 // C++ version when compiling (e.g. client code),
 // be careful not to change ABI depending on these defines.

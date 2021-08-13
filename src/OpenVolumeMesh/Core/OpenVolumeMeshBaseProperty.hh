@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,15 +33,12 @@
  *                                                                           *
 \*===========================================================================*/
 
-#ifndef OPENVOLUMEMESHBASEPROPERTY_HH
-#define OPENVOLUMEMESHBASEPROPERTY_HH
-
 #include <iosfwd>
 #include <string>
 #include <vector>
 
-#include "OpenVolumeMeshHandle.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -158,6 +156,4 @@ private:
 };
 
 } // Namespace OpenVolumeMesh
-
-#endif //OPENVOLUMEMESHBASEPROPERTY_HH
 

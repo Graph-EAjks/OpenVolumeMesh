@@ -1,3 +1,5 @@
+#pragma once
+
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,9 +34,6 @@
  *                                                                           *
 \*===========================================================================*/
 
-#pragma once
-
-//== INCLUDES =================================================================
 
 #include <cassert>
 #include <istream>
@@ -43,9 +42,9 @@
 #include <string>
 #include <vector>
 
-#include "OpenVolumeMeshBaseProperty.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshBaseProperty.hh>
 
-#include "Serializers.hh"
+#include <OpenVolumeMesh/Core/Serializers.hh>
 
 namespace OpenVolumeMesh {
 

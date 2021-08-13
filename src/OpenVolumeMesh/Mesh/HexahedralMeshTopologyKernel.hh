@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,17 +33,14 @@
  *                                                                           *
 \*===========================================================================*/
 
-#ifndef HEXAHEDRALMESHTOPOLOGYKERNEL_HH
-#define HEXAHEDRALMESHTOPOLOGYKERNEL_HH
-
 #ifndef NDEBUG
 #include <iostream>
 #endif
 #include <set>
 
-#include "../Core/TopologyKernel.hh"
-#include "HexahedralMeshIterators.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/TopologyKernel.hh>
+#include <OpenVolumeMesh/Mesh/HexahedralMeshIterators.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -99,13 +97,13 @@ public:
     ~HexahedralMeshTopologyKernel() override = default;
 
     // Overridden function
-    FaceHandle add_face(const std::vector<HalfEdgeHandle>& _halfedges, bool _topologyCheck = false) override;
+    FaceHandle add_face(std::vector<HalfEdgeHandle> _halfedges, bool _topologyCheck = false) override;
 
     // Overridden function
     FaceHandle add_face(const std::vector<VertexHandle>& _vertices) override;
 
     /// Overridden function
-    CellHandle add_cell(const std::vector<HalfFaceHandle>& _halffaces, bool _topologyCheck = false) override;
+    CellHandle add_cell(std::vector<HalfFaceHandle> _halffaces, bool _topologyCheck = false) override;
 
 private:
 
@@ -145,31 +143,31 @@ public:
     typedef class HalfFaceSheetHalfFaceIter HalfFaceSheetHalfFaceIter;
     typedef class HexVertexIter HexVertexIter;
 
-    CellSheetCellIter csc_iter(const CellHandle& _ref_h, const unsigned char _orthDir, int _max_laps = 1) const {
+    CellSheetCellIter csc_iter(CellHandle _ref_h, const unsigned char _orthDir, int _max_laps = 1) const {
         return CellSheetCellIter(_ref_h, _orthDir, this, _max_laps);
     }
 
-    std::pair<CellSheetCellIter,CellSheetCellIter> cell_sheet_cells(const CellHandle& _ref_h, const unsigned char _orthDir, int _max_laps = 1) const {
+    std::pair<CellSheetCellIter,CellSheetCellIter> cell_sheet_cells(CellHandle _ref_h, const unsigned char _orthDir, int _max_laps = 1) const {
         CellSheetCellIter begin = csc_iter(_ref_h, _orthDir, _max_laps);
         CellSheetCellIter end   = make_end_circulator(begin);
         return std::make_pair(begin, end);
     }
 
-    HalfFaceSheetHalfFaceIter hfshf_iter(const HalfFaceHandle& _ref_h, int _max_laps = 1) const {
+    HalfFaceSheetHalfFaceIter hfshf_iter(HalfFaceHandle _ref_h, int _max_laps = 1) const {
         return HalfFaceSheetHalfFaceIter(_ref_h, this, _max_laps);
     }
 
-    std::pair<HalfFaceSheetHalfFaceIter,HalfFaceSheetHalfFaceIter> halfface_sheet_halffaces(const HalfFaceHandle& _ref_h, int _max_laps = 1) const {
+    std::pair<HalfFaceSheetHalfFaceIter,HalfFaceSheetHalfFaceIter> halfface_sheet_halffaces(HalfFaceHandle _ref_h, int _max_laps = 1) const {
         HalfFaceSheetHalfFaceIter begin = hfshf_iter(_ref_h, _max_laps);
         HalfFaceSheetHalfFaceIter end   = make_end_circulator(begin);
         return std::make_pair(begin, end);
     }
 
-    HexVertexIter hv_iter(const CellHandle& _ref_h, int _max_laps = 1) const {
+    HexVertexIter hv_iter(CellHandle _ref_h, int _max_laps = 1) const {
         return HexVertexIter(_ref_h, this, _max_laps);
     }
 
-    std::pair<HexVertexIter,HexVertexIter> hex_vertices(const CellHandle& _ref_h, int _max_laps = 1) const {
+    std::pair<HexVertexIter,HexVertexIter> hex_vertices(CellHandle _ref_h, int _max_laps = 1) const {
         HexVertexIter begin = hv_iter(_ref_h, _max_laps);
         HexVertexIter end   = make_end_circulator(begin);
         return std::make_pair(begin, end);
@@ -177,7 +175,7 @@ public:
 
     // ======================= Connectivity functions =============================
 
-    inline HalfFaceHandle opposite_halfface_handle_in_cell(const HalfFaceHandle& _hfh, const CellHandle& _ch) const {
+    inline HalfFaceHandle opposite_halfface_handle_in_cell(HalfFaceHandle _hfh, CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
@@ -191,49 +189,49 @@ public:
         return TopologyKernel::InvalidHalfFaceHandle;
     }
 
-    inline HalfFaceHandle xfront_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle xfront_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[XF];
     }
 
-    inline HalfFaceHandle xback_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle xback_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[XB];
     }
 
-    inline HalfFaceHandle yfront_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle yfront_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[YF];
     }
 
-    inline HalfFaceHandle yback_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle yback_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[YB];
     }
 
-    inline HalfFaceHandle zfront_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle zfront_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[ZF];
     }
 
-    inline HalfFaceHandle zback_halfface(const CellHandle& _ch) const {
+    inline HalfFaceHandle zback_halfface(CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
         return TopologyKernel::cell(_ch).halffaces()[ZB];
     }
 
-    unsigned char orientation(const HalfFaceHandle& _hfh, const CellHandle& _ch) const {
+    unsigned char orientation(HalfFaceHandle _hfh, CellHandle _ch) const {
 
         assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
 
@@ -278,7 +276,7 @@ public:
 
     }
 
-    inline HalfFaceHandle get_oriented_halfface(const unsigned char _o, const CellHandle& _ch) const {
+    inline HalfFaceHandle get_oriented_halfface(const unsigned char _o, CellHandle _ch) const {
 
         if(_o == XF) return xfront_halfface(_ch);
         if(_o == XB) return xback_halfface(_ch);
@@ -289,7 +287,7 @@ public:
         return TopologyKernel::InvalidHalfFaceHandle;
     }
 
-    HalfFaceHandle adjacent_halfface_on_sheet(const HalfFaceHandle& _hfh, const HalfEdgeHandle& _heh) const {
+    HalfFaceHandle adjacent_halfface_on_sheet(HalfFaceHandle _hfh, HalfEdgeHandle _heh) const {
 
         if(!TopologyKernel::has_face_bottom_up_incidences()) {
 #ifndef NDEBUG
@@ -333,7 +331,7 @@ public:
         return TopologyKernel::InvalidHalfFaceHandle;
     }
 
-    HalfFaceHandle adjacent_halfface_on_surface(const HalfFaceHandle& _hfh, const HalfEdgeHandle& _heh) const {
+    HalfFaceHandle adjacent_halfface_on_surface(HalfFaceHandle _hfh, HalfEdgeHandle _heh) const {
 
         for(OpenVolumeMesh::HalfEdgeHalfFaceIter hehf_it = TopologyKernel::hehf_iter(_heh);
                 hehf_it.valid(); ++hehf_it) {
@@ -348,7 +346,7 @@ public:
         return TopologyKernel::InvalidHalfFaceHandle;
     }
 
-    HalfFaceHandle neighboring_outside_halfface(const HalfFaceHandle& _hfh, const HalfEdgeHandle& _heh) const {
+    HalfFaceHandle neighboring_outside_halfface(HalfFaceHandle _hfh, HalfEdgeHandle _heh) const {
 
         if(!TopologyKernel::has_face_bottom_up_incidences()) {
 #ifndef NDEBUG
@@ -370,11 +368,10 @@ public:
 
 private:
 
-    const HalfFaceHandle& get_adjacent_halfface(const HalfFaceHandle& _hfh, const HalfEdgeHandle& _heh,
+    HalfFaceHandle get_adjacent_halfface(HalfFaceHandle _hfh, HalfEdgeHandle _heh,
             const std::vector<HalfFaceHandle>& _halffaces) const;
 
 };
 
 } // Namespace OpenVolumeMesh
 
-#endif /* HEXAHEDRALMESHTOPOLOGYKERNEL_HH */

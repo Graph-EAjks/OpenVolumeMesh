@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,13 +33,10 @@
  *                                                                           *
 \*===========================================================================*/
 
-#ifndef BASEPROPERTY_HH_
-#define BASEPROPERTY_HH_
-
 #include <string>
 
-#include "OpenVolumeMeshHandle.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -105,7 +103,9 @@ protected:
 
     virtual void delete_multiple_entries(const std::vector<bool>& _tags) = 0;
 
-    virtual void resize(size_t /*_size*/) = 0;
+    virtual void resize(size_t _size) = 0;
+
+    virtual void reserve(size_t _size) = 0;
 
     virtual void set_handle(const OpenVolumeMeshHandle& /*_handle*/) = 0;
 
@@ -116,4 +116,3 @@ protected:
 
 } // Namespace OpenVolumeMesh
 
-#endif /* BASEPROPERTY_HH_ */

@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,7 +33,6 @@
  *                                                                           *
 \*===========================================================================*/
 
-#pragma once
 
 #ifndef NDEBUG
 #include <iostream>
@@ -41,12 +41,12 @@
 #include <vector>
 #include <type_traits>
 
-#include "../System/Compiler.hh"
-#include "OpenVolumeMesh/Config/Export.hh"
-#include "OpenVolumeMeshProperty.hh"
-#include "PropertyHandles.hh"
-#include "TypeName.hh"
-#include "ForwardDeclarations.hh"
+#include <OpenVolumeMesh/System/Compiler.hh>
+#include <OpenVolumeMesh/Config/Export.hh>
+#include <OpenVolumeMesh/Core/OpenVolumeMeshProperty.hh>
+#include <OpenVolumeMesh/Core/PropertyHandles.hh>
+#include <OpenVolumeMesh/Core/TypeName.hh>
+#include <OpenVolumeMesh/Core/ForwardDeclarations.hh>
 
 #if OVM_CXX_17
 #include <optional>
@@ -80,6 +80,11 @@ public:
     /// Change size of stored cell properties
     void resize_cprops(size_t _nc);
 
+    void reserve_vprops(size_t n);
+    void reserve_eprops(size_t n);
+    void reserve_fprops(size_t n);
+    void reserve_cprops(size_t n);
+
 protected:
 
     void vertex_deleted(const VertexHandle& _h);
@@ -89,6 +94,8 @@ protected:
     void face_deleted(const FaceHandle& _h);
 
     void cell_deleted(const CellHandle& _h);
+
+    void copy_cell_properties(CellHandle _h1, CellHandle _h2);
 
     void swap_cell_properties(CellHandle _h1, CellHandle _h2);
 
@@ -108,6 +115,14 @@ protected:
         PropIterator p_iter =  _begin;
         for (; p_iter != _end; ++p_iter)
             (*p_iter)->swap_elements(_h1.uidx(), _h2.uidx());
+    }
+
+    template <typename PropIterator, typename Handle>
+    void copy_property_elements(PropIterator _begin, PropIterator _end, Handle _h1, Handle _h2)
+    {
+        PropIterator p_iter =  _begin;
+        for (; p_iter != _end; ++p_iter)
+            (*p_iter)->copy(_h1.uidx(), _h2.uidx());
     }
 
 
@@ -243,7 +258,7 @@ private:
     template <class FullPropT, class PropIterT>
     bool property_exists(const PropIterT& _begin, const PropIterT& _end, const std::string& _name) const
     {
-        auto type_name = get_type_name<typename FullPropT::value_type>();
+        auto type_name = get_type_name(typeid(typename FullPropT::value_type));
 
         if(_name.empty()) {
 #ifndef NDEBUG
@@ -318,6 +333,9 @@ private:
     void resize_props(StdVecT& _vec, size_t _n);
 
     template<class StdVecT>
+    void reserve_props(StdVecT& _vec, size_t _n);
+
+    template<class StdVecT>
     void entity_deleted(StdVecT& _vec, const OpenVolumeMeshHandle& _h);
 
     template<class StdVecT>
@@ -364,7 +382,5 @@ private:
 
 }
 
-#if defined(INCLUDE_TEMPLATES) && !defined(RESOURCEMANAGERT_CC)
-#include "ResourceManagerT_impl.hh"
-#endif
+#include <OpenVolumeMesh/Core/ResourceManagerT_impl.hh>
 

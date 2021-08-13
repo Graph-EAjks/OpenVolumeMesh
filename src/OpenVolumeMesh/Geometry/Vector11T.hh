@@ -1,3 +1,4 @@
+#pragma once
 /* ========================================================================= *
  *                                                                           *
  *                            OPENVOLUMEMESHMesh                                 *
@@ -40,9 +41,6 @@
  *                                                                           *
  * ========================================================================= */
 
-#ifndef OPENVOLUMEMESH_SRC_OPENVOLUMEMESH_GEOMETRY_VECTOR11T_HH_
-#define OPENVOLUMEMESH_SRC_OPENVOLUMEMESH_GEOMETRY_VECTOR11T_HH_
-
 #include <array>
 #include <utility>
 #include <algorithm>
@@ -54,7 +52,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "OpenVolumeMesh/Config/Export.hh"
+#include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
@@ -79,6 +77,7 @@ struct are_convertible_to<To, From> : public std::is_convertible<From, To> {
 template<typename Scalar, int DIM>
 class VectorT {
 
+        // cppcheck-suppress syntaxError ; broken parser in cppcheck 2.3
         static_assert(DIM >= 1, "VectorT requires positive dimensionality.");
 
     private:
@@ -867,5 +866,3 @@ template <> OVM_EXPORT const std::string typeName<Vec4ui>();
 
 } // namespace OpenVolumeMesh
 
-
-#endif /* OPENVOLUMEMESH_SRC_OPENVOLUMEMESH_GEOMETRY_VECTOR11T_HH_ */

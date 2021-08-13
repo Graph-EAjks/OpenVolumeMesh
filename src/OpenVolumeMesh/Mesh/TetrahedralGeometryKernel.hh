@@ -1,3 +1,4 @@
+#pragma once
 /*===========================================================================*\
  *                                                                           *
  *                            OpenVolumeMesh                                 *
@@ -32,23 +33,13 @@
  *                                                                           *
 \*===========================================================================*/
 
-/*===========================================================================*\
- *                                                                           *
- *   $Revision$                                                         *
- *   $Date$                    *
- *   $LastChangedBy$                                                *
- *                                                                           *
-\*===========================================================================*/
-
-#ifndef TETRAHEDRALGEOMETRYKERNEL_HH_
-#define TETRAHEDRALGEOMETRYKERNEL_HH_
 
 #include <cassert>
 #include <iostream>
 
-#include "../Geometry/VectorT.hh"
-#include "../Core/GeometryKernel.hh"
-#include "TetrahedralMeshTopologyKernel.hh"
+#include <OpenVolumeMesh/Geometry/VectorT.hh>
+#include <OpenVolumeMesh/Core/GeometryKernel.hh>
+#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
 
 namespace OpenVolumeMesh {
 
@@ -100,4 +91,3 @@ protected:
 
 } // Namespace OpenVolumeMesh
 
-#endif /* TETRAHEDRALGEOMETRYKERNEL_HH_ */
