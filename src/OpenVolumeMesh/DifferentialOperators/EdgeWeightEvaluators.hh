@@ -98,7 +98,7 @@ public:
 
         if(weight_count != 2){
             std::cerr<<" ERROR - weight accumulated over "<<weight_count<<" vertices."<<std::endl;
-            return nan("");
+            return std::numeric_limits<Scalar>::quiet_NaN();
         }
 
         return weight/2.f;

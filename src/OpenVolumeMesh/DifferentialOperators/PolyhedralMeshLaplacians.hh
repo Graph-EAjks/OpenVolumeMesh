@@ -75,6 +75,9 @@ public:
         for(const auto& edge: this->mesh_.edges()){
             edge_weights_[edge] = EdgeWeightEvaluator::halfedge_weight(this->mesh_,
                                                                        this->mesh_.halfedge_handle(edge, 0));
+            if(std::isnan(edge_weights_[edge])){
+                std::cout<<" ERROR - nan edge weight at PrecomputedVertexLaplacian constructor"<<std::endl;
+            }
         }
 
         //and per vertex
