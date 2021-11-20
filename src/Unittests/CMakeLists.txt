@@ -9,6 +9,7 @@ SET(SOURCE_FILES
     unittests_mesh_copies.cc
     unittests_smart_tagger.cc
     unittests_properties.cc
+    unittests_geometry.cc
     unittests_laplacians.cc)
 
 if (NOT TARGET OpenVolumeMesh::OpenVolumeMesh)
