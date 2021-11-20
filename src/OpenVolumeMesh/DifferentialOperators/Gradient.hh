@@ -12,12 +12,12 @@ namespace OpenVolumeMesh {
 /// Compute gradient of a scalar per-vertex function `_f` in a tet.
 /// template parameter `MeshT` must be a geometric tetrahedral mesh
 /// TetHeightAttrib and NormalAttrib must be available and computed.
-template<typename MeshT, typename PropT>
+template<typename MeshT, typename Scalar>
 typename MeshT::Point compute_tet_gradient(
     MeshT const&_mesh,
     NormalAttrib<MeshT> const &_normal,
     TetHeightAttrib<MeshT> const &_height,
-    PropT const &_f,
+    PropertyPtr<Scalar, Entity::Vertex> const &_f,
     CH _ch
     )
 {
