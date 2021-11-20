@@ -44,12 +44,14 @@ namespace OpenVolumeMesh {
 
 template <class GeomKernelT>
 class TetVolumeAttrib {
+    static const inline std::string prop_name = "ovm:attrib:volume";
 public:
     using Scalar = typename GeomKernelT::Point::value_type;
 
-    explicit TetVolumeAttrib(GeomKernelT& _kernel)
+    explicit TetVolumeAttrib(GeomKernelT const& _kernel)
         : kernel_(_kernel)
-        , cell_volume_(&_kernel, "height", std::numeric_limits<Scalar>::signaling_NaN())
+        , cell_volume_(_kernel.template create_private_property<double, Entity::Cell>(
+            prop_name, std::numeric_limits<Scalar>::signaling_NaN()))
     {}
 
     void update()

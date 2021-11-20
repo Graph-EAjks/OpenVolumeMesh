@@ -45,21 +45,15 @@ namespace OpenVolumeMesh {
 
 template <class GeomKernelT>
 class TetHeightAttrib {
-    static const inline std::string attrib_name = "ovm:attrib:height";
+    static const inline std::string prop_name = "ovm:attrib:height";
 public:
     using Scalar = typename GeomKernelT::Point::value_type;
 
-    explicit TetHeightAttrib(GeomKernelT& _kernel)
+    explicit TetHeightAttrib(GeomKernelT const& _kernel)
         : kernel_(_kernel)
-        , hf_height_(&_kernel, attrib_name, std::numeric_limits<Scalar>::signaling_NaN())
+        , hf_height_(_kernel.template create_private_property<double, Entity::HalfFace>(
+            prop_name, std::numeric_limits<Scalar>::signaling_NaN()))
     {}
-
-#if 0
-    /// Get read-only property
-    static const std::optional<PropertyPtr<Scalar, Entity::HalfFace>> get(GeomKernelT const&_kernel) {
-        return _kernel.template get_property<Scalar, Entity::HalfFace>(attrib_name);
-    }
-#endif
 
     void update(TetVolumeAttrib<GeomKernelT> const& _volume,
                 TriangleAreaAttrib<GeomKernelT> const& _area)

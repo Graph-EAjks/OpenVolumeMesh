@@ -44,12 +44,14 @@ namespace OpenVolumeMesh {
 
 template <class GeomKernelT>
 class TriangleAreaAttrib {
+    static const inline std::string prop_name = "ovm:attrib:triangle_area";
 public:
     using Scalar = typename GeomKernelT::Point::value_type;
 
-    explicit TriangleAreaAttrib(GeomKernelT& _kernel)
+    explicit TriangleAreaAttrib(GeomKernelT const& _kernel)
         : kernel_(_kernel)
-        , face_area_(&_kernel, "area", std::numeric_limits<Scalar>::signaling_NaN())
+        , face_area_(_kernel.template create_private_property<double, Entity::Face>(
+            prop_name, std::numeric_limits<Scalar>::signaling_NaN()))
     {}
 
 
