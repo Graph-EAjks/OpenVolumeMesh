@@ -20,7 +20,7 @@ public:
 
     using Scalar = typename _polyhedral_mesh::PointT::value_type;
 
-    static Scalar halfedge_weight(_polyhedral_mesh& mesh,
+    static Scalar halfedge_weight(_polyhedral_mesh const& mesh,
                                   const HalfEdgeHandle& edge){
         return 1.;
     }
@@ -37,7 +37,7 @@ public:
     using VecT   = typename _tetrahedral_mesh::PointT;
     using Scalar = typename _tetrahedral_mesh::PointT::value_type;
 
-    static Scalar halfedge_weight(_tetrahedral_mesh& mesh,
+    static Scalar halfedge_weight(_tetrahedral_mesh const& mesh,
                                   const HalfEdgeHandle& edge){
 
         if(!mesh.is_boundary(edge)){
@@ -151,7 +151,7 @@ public:
 
 
     /** See paper mentioned above for computations and naming detail */
-    static Scalar halfedge_weight(_tetrahedral_mesh& mesh,
+    static Scalar halfedge_weight(_tetrahedral_mesh const& mesh,
                                   const HalfEdgeHandle& edge){
 
         Scalar weight(0);
