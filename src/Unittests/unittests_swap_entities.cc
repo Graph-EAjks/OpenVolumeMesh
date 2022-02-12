@@ -17,20 +17,13 @@ TEST_F(SwapEntitiesTest, DenisBug)
     bool success = vtk_reader.readFile("s04u_tetrahedron.vtk", mesh);
     ASSERT_EQ(success, true);
 
-    auto testCH = CH(10783);
+    auto ch = CH(27);
 
-    std::cerr << "nc " << mesh.n_cells() << std::endl;
-
-    const auto vhs = mesh.get_cell_vertices(testCH);
-    for (const auto & vh : vhs) {
-        std::cerr << vh << std::endl;
-    }
+    const auto vhs = mesh.get_cell_vertices(ch);
+    ASSERT_EQ(vhs.size(), 4);
     mesh.swap_vertex_indices(vhs[2],vhs[3]);
-    const auto vhs2 = mesh.get_cell_vertices(testCH);
-    for (const auto & vh : vhs2) {
-        std::cerr << vh << std::endl;
-    }
-    std::cout << "CHECK!" << std::endl;
-
+    ASSERT_EQ(vhs.size(), 4);
+    const auto vhs2 = mesh.get_cell_vertices(ch);
+    ASSERT_EQ(vhs2.size(), 4);
 }
 
