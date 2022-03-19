@@ -2,6 +2,7 @@
 
 #include <set>
 #include <cassert>
+#include <mutex>
 
 // TODO: remove debug prints
 #include <iostream>
@@ -53,6 +54,7 @@ public:
 protected:
     void add(T* val)
     {
+        std::scoped_lock lock{mutex_};
         assert(val != nullptr);
         assert(tracked_.find(val) == tracked_.end());
         tracked_.insert(val);
@@ -60,6 +62,7 @@ protected:
 
     void remove(T* val)
     {
+        std::scoped_lock lock{mutex_};
         assert(tracked_.find(val) != tracked_.end());
         tracked_.erase(val);
     }
@@ -67,12 +70,14 @@ protected:
     template<typename F>
     auto for_each(F fun)
     {
+        std::scoped_lock lock{mutex_};
         for (const auto t: tracked_){
             fun(t);
         }
     }
 private:
     std::set<T*> tracked_;
+    std::mutex mutex_;
 };
 
 /// Use as base class with CRDT

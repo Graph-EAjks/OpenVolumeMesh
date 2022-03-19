@@ -1,3 +1,6 @@
+Version 3.0.3 (2022-03-19)
+  - Make adding/removing properties thread-safe.
+
 Version 3.0.2 (2022-02-17)
   - Handle::is_valid(): treat all negative indices as invalid, not just -1. Bug discovered by Heng Liu.
 
