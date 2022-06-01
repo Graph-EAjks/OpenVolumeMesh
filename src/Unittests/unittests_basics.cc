@@ -2087,6 +2087,7 @@ TEST_F(PolyhedralMeshBase, MoveSemantics)
   EXPECT_EQ(mesh_.n_vertices(), move_assigned.n_vertices());
   EXPECT_EQ(mesh_.n_vertices(), move_constructed.n_vertices());
 
+  // what should happen here?
   EXPECT_EQ(foo_a_before[v0], 1337);
 
   auto foo_c = move_constructed.get_property<int, Entity::Vertex>("foo");
@@ -2098,10 +2099,11 @@ TEST_F(PolyhedralMeshBase, MoveSemantics)
   auto foo_a = move_assigned.get_property<int, Entity::Vertex>("foo");
   EXPECT_TRUE(foo_a.has_value());
   if (foo_a.has_value()) {
+      // TODO: get rid of these conditionals with ASSERT_EQ
       EXPECT_EQ(foo_a->at(v0), 1337);
   }
 
-  move_assigned.add_vertex(Vec3d(5,6,7));
+  move_assigned.add_vertex();
 
   if (foo_a.has_value()) {
     EXPECT_EQ(foo_a->size(), move_assigned.n_vertices());
@@ -2109,6 +2111,9 @@ TEST_F(PolyhedralMeshBase, MoveSemantics)
   EXPECT_EQ(foo_a_before.size(), move_assigned.n_vertices());
   EXPECT_EQ(bar_a_before.size(), move_assigned.n_vertices());
 
+  move_constructed.add_vertex();
+
+  move_assigned.add_vertex(Vec3d(5,6,7));
   move_constructed.add_vertex(Vec3d(5,6,7));
 
 }
