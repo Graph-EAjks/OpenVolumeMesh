@@ -2036,12 +2036,8 @@ TEST_F(PolyhedralMeshBase, HandleDefaultConstructors) {
     ASSERT_FALSE(ch.is_valid());
 }
 
-TEST_F(PolyhedralMeshBase, AssignmentAndCopyConstruction) {
-
-  /*
-   * Add vertices
-   */
-
+TEST_F(PolyhedralMeshBase, AssignmentAndCopyConstruction)
+{
   VertexHandle v0 = mesh_.add_vertex(Vec3d(1, 1, 1));
 
   PolyhedralMesh copy{mesh_};
@@ -2062,5 +2058,37 @@ TEST_F(PolyhedralMeshBase, AssignmentAndCopyConstruction) {
 
   PolyhedralMesh move_constructed{std::move(copy)};
   EXPECT_EQ(move_constructed.vertex(v0)[0], 1);
+
+}
+
+TEST_F(PolyhedralMeshBase, MoveSemantics)
+{
+
+  VertexHandle v0 = mesh_.add_vertex(Vec3d(1, 2, 4));
+
+  PolyhedralMesh copy{mesh_};
+  PolyhedralMesh copy2{mesh_};
+
+
+  auto foo = copy.request_vertex_property<int>("foo");
+  auto foo2 = copy2.request_vertex_property<int>("foo");
+  foo[v0] = foo2[v0] = 1337;
+
+  PolyhedralMesh move_constructed{std::move(copy)};
+
+  PolyhedralMesh move_assigned;
+  auto foo_a_before = move_assigned.request_vertex_property<int>("foo");
+  auto bar_a_before = move_assigned.request_vertex_property<int>("bar");
+  move_assigned = std::move(copy2);
+
+
+  EXPECT_EQ(mesh_.n_vertices(), move_assigned.n_vertices());
+  EXPECT_EQ(mesh_.n_vertices(), move_constructed.n_vertices());
+
+  EXPECT_EQ(foo_a_before[v0], 1337);
+  auto foo_c = move_constructed.request_vertex_property<int>("foo");
+  EXPECT_EQ(foo_c[v0], 1337);
+  auto foo_a = move_assigned.request_vertex_property<int>("foo");
+  EXPECT_EQ(foo_a[v0], 1337);
 
 }
