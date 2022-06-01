@@ -2081,14 +2081,34 @@ TEST_F(PolyhedralMeshBase, MoveSemantics)
   auto bar_a_before = move_assigned.request_vertex_property<int>("bar");
   move_assigned = std::move(copy2);
 
+  EXPECT_EQ(foo_a_before.size(), mesh_.n_vertices());
+  EXPECT_EQ(bar_a_before.size(), mesh_.n_vertices());
 
   EXPECT_EQ(mesh_.n_vertices(), move_assigned.n_vertices());
   EXPECT_EQ(mesh_.n_vertices(), move_constructed.n_vertices());
 
   EXPECT_EQ(foo_a_before[v0], 1337);
-  auto foo_c = move_constructed.request_vertex_property<int>("foo");
-  EXPECT_EQ(foo_c[v0], 1337);
-  auto foo_a = move_assigned.request_vertex_property<int>("foo");
-  EXPECT_EQ(foo_a[v0], 1337);
+
+  auto foo_c = move_constructed.get_property<int, Entity::Vertex>("foo");
+  EXPECT_TRUE(foo_c.has_value());
+  if (foo_c.has_value()) {
+    EXPECT_EQ(foo_c->at(v0), 1337);
+  }
+
+  auto foo_a = move_assigned.get_property<int, Entity::Vertex>("foo");
+  EXPECT_TRUE(foo_a.has_value());
+  if (foo_a.has_value()) {
+      EXPECT_EQ(foo_a->at(v0), 1337);
+  }
+
+  move_assigned.add_vertex(Vec3d(5,6,7));
+
+  if (foo_a.has_value()) {
+    EXPECT_EQ(foo_a->size(), move_assigned.n_vertices());
+  }
+  EXPECT_EQ(foo_a_before.size(), move_assigned.n_vertices());
+  EXPECT_EQ(bar_a_before.size(), move_assigned.n_vertices());
+
+  move_constructed.add_vertex(Vec3d(5,6,7));
 
 }
