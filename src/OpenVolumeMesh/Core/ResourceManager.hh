@@ -66,7 +66,7 @@ public:
     ResourceManager(const ResourceManager &other);
     ResourceManager& operator=(const ResourceManager &other);
     ResourceManager(ResourceManager &&other) = default;
-    ResourceManager& operator=(ResourceManager &&other) = default;
+    ResourceManager& operator=(ResourceManager &&other);
 
 private:
     using PersistentProperties = std::set<std::shared_ptr<PropertyStorageBase>>;
@@ -90,21 +90,32 @@ private:
     PropertyPtr<T, EntityTag> internal_create_property(std::string _name, const T _def, bool shared) const;
 
 
-    void assignAllPropertiesFrom(ResourceManager const&);
+    void copyAllPropertiesFrom(ResourceManager const&);
+    void moveAllPropertiesFrom(ResourceManager &&);
 
-    template<typename EntityTag>
-    void assignPropertiesFrom(ResourceManager const&);
 
     PerEntity<PersistentProperties> persistent_props_;
 
 protected:
     friend class PropertyStorageBase;
 
+    using StorageTracker = detail::Tracker<PropertyStorageBase>;
     template<typename EntityTag>
-    detail::Tracker<PropertyStorageBase> & storage_tracker() const;
-    detail::Tracker<PropertyStorageBase> & storage_tracker(EntityType type) const;
+    StorageTracker & storage_tracker() const;
+    StorageTracker & storage_tracker(EntityType type) const;
 
-    mutable PerEntity<detail::Tracker<PropertyStorageBase>> storage_trackers_;
+    using PerEntityStorageTrackers = PerEntity<detail::Tracker<PropertyStorageBase>>;
+    mutable PerEntityStorageTrackers storage_trackers_;
+
+    void clone_props(
+            StorageTracker const&src,
+            StorageTracker &dst,
+            PersistentProperties &persistent);
+    void merge_props(
+            StorageTracker &src,
+            StorageTracker &dst,
+            PersistentProperties &persistent,
+            size_t n_elem);
 
 protected:
 

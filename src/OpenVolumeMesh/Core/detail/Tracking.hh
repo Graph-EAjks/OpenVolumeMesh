@@ -33,10 +33,18 @@ public:
         *this = std::move(other);
     }
 
-    Tracker &operator=(Tracker<T> && other) {
+    Tracker &operator=(Tracker<T> && other)
+    {
+#if 0
+        // keep existing contents, only add the contents of other
         for (const auto t: other.tracked_){
+            // Tracked elements add themselves to our `tracked_` set
             t->set_tracker(this);
         }
+        other.tracked_.clear();
+#endif 
+        tracked_ = std::move(other.tracked_);
+        other.tracked_.clear();
         return *this;
     }
 

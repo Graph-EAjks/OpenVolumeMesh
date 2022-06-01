@@ -283,60 +283,6 @@ size_t ResourceManager::n_persistent_props() const {
 }
 
 
-template<typename EntityTag>
-void ResourceManager::assignPropertiesFrom(ResourceManager const& _src)
-{
-    auto &src_all = _src.template storage_tracker<EntityTag>();
-    auto &dst_all = storage_tracker<EntityTag>();
-
-    // If possible, re-use existing properties instead of copying
-    // everything blindly.
-
-    auto &persistent = persistent_props_.get<EntityTag>();
-
-    // TODO OPT: this will be slow for many props (quadratic) - we could do this in nlogn.
-    //           sort both sets by key (name, type), then traverse in parallel
-    for (const auto &srcprop: src_all) {
-        bool found = false;
-        if (!srcprop->shared()) {
-            // it does not make sense to copy private props,
-            // noone could access them
-            return;
-        }
-        // try to find and update existing properties in dst
-        for (auto it = dst_all.begin(); it != dst_all.end(); ++it)
-        {
-            auto &dstprop = *it;
-            if (!dstprop->shared()) {
-                return;
-            }
-            if (dstprop->name() == srcprop->name()
-                    && dstprop->internal_type_name() == srcprop->internal_type_name())
-            {
-                // found a correspondence!
-                dstprop->assign_values_from(srcprop);
-                if (srcprop->persistent() && !dstprop->persistent()) {
-                    persistent.insert(dstprop->shared_from_this());
-                }
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            auto dstprop = srcprop->clone();
-            dstprop->set_tracker(&storage_tracker<EntityTag>());
-            if (srcprop->persistent()) {
-                persistent.insert(dstprop->shared_from_this());
-            }
-        }
-    }
-}
-
-
-
-
 template <class T, typename Entity>
 PropertyPtr<T, Entity>::PropertyPtr(ResourceManager *mesh, std::string _name, T const &_def)
 {

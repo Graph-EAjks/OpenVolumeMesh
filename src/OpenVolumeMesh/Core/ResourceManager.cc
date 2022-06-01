@@ -33,31 +33,65 @@
 \*===========================================================================*/
 
 #include <OpenVolumeMesh/Core/ResourceManager.hh>
+#include <type_traits>
 
 namespace OpenVolumeMesh {
 
 ResourceManager::ResourceManager(const ResourceManager &other)
 {
-    assignAllPropertiesFrom(other);
+    copyAllPropertiesFrom(other);
+    *this = other;
 }
+
+ResourceManager& ResourceManager::operator=(ResourceManager &&other)
+{
+    if (this == &other) return *this;
+    moveAllPropertiesFrom(std::move(other));
+    return *this;
+}
+
 
 ResourceManager& ResourceManager::operator=(const ResourceManager &other)
 {
     if (this == &other) return *this;
-    for_each_entity([&](auto entity_tag) {
-        resize_props<decltype(entity_tag)>(other.n<decltype(entity_tag)>());
-    });
-    if (this != &other) {
-       assignAllPropertiesFrom(other);
-    }
+    copyAllPropertiesFrom(other);
     return *this;
 }
 
-void ResourceManager::assignAllPropertiesFrom(ResourceManager const& src)
+void ResourceManager::copyAllPropertiesFrom(ResourceManager const&src)
 {
+    PerEntityStorageTrackers result;
+
     for_each_entity([&](auto entity_tag) {
-        assignPropertiesFrom<decltype(entity_tag)>(src);
+        using ET = decltype(entity_tag);
+        clone_props(
+                    src.storage_tracker<ET>(),
+                    result.get<ET>(),
+                    persistent_props_.get<ET>());
+        merge_props(
+                    storage_tracker<ET>(),
+                    result.get<ET>(),
+                    persistent_props_.get<ET>(),
+                    src.n<ET>());
     });
+    storage_trackers_ = std::move(result);
+}
+void ResourceManager::moveAllPropertiesFrom(ResourceManager &&src)
+{
+
+    PerEntityStorageTrackers result = std::move(src.storage_trackers_);
+
+    for_each_entity([&](auto entity_tag) {
+        using ET = decltype(entity_tag);
+        persistent_props_.get<ET>().merge(src.persistent_props_.get<ET>());
+        assert(src.persistent_props_.get<ET>().empty()); // there should be no common props!
+        merge_props(
+                    storage_tracker<ET>(),
+                    result.get<ET>(),
+                    persistent_props_.get<ET>(),
+                    src.n<ET>());
+    });
+    storage_trackers_ = std::move(result);
 }
 
 
@@ -135,6 +169,73 @@ template<> size_t OVM_EXPORT ResourceManager::n<Entity::Face>()     const { retu
 template<> size_t OVM_EXPORT ResourceManager::n<Entity::HalfFace>() const { return n_halffaces(); }
 template<> size_t OVM_EXPORT ResourceManager::n<Entity::Cell>()     const { return n_cells(); }
 template<> size_t OVM_EXPORT ResourceManager::n<Entity::Mesh>()     const { return 1; }
+
+/// clone shared properties from src tracker into dst tracker,
+/// add to our persistent set if they were persistent.
+void ResourceManager::clone_props(
+        StorageTracker const&src,
+        StorageTracker &dst,
+        PersistentProperties &persistent)
+{
+    for (const auto &srcprop: src) {
+        if (!srcprop->shared()) {
+            // it does not make sense to clone private props,
+            // noone could access them
+            continue;
+        }
+        auto dstprop = srcprop->clone();
+        dstprop->set_tracker(&dst);
+        if (srcprop->persistent()) {
+            persistent.insert(dstprop->shared_from_this());
+        }
+    }
+}
+
+/// Merge existing props into the result for the moved/copied-into object (*this).
+///
+/// if a src property is
+///     - not in dst: resize, move to dst
+///     - in dst: - update PropertyPtr instances of src to point to the replacement prop
+///               - remove old prop from persistent
+void ResourceManager::merge_props(
+        StorageTracker &src,
+        StorageTracker &dst,
+        PersistentProperties &persistent,
+        size_t n_elem)
+{
+    std::vector<PropertyStorageBase*> to_be_moved;
+
+    for (auto* srcprop: src) {
+        if (!srcprop->shared()) {
+            // private properties cannot match with props already in dst
+            srcprop->resize(n_elem);
+            to_be_moved.push_back(srcprop);
+        }
+
+        bool found = false;
+        for (auto* dstprop: dst)
+        {
+            if (!dstprop->shared()
+                    && dstprop->name() == srcprop->name()
+                    && dstprop->internal_type_name() == srcprop->internal_type_name())
+            {
+                // found a correspondence!
+                // TODO: update PropertyPtr instances here!
+
+                persistent.erase(srcprop->shared_from_this());
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            srcprop->resize(n_elem);
+            to_be_moved.push_back(srcprop);
+        }
+    }
+    for (auto& prop: to_be_moved) {
+        prop->set_tracker(&dst);
+    }
+}
 
 
 
