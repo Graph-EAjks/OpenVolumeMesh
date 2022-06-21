@@ -128,8 +128,37 @@ protected:
     // Do some final stuff with the member data here...
   }
 
-  // Generate a basic hexahedral mesh
+  // Generate a basic tetrahedral mesh consisting of one tet
   void generateTetrahedralMesh(TetrahedralMesh& _mesh);
+  // Generate a basic tetrahedral mesh consisting of two tets sharing exactly one face
+  void generateTetrahedralMesh_2(TetrahedralMesh& _mesh);
+
+  // Generate a non-manifold tetrahedral mesh, consisting of two tets, sharing exactly one vertex
+  void generateNonManifoldTet_2T1V(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of two tets, sharing exactly one edge
+  void generateNonManifoldTet_2T1E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of two fans of cells sharing exactly one edge
+  void generateNonManifoldTet_6T1E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of one tet and one face sharing exactly one edge
+  void generateNonManifoldTet_1T1F1E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of two faces, sharing exactly one edge
+  void generateNonManifoldTet_2F1E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of three tets sharing one vertex among all of them
+  // and each pair sharing one edge. The three shared edges form a triangle. The three tets form a fourth tet,
+  // which is no cell
+  void generateNonManifoldTet_3T1V3E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of a single vertex
+  void generateNonManifoldTet_1V(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of a single edge
+  void generateNonManifoldTet_1E(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of a single face
+  void generateNonManifoldTet_1F(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of one tet and one face sharing exactly one vertex
+  void generateNonManifoldTet_1T1F1V(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of two faces, sharing exactly one vertex
+  void generateNonManifoldTet_2F1V(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of one face and one edge, sharing exactly one vertex
+  void generateNonManifoldTet_1F1E1V(TetrahedralMesh& mesh);
 
   // This member will be accessible in all tests
   TetrahedralMesh mesh_;
