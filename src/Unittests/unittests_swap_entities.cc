@@ -10,7 +10,7 @@ using namespace OpenVolumeMesh;
 
 TEST_F(TetrahedralMeshBase, SwapVerticesWithCommonEdge)
 {
-    generateTetrahedralMesh(mesh_);
+    generate_tetrahedral_mesh(mesh_);
     auto eh = HEH(0);
     auto v0 = mesh_.from_vertex_handle(eh);
     auto v1 = mesh_.to_vertex_handle(eh);

@@ -14,6 +14,8 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Core/Iterators.cc
     OpenVolumeMesh/Core/detail/internal_type_name.cc
     OpenVolumeMesh/Core/Properties/PropertyStorageBase.cc
+        OpenVolumeMesh/Core/detail/TopologicalFaceSet.cc
+        OpenVolumeMesh/Core/TopologyChecks.cc
     OpenVolumeMesh/IO/enums.cc
     OpenVolumeMesh/IO/PropertyCodecs.cc
     OpenVolumeMesh/IO/detail/BinaryIStream.cc
@@ -30,8 +32,7 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Mesh/HexahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.cc
     OpenVolumeMesh/Mesh/HexahedralMeshTopologyKernel.cc
-)
-
+        )
 # No Qt in any of our headers:
 file(GLOB_RECURSE HEADER_FILES OpenVolumeMesh/*.hh)
 set_property(SOURCE ${HEADER_FILES} PROPERTY SKIP_AUTOMOC ON)

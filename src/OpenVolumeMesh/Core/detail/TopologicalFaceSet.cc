@@ -1,0 +1,136 @@
+#include <utility>
+
+#include "TopologicalFaceSet.hh"
+
+
+namespace OpenVolumeMesh {
+
+    TopologicalFaceSet::TopologicalFaceSet(const std::initializer_list<OpenVolumeMesh::VertexHandle> &vertices,
+                                           const std::initializer_list<OpenVolumeMesh::EdgeHandle> &edges,
+                                           const std::initializer_list<OpenVolumeMesh::FaceHandle> &faces,
+                                           const std::initializer_list<OpenVolumeMesh::CellHandle> &cells)
+            : vertices_(vertices), edges_(edges), faces_(faces), cells_(cells) {}
+
+
+    TopologicalFaceSet::TopologicalFaceSet(std::set<OpenVolumeMesh::VertexHandle> vertices,
+                                           std::set<OpenVolumeMesh::EdgeHandle> edges,
+                                           std::set<OpenVolumeMesh::FaceHandle> faces,
+                                           std::set<OpenVolumeMesh::CellHandle> cells)
+                                           :vertices_(std::move(vertices)),
+                                           edges_(std::move(edges)),
+                                           faces_(std::move(faces)),
+                                           cells_(std::move(cells)) {}
+
+
+    bool TopologicalFaceSet::operator==(const TopologicalFaceSet &other) const {
+
+        return vertices_ == other.vertices_ &&
+               edges_ == other.edges_ &&
+               faces_ == other.faces_ &&
+               cells_ == other.cells_;
+
+    }
+
+
+    bool TopologicalFaceSet::operator!=(const TopologicalFaceSet &other) const {
+
+        return !((*this) == other);
+
+    }
+
+
+    TopologicalFaceSet TopologicalFaceSet::intersection(const TopologicalFaceSet &other) const {
+        VertexSet vertices;
+        for (auto &v: vertices_) {
+            if (other.vertices_.find(v) != other.vertices_.end()) {
+                vertices.insert(v);
+            }
+        }
+
+        EdgeSet edges;
+        for (auto &e: edges_) {
+            if (other.edges_.find(e) != other.edges_.end()) {
+                edges.insert(e);
+            }
+        }
+
+        FaceSet faces;
+        for (auto &f: faces_) {
+            if (other.faces_.find(f) != other.faces_.end()) {
+                faces.insert(f);
+            }
+        }
+
+        CellSet cells;
+        for (auto &c: cells_) {
+            if (other.cells_.find(c) != other.cells_.end()) {
+                cells.insert(c);
+            }
+        }
+
+        return {vertices, edges, faces, cells};
+    }
+
+    TopologicalFaceSet TopologicalFaceSet::subtract(const TopologicalFaceSet &other) const {
+
+        VertexSet vertices;
+        for (auto &v: vertices_) {
+            if (other.vertices_.find(v) == other.vertices_.end()) {
+                vertices.insert(v);
+            }
+        }
+
+        EdgeSet edges;
+        for (auto &e: edges_) {
+            if (other.edges_.find(e) == other.edges_.end()) {
+                edges.insert(e);
+            }
+        }
+
+        FaceSet faces;
+        for (auto &f: faces_) {
+            if (other.faces_.find(f) == other.faces_.end()) {
+                faces.insert(f);
+            }
+        }
+
+        CellSet cells;
+        for (auto &c: cells_) {
+            if (other.cells_.find(c) == other.cells_.end()) {
+                cells.insert(c);
+            }
+        }
+
+        return {vertices, edges, faces, cells};
+    }
+
+
+    const VertexSet &TopologicalFaceSet::vertices() const { return vertices_; }
+
+    const EdgeSet &TopologicalFaceSet::edges() const { return edges_; }
+
+    const FaceSet &TopologicalFaceSet::faces() const { return faces_; }
+
+    const CellSet &TopologicalFaceSet::cells() const { return cells_; }
+
+
+    std::ostream &operator<<(std::ostream &os, const TopologicalFaceSet &face_set) {
+        os << " Edges: { ";
+        for (auto e: face_set.edges()) {
+            std::cout << e << " ";
+        }
+        std::cout << "}, Vertices {";
+        for (auto v: face_set.vertices()) {
+            std::cout << v << " ";
+        }
+        std::cout << "}";
+        return os;
+    }
+
+    void TopologicalFaceSet::clear() {
+        vertices_.clear();
+        edges_.clear();
+        faces_.clear();
+        cells_.clear();
+    }
+}

@@ -6,7 +6,7 @@ using namespace OpenVolumeMesh;
 
 TEST_F(TetrahedralMeshBase, SmartTaggerBool) {
 
-    generateTetrahedralMesh(mesh_);
+    generate_tetrahedral_mesh(mesh_);
 
     auto tagger = SmartTaggerBool<Entity::Vertex>(mesh_);
     for (auto vh: mesh_.vertices()) {
@@ -30,7 +30,7 @@ TEST_F(TetrahedralMeshBase, SmartTaggerEnum) {
 
   enum class TestEnum { Zero, One, Two };
 
-    generateTetrahedralMesh(mesh_);
+    generate_tetrahedral_mesh(mesh_);
 
     auto tagger = SmartTagger<Entity::Vertex, uint8_t, TestEnum>(mesh_, 3);
     for (auto vh: mesh_.vertices()) {
