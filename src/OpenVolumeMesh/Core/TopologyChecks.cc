@@ -24,6 +24,9 @@ namespace OpenVolumeMesh {
     bool face_contains_vertex(const TetrahedralMeshTopologyKernel& mesh,
                                           const VertexHandle& vertex,
                                           const FaceHandle& face){
+        if (!mesh.is_valid(vertex) || !mesh.is_valid(face)) {
+            return false;
+        }
         auto hf_vertices = mesh.get_halfface_vertices(mesh.halfface_handle(face, 0));
 
         return  hf_vertices[0] == vertex ||
@@ -34,6 +37,9 @@ namespace OpenVolumeMesh {
     bool cell_contains_vertex(const TetrahedralMeshTopologyKernel& mesh,
                                           const VertexHandle& vertex,
                                           const CellHandle& cell){
+        if (!mesh.is_valid(vertex) || !mesh.is_valid(cell)) {
+            return false;
+        }
         auto c_vertices = mesh.get_cell_vertices(cell);
 
         return  c_vertices[0] == vertex ||
@@ -230,6 +236,10 @@ namespace OpenVolumeMesh {
 
     bool singleConnectedComponent(TetrahedralMeshTopologyKernel&  mesh){
 
+        if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
+            return false; //TODO: it might be preferable to return true, as an empty mesh is connected (maybe not?)
+        }
+
         auto visited_prop = mesh.request_vertex_property<bool>("visited");
 
         std::set<VertexHandle> to_visit;
@@ -334,6 +344,11 @@ namespace OpenVolumeMesh {
 
     bool manifoldVertex(TetrahedralMeshTopologyKernel& mesh,
                                     const VertexHandle& vertex){
+
+
+        if (!mesh.is_valid(vertex)) {
+            return false;
+        }
 
         // if the vertex is incident to less than three edges, it cannot be part of a tet
         if (mesh.valence(vertex) < 3) {
