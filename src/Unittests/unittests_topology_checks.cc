@@ -107,17 +107,6 @@ TEST_F(TetrahedralMeshBase, cell_contains_vertex) {
     EXPECT_FALSE(OpenVolumeMesh::cell_contains_vertex(mesh, cell_vertices[0], cell)); // invalid mesh
 }
 
-/*
-TEST_F(TetrahedralMeshBase, find_non_cell_tets) {
-    TetrahedralMesh &mesh = this->mesh_;
-    generateTetrahedralMesh(mesh);
-    std::set<std::pair<std::set<VertexHandle>, bool>> non_cell_tets;
-
-    auto found_non_cell_tets = OpenVolumeMesh::findNonCellTets(mesh):
-    EXPECT_TRUE(found_non_cell_tets.empty());
-}
- */
-
 TEST_F(TetrahedralMeshBase, singleConnectedComponent) {
     TetrahedralMesh &mesh = this->mesh_;
     generateTetrahedralMesh(mesh);
@@ -315,4 +304,44 @@ TEST_F(TetrahedralMeshBase, noDoubleEdges) {
     // Test invalid input
     mesh.clear();
     EXPECT_TRUE(OpenVolumeMesh::noDoubleEdges(mesh));
+}
+
+TEST_F(TetrahedralMeshBase, findNonCellTets) {
+    TetrahedralMesh &mesh = this->mesh_;
+    generateTetrahedralMesh(mesh);
+
+    EXPECT_TRUE(OpenVolumeMesh::findNonCellTets(mesh).empty());
+
+
+    generateNonManifoldTet_3T1V3E(mesh);
+
+    // find the "missing tet" in the mesh manually
+    std::set<VertexHandle> tetVertices;
+    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        // there are 7 vertices. 3 with valence 3 outside the missing tet, 3 with valence 5, defining one face of the
+        // missing tet and one central vertex with valence 6, being the last vertex of the missing tet.
+        if (mesh.valence(*v_it) == 5 || mesh.valence(*v_it) == 6) {
+            tetVertices.insert(*v_it);
+        }
+    }
+    ASSERT_EQ(tetVertices.size(), 4);
+    std::vector<VertexHandle> face_vertices = {*++mesh.vertices_begin(), *++(++(++mesh.vertices_begin())), *++(++mesh.vertices_begin())};
+    printMeshTopology(mesh);
+    mesh.add_face(face_vertices);
+    printMeshTopology(mesh);
+    std::set<std::set<VertexHandle>> res = OpenVolumeMesh::findNonCellTets(mesh);
+    EXPECT_EQ(res.size(), 1);
+    std::set<VertexHandle> foundTet = *res.begin();
+    EXPECT_EQ(tetVertices, foundTet);
+
+    generateTetWithoutCell(mesh);
+    res = OpenVolumeMesh::findNonCellTets(mesh);
+    EXPECT_EQ(res.size(), 1);
+    tetVertices.clear();
+    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        tetVertices.insert(*v_it);
+    }
+    foundTet = *res.begin();
+    EXPECT_EQ(tetVertices, foundTet);
+
 }

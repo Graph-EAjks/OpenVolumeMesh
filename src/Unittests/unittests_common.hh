@@ -132,6 +132,9 @@ protected:
   void generateTetrahedralMesh(TetrahedralMesh& _mesh);
   // Generate a basic tetrahedral mesh consisting of two tets sharing exactly one face
   void generateTetrahedralMesh_2(TetrahedralMesh& _mesh);
+  // generate a basic tetrahedral mesh consisting of one tet. However, the tet cell does not exist, while all
+  // vertices, edges and faces do exist
+  void generateTetWithoutCell(TetrahedralMesh &mesh);
 
   //-------------------------------//
   // Non-manifold test tets. Note: They have no geometry, only topology

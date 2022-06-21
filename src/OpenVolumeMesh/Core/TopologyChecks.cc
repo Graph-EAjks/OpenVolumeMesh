@@ -49,9 +49,9 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
-    std::set<std::pair<std::set<VertexHandle>, bool>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_){
+    std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_){
 
-        std::set<std::pair<std::set<VertexHandle>, bool>> non_cell_tets;
+        std::set<std::set<VertexHandle>> non_cell_tets;
 
         for(auto v: mesh_.vertices()){
 
@@ -65,6 +65,7 @@ namespace OpenVolumeMesh {
 
                 std::set<VertexHandle> tet_vertices;
                 tet_vertices.insert(v);
+
 
                 //find opposite edge to v
                 EdgeHandle opposite_edge(-1);
@@ -112,48 +113,7 @@ namespace OpenVolumeMesh {
                                     std::cout<<" ERROR - tet does not contain 4 vertices"<<std::endl;
                                     return {};
                                 }
-                                //check that at least two vertices are non-boundary
-                                int boundary_count(0);
-                                for(auto v: partial_cell){
-                                    boundary_count += mesh_.is_boundary(v);
-                                }
-                                if(boundary_count <=2){
-
-                                    bool all_edge_non_collapsible(true);
-                                    std::set<EdgeHandle> tet_edges;
-                                    for(auto v: partial_cell){
-                                        for(auto out_he: mesh_.outgoing_halfedges(v)){
-                                            auto edge = mesh_.edge_handle(out_he);
-
-                                            if(partial_cell.find(mesh_.to_vertex_handle(out_he)) != partial_cell.end()){
-                                                tet_edges.insert(edge);
-                                                all_edge_non_collapsible &= !link_condition(mesh_, edge);
-                                            }
-                                        }
-                                    }
-
-                                    if(tet_edges.size() != 6){
-                                        std::cout<<" ERROR - tet does not contain 6 edges"<<std::endl;
-                                        return {};
-                                    }
-
-                                    std::set<FaceHandle> tet_faces;
-                                    for(auto e: tet_edges){
-                                        for(auto ef_it = mesh_.ef_iter(e); ef_it.valid(); ef_it++){
-                                            for(auto fv_it = mesh_.fv_iter(*ef_it); fv_it.valid(); fv_it++){
-                                                if(*fv_it != mesh_.edge(e).from_vertex() &&
-                                                   *fv_it != mesh_.edge(e).to_vertex() &&
-                                                   partial_cell.find(*fv_it) != partial_cell.end()){
-                                                    tet_faces.insert(*ef_it);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if(tet_faces.size() == 4){
-                                        non_cell_tets.insert({partial_cell, all_edge_non_collapsible});
-                                    }
-                                }
+                                non_cell_tets.insert(partial_cell);
                             }
                         }
                     }
@@ -417,5 +377,41 @@ namespace OpenVolumeMesh {
         }
 
         return true;
+    }
+
+    void printMeshTopology(TetrahedralMeshTopologyKernel& mesh) {
+        std::cout << "Printing mesh topology: " << std::endl;
+        std::cout << std::endl;
+        std::cout << "Number ob vertices: " << mesh.n_vertices() << std::endl;
+        std::cout << std::endl;
+        std::cout << "Number of edges: " << mesh.n_edges() << std::endl;
+        int counter = 0;
+        for (auto e_it = mesh.edges_begin(); e_it.valid(); ++e_it) {
+            auto heh = mesh.halfedge_handle(*e_it, 0);
+            std::cout << counter << ": " << mesh.from_vertex_handle(heh).idx() << "-" << mesh.to_vertex_handle(heh).idx() << std::endl;
+            ++counter;
+        }
+        std::cout << std::endl;
+        std::cout << "Number of faces: " << mesh.n_faces() << std::endl;
+        counter = 0;
+        for (auto f_it = mesh.faces_begin(); f_it.valid(); ++f_it) {
+            std::cout << counter << ": ";
+            for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.valid(); ++f_he_it) {
+                std::cout << (*f_he_it).idx() << "-";
+            }
+            std::cout << std::endl;
+            ++counter;
+        }
+        std::cout << std::endl;
+        std::cout << "Number of cells: " << mesh.n_cells() << std::endl;
+        counter = 0;
+        for (auto c_it = mesh.cells_begin(); c_it.valid(); ++c_it) {
+            std::cout << counter << ": ";
+            for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.valid(); ++c_hf_it) {
+                std::cout << (*c_hf_it).idx() << "-";
+            }
+            std::cout << std::endl;
+            ++counter;
+        }
     }
 }
