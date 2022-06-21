@@ -5,7 +5,8 @@
 #include <set>
 #include <iostream>
 
-#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+//#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Core/Handles.hh>
 
 namespace OpenVolumeMesh {
 
