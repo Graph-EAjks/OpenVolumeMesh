@@ -1,4 +1,5 @@
-#include "TopologyChecks.hh"
+#include <OpenVolumeMesh/Core/TopologyChecks.hh>
+#include <OpenVolumeMesh/Core/TopologicalLinkT_impl.hh>
 
 namespace OpenVolumeMesh {
 
@@ -48,7 +49,6 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
-    /*
     std::set<std::pair<std::set<VertexHandle>, bool>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_){
 
         std::set<std::pair<std::set<VertexHandle>, bool>> non_cell_tets;
@@ -179,60 +179,6 @@ namespace OpenVolumeMesh {
 
         return vertex_link_intersection == link(mesh, edge);
     }
-
-    //TODO: We need the class TopologicalFaceSet
-    TopologicalFaceSet link(const TetrahedralMesh& mesh,
-                            const VertexHandle& vertex){
-
-        VertexSet vertices;
-        EdgeSet edges;
-        FaceSet faces;
-
-        for(auto v = mesh.vv_iter(vertex); v.valid(); v++){
-            vertices.insert(*v);
-        }
-
-        for(auto c = mesh.vc_iter(vertex); c.valid(); c++){
-            //std::cout<<" - checking neighbor cell "<<*c<<std::endl;
-
-            for(auto hf = mesh.chf_iter(*c); hf.valid(); hf++){
-                //std::cout<<" -- checking halfface "<<*hf<<std::endl;
-                bool found(false);
-                for(auto v = mesh.hfv_iter(*hf); v.valid(); v++){
-                    //std::cout<<" --- checking vertex "<<*v<<std::endl;
-                    if(*v == vertex){
-                        found = true;
-                    }
-                }
-                if(!found){
-                    //std::cout<<" --> face "<<mesh.face_handle(*hf)<<" is opposite"<<std::endl;
-                    faces.insert(mesh.face_handle(*hf));
-                    for(auto e = mesh.hfe_iter(*hf); e.valid(); e++){
-                        // std::cout<<" ----> inserting edge "<<*e<<std::endl;
-                        edges.insert(*e);
-                        //vertices.insert(mesh.edge(*e).from_vertex());
-                        //vertices.insert(mesh.edge(*e).to_vertex());
-                    }
-                }
-            }
-        }
-
-        for(auto f = mesh.vf_iter(vertex); f.valid(); f++){
-            for(auto e = mesh.fe_iter(*f); e.valid(); e++){
-                bool found(false);
-                if(mesh.edge(*e).to_vertex() == vertex ||
-                   mesh.edge(*e).from_vertex() == vertex){
-                    found = true;
-                }
-                if(!found){
-                    edges.insert(*e);
-                }
-            }
-        }
-
-        return {vertices, edges, faces, {}};
-    }
-     */
 
     bool singleConnectedComponent(TetrahedralMeshTopologyKernel&  mesh){
 
