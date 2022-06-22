@@ -6,9 +6,9 @@ namespace OpenVolumeMesh {
     CellHandle cell_exists(const TetrahedralMeshTopologyKernel& mesh,
                            const std::vector<VertexHandle>& cell_vertices) {
         if(cell_vertices.size() == 4){
-            for(auto vc_it = mesh.vc_iter(cell_vertices[0]); vc_it.valid(); vc_it++){
+            for(auto vc_it = mesh.vc_iter(cell_vertices[0]); vc_it.is_valid(); vc_it++){
                 int found_vertices_count(0);
-                for(auto cv_it = mesh.cv_iter(*vc_it); cv_it.valid(); cv_it++){
+                for(auto cv_it = mesh.cv_iter(*vc_it); cv_it.is_valid(); cv_it++){
                     if(std::find(cell_vertices.begin(), cell_vertices.end(), *cv_it) != cell_vertices.end()){
                         found_vertices_count++;
                     }
@@ -49,19 +49,49 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
-    std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_){
+    std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_, bool only_check_faces = true){
 
         std::set<std::set<VertexHandle>> non_cell_tets;
+
+        if (!only_check_faces) {
+            auto non_face_tris = OpenVolumeMesh::find_non_face_triangles(mesh_);
+            // check for all non-face triangles, if there exists a fourth vertex which forms a tet with the triangle
+            for (auto triangle : non_face_tris) {
+                auto potentialTetVertex = mesh_.request_vertex_property<int>("potentialTetVertex");
+                auto triVertex0 = *triangle.begin(), triVertex1 = *++triangle.begin(), triVertex2 = *++(++triangle.begin());
+
+                // iterate over the neighbors of triVertex0 and mark them as a potential tet extension
+                for (auto vv_it = mesh_.vv_iter(triVertex0); vv_it.is_valid(); ++vv_it) {
+                    ++potentialTetVertex[*vv_it];
+                }
+                // iterate over the neighbors of triVertex1 and mark them as a potential tet extension
+                for (auto vv_it = mesh_.vv_iter(triVertex1); vv_it.is_valid(); ++vv_it) {
+                    ++potentialTetVertex[*vv_it];
+                }
+                // iterate over the neighbors of triVertex2. If any of them is a neighbor of the first two vertices as well,
+                // then we found a non-cell tet
+                for (auto vv_it = mesh_.vv_iter(triVertex2); vv_it.is_valid(); ++vv_it) {
+                    if (potentialTetVertex[*vv_it] == 2){
+                        std::set<VertexHandle> non_cell_tet;
+                        non_cell_tet.insert(triVertex0);
+                        non_cell_tet.insert(triVertex1);
+                        non_cell_tet.insert(triVertex2);
+                        non_cell_tet.insert(*vv_it);
+                        non_cell_tets.insert(non_cell_tet);
+                    }
+                }
+            }
+        }
 
         for(auto v: mesh_.vertices()){
 
             auto neighbor = mesh_.request_vertex_property<bool>("neighbor");
 
-            for(auto vv_it = mesh_.vv_iter(v); vv_it.valid(); vv_it++){
+            for(auto vv_it = mesh_.vv_iter(v); vv_it.is_valid(); vv_it++){
                 neighbor[*vv_it] = true;
             }
 
-            for(auto vf_it = mesh_.vf_iter(v); vf_it.valid(); vf_it++){
+            for(auto vf_it = mesh_.vf_iter(v); vf_it.is_valid(); vf_it++){
 
                 std::set<VertexHandle> tet_vertices;
                 tet_vertices.insert(v);
@@ -70,7 +100,7 @@ namespace OpenVolumeMesh {
                 //find opposite edge to v
                 EdgeHandle opposite_edge(-1);
 
-                for(auto fe_it = mesh_.fe_iter(*vf_it); fe_it.valid(); fe_it++){
+                for(auto fe_it = mesh_.fe_iter(*vf_it); fe_it.is_valid(); fe_it++){
                     if(mesh_.edge(*fe_it).from_vertex() != v &&
                        mesh_.edge(*fe_it).to_vertex() != v){
                         tet_vertices.insert(mesh_.edge(*fe_it).from_vertex());
@@ -81,11 +111,11 @@ namespace OpenVolumeMesh {
                 }
 
                 //iterate through the opposite edge's faces to try to find another neighbor vertex
-                for(auto ef_it = mesh_.ef_iter(opposite_edge); ef_it.valid(); ef_it++){
+                for(auto ef_it = mesh_.ef_iter(opposite_edge); ef_it.is_valid(); ef_it++){
                     std::set<VertexHandle> partial_cell = tet_vertices;
 
                     //find the opposite vertex
-                    for(auto fv_it = mesh_.fv_iter(*ef_it); fv_it.valid(); fv_it++){
+                    for(auto fv_it = mesh_.fv_iter(*ef_it); fv_it.is_valid(); fv_it++){
                         if(mesh_.edge(opposite_edge).from_vertex() != *fv_it &&
                            mesh_.edge(opposite_edge).to_vertex() != *fv_it &&
                            neighbor[*fv_it]){
@@ -95,9 +125,9 @@ namespace OpenVolumeMesh {
                             bool found_cell(false);
 
                             //check if it's a cell or not
-                            for(auto vc_it = mesh_.vc_iter(v); vc_it.valid(); vc_it++){
+                            for(auto vc_it = mesh_.vc_iter(v); vc_it.is_valid(); vc_it++){
                                 int found_vertices(0);
-                                for(auto cv_it = mesh_.cv_iter(*vc_it); cv_it.valid(); cv_it++){
+                                for(auto cv_it = mesh_.cv_iter(*vc_it); cv_it.is_valid(); cv_it++){
                                     if(partial_cell.find(*cv_it) != partial_cell.end()){
                                         found_vertices++;
                                     }
@@ -157,7 +187,7 @@ namespace OpenVolumeMesh {
 
             visited_prop[next] = true;
 
-            for(auto out_he_it = mesh.outgoing_halfedges(next).first; out_he_it.valid(); out_he_it++){
+            for(auto out_he_it = mesh.outgoing_halfedges(next).first; out_he_it.is_valid(); out_he_it++){
                 auto to_vertex = mesh.to_vertex_handle(*out_he_it);
                 if(!visited_prop[to_vertex]){
                     to_visit.insert(to_vertex);
@@ -207,9 +237,9 @@ namespace OpenVolumeMesh {
 
                 visited[current_face] = true;
 
-                for(auto fe_it = mesh.fe_iter(current_face); fe_it.valid(); fe_it++){
+                for(auto fe_it = mesh.fe_iter(current_face); fe_it.is_valid(); fe_it++){
 
-                    for(auto ef_it = mesh.ef_iter(*fe_it); ef_it.valid(); ef_it++){
+                    for(auto ef_it = mesh.ef_iter(*fe_it); ef_it.is_valid(); ef_it++){
                         if(mesh.is_boundary(*ef_it) && !visited[*ef_it]){
                             to_visit.push_back(*ef_it);
                         }
@@ -280,7 +310,7 @@ namespace OpenVolumeMesh {
 
         //find an initial boundary face
         FaceHandle initial_boundary_face(-1);
-        for(auto vf_it = mesh.vf_iter(vertex); vf_it.valid(); vf_it++){
+        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); vf_it++){
             if(mesh.is_boundary(*vf_it)){
                 initial_boundary_face = *vf_it;
                 break;
@@ -304,7 +334,7 @@ namespace OpenVolumeMesh {
         EdgeHandle next_edge(-1);
 
         //visit all vertices of the initial face
-        for(auto fe_it = mesh.fe_iter(initial_boundary_face); fe_it.valid(); fe_it++){
+        for(auto fe_it = mesh.fe_iter(initial_boundary_face); fe_it.is_valid(); fe_it++){
             if(mesh.edge(*fe_it).to_vertex() == vertex ||
                mesh.edge(*fe_it).from_vertex() == vertex){
                 visited_edge[*fe_it] = true;
@@ -321,7 +351,7 @@ namespace OpenVolumeMesh {
             next_edge = EdgeHandle(-1);
 
             //circulate through boundary faces around edge to find the next one
-            for(auto ef_it = mesh.ef_iter(current_edge); ef_it.valid(); ef_it++){
+            for(auto ef_it = mesh.ef_iter(current_edge); ef_it.is_valid(); ef_it++){
                 //std::cout<<" -- checking face "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
                 if(mesh.is_boundary(*ef_it) && ! visited_face[*ef_it]){
                     //found a neighboring face to both current_edge and vertex
@@ -329,7 +359,7 @@ namespace OpenVolumeMesh {
 
                     //std::cout<<" ---- neighbor face: "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
 
-                    for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.valid(); fe_it++){
+                    for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.is_valid(); fe_it++){
                         if(mesh.is_boundary(*fe_it)&&
                            (mesh.edge(*fe_it).to_vertex() == vertex ||
                             mesh.edge(*fe_it).from_vertex() == vertex) &&
@@ -346,7 +376,7 @@ namespace OpenVolumeMesh {
 
         //and finally we check that all boundary faces were visited
         bool all_visited(true);
-        for(auto vf_it = mesh.vf_iter(vertex); vf_it.valid(); vf_it++){
+        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); vf_it++){
             if(mesh.is_boundary(*vf_it)){
                 all_visited &= visited_face[*vf_it];
             }
@@ -386,7 +416,7 @@ namespace OpenVolumeMesh {
         std::cout << std::endl;
         std::cout << "Number of edges: " << mesh.n_edges() << std::endl;
         int counter = 0;
-        for (auto e_it = mesh.edges_begin(); e_it.valid(); ++e_it) {
+        for (auto e_it = mesh.edges_begin(); e_it.is_valid(); ++e_it) {
             auto heh = mesh.halfedge_handle(*e_it, 0);
             std::cout << counter << ": " << mesh.from_vertex_handle(heh).idx() << "-" << mesh.to_vertex_handle(heh).idx() << std::endl;
             ++counter;
@@ -394,9 +424,9 @@ namespace OpenVolumeMesh {
         std::cout << std::endl;
         std::cout << "Number of faces: " << mesh.n_faces() << std::endl;
         counter = 0;
-        for (auto f_it = mesh.faces_begin(); f_it.valid(); ++f_it) {
+        for (auto f_it = mesh.faces_begin(); f_it.is_valid(); ++f_it) {
             std::cout << counter << ": ";
-            for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.valid(); ++f_he_it) {
+            for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.is_valid(); ++f_he_it) {
                 std::cout << (*f_he_it).idx() << "-";
             }
             std::cout << std::endl;
@@ -405,13 +435,56 @@ namespace OpenVolumeMesh {
         std::cout << std::endl;
         std::cout << "Number of cells: " << mesh.n_cells() << std::endl;
         counter = 0;
-        for (auto c_it = mesh.cells_begin(); c_it.valid(); ++c_it) {
+        for (auto c_it = mesh.cells_begin(); c_it.is_valid(); ++c_it) {
             std::cout << counter << ": ";
-            for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.valid(); ++c_hf_it) {
+            for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.is_valid(); ++c_hf_it) {
                 std::cout << (*c_hf_it).idx() << "-";
             }
             std::cout << std::endl;
             ++counter;
         }
+    }
+
+    std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh) {
+        std::set<std::set<VertexHandle>> foundFaces;
+        auto visited = mesh.request_vertex_property<bool>("visited");
+        for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+            auto vertex = *v_it;
+            auto found_faces_by_vertex = find_non_face_triangles_around_vertex(mesh, vertex);
+            foundFaces.insert(found_faces_by_vertex.begin(), found_faces_by_vertex.end());
+            visited[*v_it] = true;
+        }
+        return foundFaces;
+    }
+
+    std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(TetrahedralMeshTopologyKernel& mesh, VertexHandle& vertex) {
+        std::set<std::set<VertexHandle>> res;
+
+        // call visited property from find_non_face_triangles method to prevent unnecessary checks
+        auto visited = mesh.request_vertex_property<bool>("visited");
+
+        // mark the neighbors
+        auto neighbor_prop = mesh.request_vertex_property<bool>("neighbor_prop");
+        std::set<VertexHandle> neighbors;
+        for (auto vv_it = mesh.vv_iter(vertex); vv_it.is_valid(); ++vv_it) {
+            if (!visited[*vv_it]) {
+                neighbor_prop[*vv_it] = true;
+                neighbors.insert(*vv_it);
+            }
+        }
+
+        for (auto neighbor : neighbors) {
+            for (auto vv_it = mesh.vv_iter(neighbor); vv_it.is_valid(); ++vv_it) {
+                if (neighbor_prop[*vv_it]) {
+                    std::set<VertexHandle> foundTriangle = {vertex, neighbor, *vv_it};
+                    std::vector<VertexHandle> triangleVector(foundTriangle.size());
+                    std::copy(foundTriangle.begin(), foundTriangle.end(), triangleVector.begin());
+                    if (!mesh.halfface(triangleVector).is_valid()) {
+                        res.insert(foundTriangle);
+                    }
+                }
+            }
+        }
+        return res;
     }
 }
