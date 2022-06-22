@@ -49,10 +49,12 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
+    // TODO: If only_check_faces = true, in some cases it might find tets without four faces, in other cases it might not
     std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_, bool only_check_faces = true){
 
         std::set<std::set<VertexHandle>> non_cell_tets;
 
+        // TODO: Maybe it can be faster by marking some vertices/triangles as visited?
         if (!only_check_faces) {
             auto non_face_tris = OpenVolumeMesh::find_non_face_triangles(mesh_);
             // check for all non-face triangles, if there exists a fourth vertex which forms a tet with the triangle

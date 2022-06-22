@@ -326,9 +326,9 @@ TEST_F(TetrahedralMeshBase, findNonCellTets) {
     }
     ASSERT_EQ(tetVertices.size(), 4);
     std::vector<VertexHandle> face_vertices = {*++mesh.vertices_begin(), *++(++(++mesh.vertices_begin())), *++(++mesh.vertices_begin())};
-    printMeshTopology(mesh);
+//    printMeshTopology(mesh);
     mesh.add_face(face_vertices);
-    printMeshTopology(mesh);
+//    printMeshTopology(mesh);
     std::set<std::set<VertexHandle>> res = OpenVolumeMesh::findNonCellTets(mesh, true);
     EXPECT_EQ(res.size(), 1);
     std::set<VertexHandle> foundTet = *res.begin();
@@ -343,6 +343,30 @@ TEST_F(TetrahedralMeshBase, findNonCellTets) {
     }
     foundTet = *res.begin();
     EXPECT_EQ(tetVertices, foundTet);
+
+    generateTriTet_withFaces(mesh);
+    printMeshTopology(mesh);
+    res = OpenVolumeMesh::findNonCellTets(mesh, true);
+    EXPECT_EQ(res.size(), 3);
+    std::vector<VertexHandle> all_vertices;
+    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        all_vertices.push_back(*v_it);
+    }
+    std::vector<std::vector<VertexHandle>> expectedTetsVertices = {
+            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[4]},
+            {all_vertices[0], all_vertices[1], all_vertices[3], all_vertices[4]},
+            {all_vertices[0], all_vertices[2], all_vertices[3], all_vertices[4]}
+    };
+    std::set<std::set<VertexHandle>> expectedTets;
+    std::set<VertexHandle> exptectedTet;
+    for (auto expectedTetVertices : expectedTetsVertices) {
+        exptectedTet.clear();
+        for (auto expectedVertex : expectedTetVertices) {
+            exptectedTet.insert(expectedVertex);
+        }
+        expectedTets.insert(exptectedTet);
+    }
+    EXPECT_EQ(expectedTets, res);
 
     // test some invalid inputs
     mesh.clear();

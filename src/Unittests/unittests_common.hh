@@ -139,6 +139,12 @@ protected:
   void generateTriWithoutFace(TetrahedralMesh& mesh);
   // Generate a tetrahedral mesh consisting of two tets without cells or faces
   void generateTet_withoutCellsAndFaces(TetrahedralMesh& mesh);
+  // Generate a tritet: A tetrahedral mesh basically consisting of two tets, sharing exactly one face, where the two
+  // vertices not belonging to that face are connected by an edge, leading to three tets, pairwise sharing one face
+  // (contains only vertices and edges, no faces or cells
+  void generateTriTet(TetrahedralMesh& mesh);
+  // Generate the same as before, but with faces
+  void generateTriTet_withFaces(TetrahedralMesh& mesh);
 
   //-------------------------------//
   // Non-manifold test tets. Note: They have no geometry, only topology
@@ -169,6 +175,8 @@ protected:
   void generateNonManifoldTet_2F1V(TetrahedralMesh& mesh);
   // Generate a non-manifold tetrahedral mesh, consisting of one face and one edge, sharing exactly one vertex
   void generateNonManifoldTet_1F1E1V(TetrahedralMesh& mesh);
+  // Generate a non-manifold tetrahedral mesh, consisting of three tets, sharing exactly one face. Only vertices and edges
+  void generateNonManifoldTet_3T1F(TetrahedralMesh& mesh);
 
   // This member will be accessible in all tests
   TetrahedralMesh mesh_;
