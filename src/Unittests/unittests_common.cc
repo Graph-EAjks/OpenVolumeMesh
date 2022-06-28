@@ -211,7 +211,7 @@ void HexahedralMeshBase::generateHexahedralMesh(HexahedralMesh& _mesh) {
     _mesh.add_cell(halffaces);
 }
 
-void TetrahedralMeshBase::generateTetrahedralMesh(TetrahedralMesh& _mesh) {
+void TetrahedralMeshBase::generate_tetrahedral_mesh(TetrahedralMesh& _mesh) {
 
     _mesh.clear();
 
@@ -229,7 +229,7 @@ void TetrahedralMeshBase::generateTetrahedralMesh(TetrahedralMesh& _mesh) {
     _mesh.add_cell(v1, v2, v3, v4);
 }
 
-void TetrahedralMeshBase::generateTetrahedralMesh_2(TetrahedralMesh &_mesh) {
+void TetrahedralMeshBase::generate_tetrahedral_mesh_2(TetrahedralMesh &_mesh) {
     _mesh.clear();
 
     VertexHandle vertices[5];
@@ -240,235 +240,223 @@ void TetrahedralMeshBase::generateTetrahedralMesh_2(TetrahedralMesh &_mesh) {
     _mesh.add_cell(vertices[0],  vertices[2], vertices[1], vertices[4]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_2T1V(TetrahedralMesh& mesh) {
+void TetrahedralMeshBase::generate_non_manifold_tet_2T1V(TetrahedralMesh& _mesh) {
 
-    mesh.clear();
-/*
-    Vec3d positions[7] = {
-            Vec3d(0.0, 0.0, 0.0),
-            Vec3d(1.0, 0.0, 0.0),
-            Vec3d(0.0, 1.0, 0.0),
-            Vec3d(0.0, 0.0, 1.0),
-            Vec3d(-1.0, 0.0, 0.0),
-            Vec3d(0.0, -1.0, 0.0),
-            Vec3d(0.0, 0.0, -1.0)
-    };
-    */
+    _mesh.clear();
     VertexHandle vertices[7];
     for (int i = 0; i < 7; ++i) {
-//        vertices[i] = mesh.add_vertex(positions[i]);
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
-    mesh.add_cell(vertices[0], vertices[4], vertices[5], vertices[6]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
+    _mesh.add_cell(vertices[0], vertices[4], vertices[5], vertices[6]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_2T1E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_2T1E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[6];
     for (int i = 0; i < 6; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
-    mesh.add_cell(vertices[0], vertices[1], vertices[4], vertices[5]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[4], vertices[5]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_6T1E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_6T1E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[8];
     for (int i = 0; i < 8; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
-    mesh.add_cell(vertices[1], vertices[0], vertices[2], vertices[4]);
-    mesh.add_cell(vertices[0], vertices[1], vertices[5], vertices[6]);
-    mesh.add_cell(vertices[1], vertices[0], vertices[5], vertices[7]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
+    _mesh.add_cell(vertices[1], vertices[0], vertices[2], vertices[4]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[5], vertices[6]);
+    _mesh.add_cell(vertices[1], vertices[0], vertices[5], vertices[7]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1T1F1E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1T1F1E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[5];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3], true);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3], true);
     std::vector<VertexHandle> face_vertices = {vertices[0], vertices[1], vertices[4]};
-    mesh.add_face(face_vertices);
+    _mesh.add_face(face_vertices);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_2F1E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_2F1E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[4];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
     std::vector<VertexHandle> faceVertices = {vertices[0], vertices[1], vertices[2]};
-    mesh.add_face(faceVertices);
+    _mesh.add_face(faceVertices);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_3T1V3E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_3T1V3E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[7];
     for (int i = 0; i < 7; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[4]);
-    mesh.add_cell(vertices[0], vertices[3], vertices[1], vertices[5]);
-    mesh.add_cell(vertices[0], vertices[2], vertices[3], vertices[6]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[4]);
+    _mesh.add_cell(vertices[0], vertices[3], vertices[1], vertices[5]);
+    _mesh.add_cell(vertices[0], vertices[2], vertices[3], vertices[6]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1V(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1V(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
-    mesh.add_vertex();
+    _mesh.add_vertex();
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1E(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1E(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[2];
     for (int i = 0; i < 2; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_edge(vertices[0], vertices[1]);
+    _mesh.add_edge(vertices[0], vertices[1]);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1F(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1F(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[3];
     for (int i = 0; i < 3; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
     std::vector<VertexHandle> faceVertices = {vertices[0], vertices[1], vertices[2]};
-    mesh.add_face(faceVertices);
+    _mesh.add_face(faceVertices);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1T1F1V(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1T1F1V(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[6];
     for (int i = 0; i < 6; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[3]);
     std::vector<VertexHandle> faceVertices = { vertices[0], vertices[4], vertices[5]};
-    mesh.add_face(faceVertices);
+    _mesh.add_face(faceVertices);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_2F1V(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_2F1V(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[5];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    std::vector<VertexHandle> verticesFace1 = {vertices[0], vertices[1], vertices[2]};
-    std::vector<VertexHandle> verticesFace2 = {vertices[0], vertices[3], vertices[4]};
-    mesh.add_face(verticesFace1);
-    mesh.add_face(verticesFace2);
+    std::vector<VertexHandle> vertices_face_1 = {vertices[0], vertices[1], vertices[2]};
+    std::vector<VertexHandle> vertices_face_2 = {vertices[0], vertices[3], vertices[4]};
+    _mesh.add_face(vertices_face_1);
+    _mesh.add_face(vertices_face_2);
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_1F1E1V(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_non_manifold_tet_1F1E1V(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[4];
     for (int i = 0; i < 4; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    std::vector<VertexHandle> faceVertices = {vertices[0], vertices[1], vertices[2]};
-    mesh.add_face(faceVertices);
-    mesh.add_edge(vertices[0], vertices[3]);
+    std::vector<VertexHandle> face_vertices = {vertices[0], vertices[1], vertices[2]};
+    _mesh.add_face(face_vertices);
+    _mesh.add_edge(vertices[0], vertices[3]);
 }
 
-void TetrahedralMeshBase::generateTetWithoutCell(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_tet_without_cell(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[4];
     for (int i = 0; i < 4; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_face({vertices[0], vertices[1], vertices[2]});
-    mesh.add_face({vertices[0], vertices[3], vertices[1]});
-    mesh.add_face({vertices[0], vertices[2], vertices[3]});
-    mesh.add_face({vertices[1], vertices[3], vertices[2]});
+    _mesh.add_face({vertices[0], vertices[1], vertices[2]});
+    _mesh.add_face({vertices[0], vertices[3], vertices[1]});
+    _mesh.add_face({vertices[0], vertices[2], vertices[3]});
+    _mesh.add_face({vertices[1], vertices[3], vertices[2]});
 }
 
-void TetrahedralMeshBase::generateTriWithoutFace(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_tri_without_face(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[3];
     for (int i = 0; i < 3; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_edge(vertices[0], vertices[1]);
-    mesh.add_edge(vertices[1], vertices[2]);
-    mesh.add_edge(vertices[2], vertices[0]);
+    _mesh.add_edge(vertices[0], vertices[1]);
+    _mesh.add_edge(vertices[1], vertices[2]);
+    _mesh.add_edge(vertices[2], vertices[0]);
 }
 
-void TetrahedralMeshBase::generateTet_withoutCellsAndFaces(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_tet_without_cells_and_faces(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[5];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_edge(vertices[0], vertices[1]);
-    mesh.add_edge(vertices[0], vertices[2]);
-    mesh.add_edge(vertices[0], vertices[3]);
-    mesh.add_edge(vertices[1], vertices[2]);
-    mesh.add_edge(vertices[1], vertices[3]);
-    mesh.add_edge(vertices[2], vertices[3]);
-    mesh.add_edge(vertices[1], vertices[4]);
-    mesh.add_edge(vertices[2], vertices[4]);
-    mesh.add_edge(vertices[3], vertices[4]);
+    _mesh.add_edge(vertices[0], vertices[1]);
+    _mesh.add_edge(vertices[0], vertices[2]);
+    _mesh.add_edge(vertices[0], vertices[3]);
+    _mesh.add_edge(vertices[1], vertices[2]);
+    _mesh.add_edge(vertices[1], vertices[3]);
+    _mesh.add_edge(vertices[2], vertices[3]);
+    _mesh.add_edge(vertices[1], vertices[4]);
+    _mesh.add_edge(vertices[2], vertices[4]);
+    _mesh.add_edge(vertices[3], vertices[4]);
 }
 
-void TetrahedralMeshBase::generateTriTet(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_tri_tet(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[5];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_edge(vertices[0], vertices[1]);
-    mesh.add_edge(vertices[0], vertices[2]);
-    mesh.add_edge(vertices[0], vertices[3]);
-    mesh.add_edge(vertices[1], vertices[2]);
-    mesh.add_edge(vertices[2], vertices[3]);
-    mesh.add_edge(vertices[3], vertices[1]);
-    mesh.add_edge(vertices[1], vertices[4]);
-    mesh.add_edge(vertices[2], vertices[4]);
-    mesh.add_edge(vertices[3], vertices[4]);
-    mesh.add_edge(vertices[0], vertices[4]);
+    _mesh.add_edge(vertices[0], vertices[1]);
+    _mesh.add_edge(vertices[0], vertices[2]);
+    _mesh.add_edge(vertices[0], vertices[3]);
+    _mesh.add_edge(vertices[1], vertices[2]);
+    _mesh.add_edge(vertices[2], vertices[3]);
+    _mesh.add_edge(vertices[3], vertices[1]);
+    _mesh.add_edge(vertices[1], vertices[4]);
+    _mesh.add_edge(vertices[2], vertices[4]);
+    _mesh.add_edge(vertices[3], vertices[4]);
+    _mesh.add_edge(vertices[0], vertices[4]);
 
 }
 
-void TetrahedralMeshBase::generateTriTet_withFaces(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_tri_tet_with_faces(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle  vertices[5];
     for (int i = 0; i < 5; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
     std::vector<std::vector<VertexHandle>> faces;
@@ -483,28 +471,79 @@ void TetrahedralMeshBase::generateTriTet_withFaces(TetrahedralMesh &mesh) {
     faces.push_back({vertices[0], vertices[3], vertices[4]});
 
     for (auto face : faces) {
-        mesh.add_face(face);
+        _mesh.add_face(face);
     }
 }
 
-void TetrahedralMeshBase::generateNonManifoldTet_3T1F(TetrahedralMesh &mesh) {
-    mesh.clear();
+void TetrahedralMeshBase::generate_nested_tets(TetrahedralMesh &_mesh) {
+    _mesh.clear();
+
+    VertexHandle vertices[8];
+    for (int i = 0; i < 8; ++i) {
+        vertices[i] = _mesh.add_vertex();
+    }
+
+    std::vector<std::vector<VertexHandle>> faces;
+    // inner tet
+    faces.push_back({vertices[0], vertices[1], vertices[2]});
+    faces.push_back({vertices[0], vertices[1], vertices[3]});
+    faces.push_back({vertices[0], vertices[2], vertices[3]});
+    faces.push_back({vertices[1], vertices[2], vertices[3]});
+    // outer tet
+    faces.push_back({vertices[4], vertices[5], vertices[6]});
+    faces.push_back({vertices[4], vertices[5], vertices[7]});
+    faces.push_back({vertices[4], vertices[6], vertices[7]});
+    faces.push_back({vertices[5], vertices[6], vertices[7]});
+    // faces between tets
+    faces.push_back({vertices[0], vertices[1], vertices[4], vertices[5]});
+    faces.push_back({vertices[0], vertices[2], vertices[4], vertices[6]});
+    faces.push_back({vertices[1], vertices[2], vertices[5], vertices[6]});
+    faces.push_back({vertices[0], vertices[3], vertices[4], vertices[7]});
+    faces.push_back({vertices[1], vertices[3], vertices[5], vertices[7]});
+    faces.push_back({vertices[2], vertices[3], vertices[6], vertices[7]});
+
+    for (auto face : faces) {
+        _mesh.add_face(face);
+    }
+}
+
+void TetrahedralMeshBase::generate_tet_3F(TetrahedralMesh &_mesh) {
+    _mesh.clear();
+
+    VertexHandle vertices[4];
+    for (int i = 0; i < 4; ++i) {
+        vertices[i] = _mesh.add_vertex();
+    }
+
+    std::vector<std::vector<VertexHandle>> faces;
+    faces.push_back({vertices[0], vertices[1], vertices[2]});
+    faces.push_back({vertices[0], vertices[1], vertices[3]});
+    faces.push_back({vertices[0], vertices[2], vertices[3]});
+
+    for (auto face : faces) {
+        _mesh.add_face(face);
+    }
+
+}
+
+void TetrahedralMeshBase::generate_non_manifold_tet_3T1F(TetrahedralMesh &_mesh) {
+    _mesh.clear();
 
     VertexHandle vertices[6];
     for (int i = 0; i < 6; ++i) {
-        vertices[i] = mesh.add_vertex();
+        vertices[i] = _mesh.add_vertex();
     }
 
-    mesh.add_edge(vertices[0], vertices[1]);
-    mesh.add_edge(vertices[0], vertices[2]);
-    mesh.add_edge(vertices[0], vertices[3]);
-    mesh.add_edge(vertices[1], vertices[2]);
-    mesh.add_edge(vertices[2], vertices[3]);
-    mesh.add_edge(vertices[3], vertices[1]);
-    mesh.add_edge(vertices[1], vertices[4]);
-    mesh.add_edge(vertices[2], vertices[4]);
-    mesh.add_edge(vertices[3], vertices[4]);
-    mesh.add_edge(vertices[1], vertices[5]);
-    mesh.add_edge(vertices[2], vertices[5]);
-    mesh.add_edge(vertices[3], vertices[5]);
+    _mesh.add_edge(vertices[0], vertices[1]);
+    _mesh.add_edge(vertices[0], vertices[2]);
+    _mesh.add_edge(vertices[0], vertices[3]);
+    _mesh.add_edge(vertices[1], vertices[2]);
+    _mesh.add_edge(vertices[2], vertices[3]);
+    _mesh.add_edge(vertices[3], vertices[1]);
+    _mesh.add_edge(vertices[1], vertices[4]);
+    _mesh.add_edge(vertices[2], vertices[4]);
+    _mesh.add_edge(vertices[3], vertices[4]);
+    _mesh.add_edge(vertices[1], vertices[5]);
+    _mesh.add_edge(vertices[2], vertices[5]);
+    _mesh.add_edge(vertices[3], vertices[5]);
 }
