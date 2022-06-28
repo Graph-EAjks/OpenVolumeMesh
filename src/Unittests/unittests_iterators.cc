@@ -23,7 +23,7 @@ TEST_F(HexahedralMeshBase, HexVertexIterTest) {
 
 TEST_F(TetrahedralMeshBase, VertexVertexIteratorTest) {
 
-    generateTetrahedralMesh(mesh_);
+    generate_tetrahedral_mesh(mesh_);
 
     {
 
@@ -78,7 +78,7 @@ TEST_F(TetrahedralMeshBase, VertexVertexIteratorTest) {
 
 TEST_F(TetrahedralMeshBase, VertexFaceIteratorTest) {
 
-    generateTetrahedralMesh(mesh_);
+    generate_tetrahedral_mesh(mesh_);
 
     {
 

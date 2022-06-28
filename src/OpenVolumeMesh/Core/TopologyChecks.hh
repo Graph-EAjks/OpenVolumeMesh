@@ -19,23 +19,21 @@ namespace OpenVolumeMesh{
                                      const CellHandle& cell);
 
     // TODO: This method does not work in all cases. It only finds non-cell tets which are completely surrounded by faces.
-    std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
+    std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle& edge);
 
-    bool singleConnectedComponent(TetrahedralMeshTopologyKernel&  mesh);
+    bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh);
 
-    bool containsVoid(TetrahedralMeshTopologyKernel&  mesh);
+    bool contains_void(TetrahedralMeshTopologyKernel&  mesh);
 
-    std::vector<VertexHandle> nonManifoldBoundaryVertices(TetrahedralMeshTopologyKernel& mesh);
+    bool manifold_vertex(TetrahedralMeshTopologyKernel& mesh,
+                         const VertexHandle& vertex);
 
-    bool manifoldVertex(TetrahedralMeshTopologyKernel& mesh,
-                        const VertexHandle& vertex);
+    bool no_double_edges(TetrahedralMeshTopologyKernel& mesh);
 
-    bool noDoubleEdges(TetrahedralMeshTopologyKernel& mesh);
-
-    void printMeshTopology(TetrahedralMeshTopologyKernel& mesh);
+    void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh);
 
     std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh);
 

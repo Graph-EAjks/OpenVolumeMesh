@@ -49,8 +49,7 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
-    // TODO: If only_check_faces = true, in some cases it might find tets without four faces, in other cases it might not
-    std::set<std::set<VertexHandle>> findNonCellTets(TetrahedralMeshTopologyKernel& mesh_, bool only_check_faces = true){
+    std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh_, bool only_check_faces = true){
 
         std::set<std::set<VertexHandle>> non_cell_tets;
 
@@ -59,25 +58,25 @@ namespace OpenVolumeMesh {
             auto non_face_tris = OpenVolumeMesh::find_non_face_triangles(mesh_);
             // check for all non-face triangles, if there exists a fourth vertex which forms a tet with the triangle
             for (auto triangle : non_face_tris) {
-                auto potentialTetVertex = mesh_.request_vertex_property<int>("potentialTetVertex");
-                auto triVertex0 = *triangle.begin(), triVertex1 = *++triangle.begin(), triVertex2 = *++(++triangle.begin());
+                auto potential_tet_vertex = mesh_.request_vertex_property<int>("potential_tet_vertex");
+                auto tri_vertex0 = *triangle.begin(), tri_vertex1 = *++triangle.begin(), tri_vertex2 = *++(++triangle.begin());
 
-                // iterate over the neighbors of triVertex0 and mark them as a potential tet extension
-                for (auto vv_it = mesh_.vv_iter(triVertex0); vv_it.is_valid(); ++vv_it) {
-                    ++potentialTetVertex[*vv_it];
+                // iterate over the neighbors of tri_vertex0 and mark them as a potential tet extension
+                for (auto vv_it = mesh_.vv_iter(tri_vertex0); vv_it.is_valid(); ++vv_it) {
+                    ++potential_tet_vertex[*vv_it];
                 }
-                // iterate over the neighbors of triVertex1 and mark them as a potential tet extension
-                for (auto vv_it = mesh_.vv_iter(triVertex1); vv_it.is_valid(); ++vv_it) {
-                    ++potentialTetVertex[*vv_it];
+                // iterate over the neighbors of tri_vertex1 and mark them as a potential tet extension
+                for (auto vv_it = mesh_.vv_iter(tri_vertex1); vv_it.is_valid(); ++vv_it) {
+                    ++potential_tet_vertex[*vv_it];
                 }
-                // iterate over the neighbors of triVertex2. If any of them is a neighbor of the first two vertices as well,
+                // iterate over the neighbors of tri_vertex2. If any of them is a neighbor of the first two vertices as well,
                 // then we found a non-cell tet
-                for (auto vv_it = mesh_.vv_iter(triVertex2); vv_it.is_valid(); ++vv_it) {
-                    if (potentialTetVertex[*vv_it] == 2){
+                for (auto vv_it = mesh_.vv_iter(tri_vertex2); vv_it.is_valid(); ++vv_it) {
+                    if (potential_tet_vertex[*vv_it] == 2){
                         std::set<VertexHandle> non_cell_tet;
-                        non_cell_tet.insert(triVertex0);
-                        non_cell_tet.insert(triVertex1);
-                        non_cell_tet.insert(triVertex2);
+                        non_cell_tet.insert(tri_vertex0);
+                        non_cell_tet.insert(tri_vertex1);
+                        non_cell_tet.insert(tri_vertex2);
                         non_cell_tet.insert(*vv_it);
                         non_cell_tets.insert(non_cell_tet);
                     }
@@ -138,8 +137,16 @@ namespace OpenVolumeMesh {
                                     found_cell = true;
                                 }
                             }
+                            bool faces_exist = true;
+                            std::vector<std::vector<VertexHandle>> triangles = {{*partial_cell.begin(), *++partial_cell.begin(), *++(++partial_cell.begin())},
+                                                                                {*partial_cell.begin(), *++partial_cell.begin(), *++(++(++partial_cell.begin()))},
+                                                                                {*partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))},
+                                                                                {*++partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))}};
+                            for (auto triangle : triangles) {
+                                faces_exist &= mesh_.halfface(triangle).is_valid();
+                            }
 
-                            if(!found_cell){
+                            if(!found_cell && (!only_check_faces || faces_exist)){
 
                                 if(partial_cell.size() != 4){
                                     std::cout<<" ERROR - tet does not contain 4 vertices"<<std::endl;
@@ -172,7 +179,7 @@ namespace OpenVolumeMesh {
         return vertex_link_intersection == link(mesh, edge);
     }
 
-    bool singleConnectedComponent(TetrahedralMeshTopologyKernel&  mesh){
+    bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh){
 
         if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
             return false; //TODO: it might be preferable to return true, as an empty mesh is connected (maybe not?)
@@ -209,7 +216,7 @@ namespace OpenVolumeMesh {
         return all_visited;
     }
 
-    bool containsVoid(TetrahedralMeshTopologyKernel&  mesh){
+    bool contains_void(TetrahedralMeshTopologyKernel&  mesh){
 
         std::vector<FaceHandle> to_visit;
 
@@ -263,25 +270,8 @@ namespace OpenVolumeMesh {
         return false;
     }
 
-    std::vector<VertexHandle> nonManifoldBoundaryVertices(TetrahedralMeshTopologyKernel& mesh){
-
-        std::vector<VertexHandle> non_manifold_boundary_vertices;
-
-        for(auto v: mesh.vertices()){
-            if(mesh.is_boundary(v)){
-
-                if(!manifoldVertex(mesh, v)){
-                    non_manifold_boundary_vertices.push_back(v);
-                }
-
-            }
-        }
-
-        return non_manifold_boundary_vertices;
-    }
-
-    bool manifoldVertex(TetrahedralMeshTopologyKernel& mesh,
-                                    const VertexHandle& vertex){
+    bool manifold_vertex(TetrahedralMeshTopologyKernel& mesh,
+                         const VertexHandle& vertex){
 
 
         if (!mesh.is_valid(vertex)) {
@@ -390,7 +380,7 @@ namespace OpenVolumeMesh {
         return all_visited;
     }
 
-    bool noDoubleEdges(TetrahedralMeshTopologyKernel& mesh){
+    bool no_double_edges(TetrahedralMeshTopologyKernel& mesh){
 
         for(auto v: mesh.vertices()){
             auto visited = mesh.request_vertex_property<HalfEdgeHandle>("visited through", HalfEdgeHandle(-1));
@@ -411,7 +401,7 @@ namespace OpenVolumeMesh {
         return true;
     }
 
-    void printMeshTopology(TetrahedralMeshTopologyKernel& mesh) {
+    void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh) {
         std::cout << "Printing mesh topology: " << std::endl;
         std::cout << std::endl;
         std::cout << "Number ob vertices: " << mesh.n_vertices() << std::endl;
@@ -431,7 +421,7 @@ namespace OpenVolumeMesh {
             for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.is_valid(); ++f_he_it) {
                 std::cout << (*f_he_it).idx() << "-";
             }
-            std::cout << std::endl;
+            std::cout << '\b' << " " << std::endl;
             ++counter;
         }
         std::cout << std::endl;
@@ -442,21 +432,21 @@ namespace OpenVolumeMesh {
             for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.is_valid(); ++c_hf_it) {
                 std::cout << (*c_hf_it).idx() << "-";
             }
-            std::cout << std::endl;
+            std::cout << '\b' << " " << std::endl;
             ++counter;
         }
     }
 
     std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh) {
-        std::set<std::set<VertexHandle>> foundFaces;
+        std::set<std::set<VertexHandle>> found_faces;
         auto visited = mesh.request_vertex_property<bool>("visited");
         for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
             auto vertex = *v_it;
             auto found_faces_by_vertex = find_non_face_triangles_around_vertex(mesh, vertex);
-            foundFaces.insert(found_faces_by_vertex.begin(), found_faces_by_vertex.end());
+            found_faces.insert(found_faces_by_vertex.begin(), found_faces_by_vertex.end());
             visited[*v_it] = true;
         }
-        return foundFaces;
+        return found_faces;
     }
 
     std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(TetrahedralMeshTopologyKernel& mesh, VertexHandle& vertex) {
@@ -478,11 +468,11 @@ namespace OpenVolumeMesh {
         for (auto neighbor : neighbors) {
             for (auto vv_it = mesh.vv_iter(neighbor); vv_it.is_valid(); ++vv_it) {
                 if (neighbor_prop[*vv_it]) {
-                    std::set<VertexHandle> foundTriangle = {vertex, neighbor, *vv_it};
-                    std::vector<VertexHandle> triangleVector(foundTriangle.size());
-                    std::copy(foundTriangle.begin(), foundTriangle.end(), triangleVector.begin());
-                    if (!mesh.halfface(triangleVector).is_valid()) {
-                        res.insert(foundTriangle);
+                    std::set<VertexHandle> found_triangle = {vertex, neighbor, *vv_it};
+                    std::vector<VertexHandle> triangle_vector(found_triangle.size());
+                    std::copy(found_triangle.begin(), found_triangle.end(), triangle_vector.begin());
+                    if (!mesh.halfface(triangle_vector).is_valid()) {
+                        res.insert(found_triangle);
                     }
                 }
             }
