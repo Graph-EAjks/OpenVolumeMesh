@@ -18,7 +18,6 @@ namespace OpenVolumeMesh{
                                      const VertexHandle& vertex,
                                      const CellHandle& cell);
 
-    // TODO: This method does not work in all cases. It only finds non-cell tets which are completely surrounded by faces.
     std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,

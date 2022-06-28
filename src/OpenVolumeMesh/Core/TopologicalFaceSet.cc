@@ -120,6 +120,7 @@ namespace OpenVolumeMesh {
             std::cout << v << " ";
         }
         std::cout << "}";
+        return os;
     }
 
 }
