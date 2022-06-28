@@ -294,11 +294,13 @@ void TetrahedralMeshBase::generate_non_manifold_tet_2F1E(TetrahedralMesh &_mesh)
     _mesh.clear();
 
     VertexHandle vertices[4];
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 4; ++i) {
         vertices[i] = _mesh.add_vertex();
     }
 
     std::vector<VertexHandle> faceVertices = {vertices[0], vertices[1], vertices[2]};
+    _mesh.add_face(faceVertices);
+    faceVertices = {vertices[0], vertices[1], vertices[3]};
     _mesh.add_face(faceVertices);
 }
 
