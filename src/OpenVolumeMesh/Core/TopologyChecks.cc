@@ -6,9 +6,9 @@ namespace OpenVolumeMesh {
     CellHandle cell_exists(const TetrahedralMeshTopologyKernel& mesh,
                            const std::vector<VertexHandle>& cell_vertices) {
         if(cell_vertices.size() == 4){
-            for(auto vc_it = mesh.vc_iter(cell_vertices[0]); vc_it.is_valid(); vc_it++){
+            for(auto vc_it = mesh.vc_iter(cell_vertices[0]); vc_it.is_valid(); ++vc_it){
                 int found_vertices_count(0);
-                for(auto cv_it = mesh.cv_iter(*vc_it); cv_it.is_valid(); cv_it++){
+                for(auto cv_it = mesh.cv_iter(*vc_it); cv_it.is_valid(); ++cv_it){
                     if(std::find(cell_vertices.begin(), cell_vertices.end(), *cv_it) != cell_vertices.end()){
                         found_vertices_count++;
                     }
@@ -88,11 +88,11 @@ namespace OpenVolumeMesh {
 
             auto neighbor = mesh_.request_vertex_property<bool>("neighbor");
 
-            for(auto vv_it = mesh_.vv_iter(v); vv_it.is_valid(); vv_it++){
+            for(auto vv_it = mesh_.vv_iter(v); vv_it.is_valid(); ++vv_it){
                 neighbor[*vv_it] = true;
             }
 
-            for(auto vf_it = mesh_.vf_iter(v); vf_it.is_valid(); vf_it++){
+            for(auto vf_it = mesh_.vf_iter(v); vf_it.is_valid(); ++vf_it){
 
                 std::set<VertexHandle> tet_vertices;
                 tet_vertices.insert(v);
@@ -101,7 +101,7 @@ namespace OpenVolumeMesh {
                 //find opposite edge to v
                 EdgeHandle opposite_edge(-1);
 
-                for(auto fe_it = mesh_.fe_iter(*vf_it); fe_it.is_valid(); fe_it++){
+                for(auto fe_it = mesh_.fe_iter(*vf_it); fe_it.is_valid(); ++fe_it){
                     if(mesh_.edge(*fe_it).from_vertex() != v &&
                        mesh_.edge(*fe_it).to_vertex() != v){
                         tet_vertices.insert(mesh_.edge(*fe_it).from_vertex());
@@ -112,11 +112,11 @@ namespace OpenVolumeMesh {
                 }
 
                 //iterate through the opposite edge's faces to try to find another neighbor vertex
-                for(auto ef_it = mesh_.ef_iter(opposite_edge); ef_it.is_valid(); ef_it++){
+                for(auto ef_it = mesh_.ef_iter(opposite_edge); ef_it.is_valid(); ++ef_it){
                     std::set<VertexHandle> partial_cell = tet_vertices;
 
                     //find the opposite vertex
-                    for(auto fv_it = mesh_.fv_iter(*ef_it); fv_it.is_valid(); fv_it++){
+                    for(auto fv_it = mesh_.fv_iter(*ef_it); fv_it.is_valid(); ++fv_it){
                         if(mesh_.edge(opposite_edge).from_vertex() != *fv_it &&
                            mesh_.edge(opposite_edge).to_vertex() != *fv_it &&
                            neighbor[*fv_it]){
@@ -126,9 +126,9 @@ namespace OpenVolumeMesh {
                             bool found_cell(false);
 
                             //check if it's a cell or not
-                            for(auto vc_it = mesh_.vc_iter(v); vc_it.is_valid(); vc_it++){
+                            for(auto vc_it = mesh_.vc_iter(v); vc_it.is_valid(); ++vc_it){
                                 int found_vertices(0);
-                                for(auto cv_it = mesh_.cv_iter(*vc_it); cv_it.is_valid(); cv_it++){
+                                for(auto cv_it = mesh_.cv_iter(*vc_it); cv_it.is_valid(); ++cv_it){
                                     if(partial_cell.find(*cv_it) != partial_cell.end()){
                                         found_vertices++;
                                     }
@@ -196,7 +196,7 @@ namespace OpenVolumeMesh {
 
             visited_prop[next] = true;
 
-            for(auto out_he_it = mesh.outgoing_halfedges(next).first; out_he_it.is_valid(); out_he_it++){
+            for(auto out_he_it = mesh.outgoing_halfedges(next).first; out_he_it.is_valid(); ++out_he_it){
                 auto to_vertex = mesh.to_vertex_handle(*out_he_it);
                 if(!visited_prop[to_vertex]){
                     to_visit.insert(to_vertex);
@@ -246,9 +246,9 @@ namespace OpenVolumeMesh {
 
                 visited[current_face] = true;
 
-                for(auto fe_it = mesh.fe_iter(current_face); fe_it.is_valid(); fe_it++){
+                for(auto fe_it = mesh.fe_iter(current_face); fe_it.is_valid(); ++fe_it){
 
-                    for(auto ef_it = mesh.ef_iter(*fe_it); ef_it.is_valid(); ef_it++){
+                    for(auto ef_it = mesh.ef_iter(*fe_it); ef_it.is_valid(); ++ef_it){
                         if(mesh.is_boundary(*ef_it) && !visited[*ef_it]){
                             to_visit.push_back(*ef_it);
                         }
@@ -302,7 +302,7 @@ namespace OpenVolumeMesh {
 
         //find an initial boundary face
         FaceHandle initial_boundary_face(-1);
-        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); vf_it++){
+        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); ++vf_it){
             if(mesh.is_boundary(*vf_it)){
                 initial_boundary_face = *vf_it;
                 break;
@@ -326,7 +326,7 @@ namespace OpenVolumeMesh {
         EdgeHandle next_edge(-1);
 
         //visit all vertices of the initial face
-        for(auto fe_it = mesh.fe_iter(initial_boundary_face); fe_it.is_valid(); fe_it++){
+        for(auto fe_it = mesh.fe_iter(initial_boundary_face); fe_it.is_valid(); ++fe_it){
             if(mesh.edge(*fe_it).to_vertex() == vertex ||
                mesh.edge(*fe_it).from_vertex() == vertex){
                 visited_edge[*fe_it] = true;
@@ -343,7 +343,7 @@ namespace OpenVolumeMesh {
             next_edge = EdgeHandle(-1);
 
             //circulate through boundary faces around edge to find the next one
-            for(auto ef_it = mesh.ef_iter(current_edge); ef_it.is_valid(); ef_it++){
+            for(auto ef_it = mesh.ef_iter(current_edge); ef_it.is_valid(); ++ef_it){
                 //std::cout<<" -- checking face "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
                 if(mesh.is_boundary(*ef_it) && ! visited_face[*ef_it]){
                     //found a neighboring face to both current_edge and vertex
@@ -351,7 +351,7 @@ namespace OpenVolumeMesh {
 
                     //std::cout<<" ---- neighbor face: "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
 
-                    for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.is_valid(); fe_it++){
+                    for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.is_valid(); ++fe_it){
                         if(mesh.is_boundary(*fe_it)&&
                            (mesh.edge(*fe_it).to_vertex() == vertex ||
                             mesh.edge(*fe_it).from_vertex() == vertex) &&
@@ -368,7 +368,7 @@ namespace OpenVolumeMesh {
 
         //and finally we check that all boundary faces were visited
         bool all_visited(true);
-        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); vf_it++){
+        for(auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); ++vf_it){
             if(mesh.is_boundary(*vf_it)){
                 all_visited &= visited_face[*vf_it];
             }
