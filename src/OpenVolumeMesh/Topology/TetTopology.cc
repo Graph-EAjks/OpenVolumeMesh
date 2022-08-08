@@ -87,7 +87,7 @@ TetTopology::TetTopology(const TopologyKernel &_mesh,
 {}
 
 TetTopology::TetTopology(const TopologyKernel &_mesh, CH _ch)
-    : TetTopology(_mesh, *_mesh.chf_iter(_ch))
+    : TetTopology(_mesh, _ch, *_mesh.chf_iter(_ch), VH())
 {}
 
 bool TetTopology::operator==(TetTopology const& other) const

@@ -33,10 +33,28 @@ public:
         ABC = 3, BCA = 3, CAB = 3, OppD = 3,
     };
 
-    // TODO: TetrahedralTopologyKernel overload for more performance?
+    /// Find a vertex labeling for the cell `ch` with the given
+    /// halfface abc and vertex a.
+    ///
+    /// `abc` must be a a halfface of a the topological tetrahedron `ch`,
+    /// and contain the vertex `a`.
     TetTopology(TopologyKernel const &mesh, CH ch, HFH abc, VH a=VH());
+
+    /// Find a vertex labeling for the cell incident to `abc`, such that
+    /// `a` is the given vertex handle, and a, b, and c form `abc`.
+    ///
+    /// `ch` MUST be a topological tetrahedron
+    /// `hfh` MUST be a halface of a topological tetrahedron and contain `a`.
     TetTopology(TopologyKernel const &mesh, HFH abc, VH a=VH());
+
+    /// Find a vertex labeling for the cell `ch`, such that `a` is the given
+    /// vertex.
+    /// `ch` MUST be a topological tetrahedron
+    /// `a` MUST be a vertex of `ch`.
     TetTopology(TopologyKernel const &mesh, CH ch, VH a);
+
+    /// Find any vertex labeling for the tetrahedral `ch`.
+    /// `ch` MUST be a topological tetrahedron.
     TetTopology(TopologyKernel const &mesh, CH ch);
 
     bool operator==(TetTopology const& other) const;
