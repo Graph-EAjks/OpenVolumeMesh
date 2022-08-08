@@ -15,4 +15,10 @@ TriangleTopology::TriangleTopology(
     assert(idx == 3);
 }
 
+bool TriangleTopology::operator==(TriangleTopology const& other) const
+{
+    return vh_ == other.vh_
+       && heh_ == other.heh_;
+}
+
 } // namespace OpenVolumeMesh

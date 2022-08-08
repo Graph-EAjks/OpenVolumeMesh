@@ -90,4 +90,12 @@ TetTopology::TetTopology(const TetrahedralMeshTopologyKernel &_mesh, CH _ch)
     : TetTopology(_mesh, *_mesh.chf_iter(_ch))
 {}
 
+bool TetTopology::operator==(TetTopology const& other) const
+{
+  return vh_ == other.vh_
+    && heh_ == other.heh_
+    && hfh_ == other.hfh_;
+}
+
+
 } // namespace OpenVolumeMesh

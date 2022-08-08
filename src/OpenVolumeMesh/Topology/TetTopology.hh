@@ -32,10 +32,13 @@ public:
         ABC = 3, BCA = 3, CAB = 3, OppD = 3,
     };
 
+    // TODO: template on mesh type - this should work on mixed meshes too.
     TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch, HFH abc, VH a=VH());
     TetTopology(TetrahedralMeshTopologyKernel const &mesh, HFH abc, VH a=VH());
     TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch, VH a);
     TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch);
+
+    bool operator==(TetTopology const& other) const;
 
     const auto &halfface_handles() const {return hfh_;}
 

@@ -15,7 +15,10 @@ public:
     enum HalfEdgeLabel : uint8_t {
         AB, BC, CA
     };
+    // TODO: template on mesh type - this should work on mixed meshes too.
+    // TODO: constructors that takes HFH, HFH+VH, ...
     TriangleTopology(TetrahedralMeshTopologyKernel const &mesh, FH fh);
+    bool operator==(TriangleTopology const& other) const;
 
     template<VertexLabel I>
     constexpr VH vh() const {return vh_[I];}
