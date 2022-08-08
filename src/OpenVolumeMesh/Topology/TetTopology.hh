@@ -2,7 +2,8 @@
 
 #include <OpenVolumeMesh/Config/Export.hh>
 #include <OpenVolumeMesh/Core/Handles.hh>
-#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
+//#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
+#include <OpenVolumeMesh/Core/TopologyKernel.hh>
 
 namespace OpenVolumeMesh {
 
@@ -32,11 +33,11 @@ public:
         ABC = 3, BCA = 3, CAB = 3, OppD = 3,
     };
 
-    // TODO: template on mesh type - this should work on mixed meshes too.
-    TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch, HFH abc, VH a=VH());
-    TetTopology(TetrahedralMeshTopologyKernel const &mesh, HFH abc, VH a=VH());
-    TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch, VH a);
-    TetTopology(TetrahedralMeshTopologyKernel const &mesh, CH ch);
+    // TODO: TetrahedralTopologyKernel overload for more performance?
+    TetTopology(TopologyKernel const &mesh, CH ch, HFH abc, VH a=VH());
+    TetTopology(TopologyKernel const &mesh, HFH abc, VH a=VH());
+    TetTopology(TopologyKernel const &mesh, CH ch, VH a);
+    TetTopology(TopologyKernel const &mesh, CH ch);
 
     bool operator==(TetTopology const& other) const;
 

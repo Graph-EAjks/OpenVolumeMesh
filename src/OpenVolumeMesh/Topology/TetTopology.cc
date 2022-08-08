@@ -2,7 +2,7 @@
 
 namespace OpenVolumeMesh {
 
-static HFH find_halfface(TetrahedralMeshTopologyKernel const &_mesh, CH _ch, VH _vh) {
+static HFH find_halfface(TopologyKernel const &_mesh, CH _ch, VH _vh) {
     for (const auto hfh: _mesh.cell_halffaces(_ch)) {
         for (const auto vh: _mesh.halfface_vertices(hfh)) {
             if (vh == _vh)
@@ -14,7 +14,7 @@ static HFH find_halfface(TetrahedralMeshTopologyKernel const &_mesh, CH _ch, VH 
 }
 
 
-TetTopology::TetTopology(const TetrahedralMeshTopologyKernel &mesh,
+TetTopology::TetTopology(const TopologyKernel &mesh,
                          CH _ch,
                          HFH _abc,
                          VH _a)
@@ -76,17 +76,17 @@ TetTopology::TetTopology(const TetrahedralMeshTopologyKernel &mesh,
 }
 
 
-TetTopology::TetTopology(TetrahedralMeshTopologyKernel const &_mesh,
+TetTopology::TetTopology(TopologyKernel const &_mesh,
         HFH _abc, VH _a)
     : TetTopology(_mesh, _mesh.incident_cell(_abc), _abc, _a)
 {}
 
-TetTopology::TetTopology(const TetrahedralMeshTopologyKernel &_mesh,
+TetTopology::TetTopology(const TopologyKernel &_mesh,
                          CH _ch, VH _a)
     : TetTopology(_mesh, _ch, find_halfface(_mesh, _ch, _a), _a)
 {}
 
-TetTopology::TetTopology(const TetrahedralMeshTopologyKernel &_mesh, CH _ch)
+TetTopology::TetTopology(const TopologyKernel &_mesh, CH _ch)
     : TetTopology(_mesh, *_mesh.chf_iter(_ch))
 {}
 

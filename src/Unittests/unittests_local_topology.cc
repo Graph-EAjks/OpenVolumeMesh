@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#include <OpenVolumeMesh/Core/TopologyKernel.hh>
 #include <OpenVolumeMesh/Topology/TetTopology.hh>
+#include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
 
 
 using namespace OpenVolumeMesh;
@@ -7,6 +9,7 @@ using namespace OpenVolumeMesh;
 struct TetTopologyTest : public ::testing::Test
 {
   TetrahedralMeshTopologyKernel mesh;
+  //TopologyKernel mesh;
   VH a = mesh.add_vertex();
   VH b = mesh.add_vertex();
   VH c = mesh.add_vertex();
