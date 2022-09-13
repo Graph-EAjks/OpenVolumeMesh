@@ -607,3 +607,114 @@ TEST_F(TetrahedralMeshBase, findNonCellTets_nonfaceTris) {
     found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, false);
     EXPECT_TRUE(found_tets.empty());
 }
+
+
+TEST_F(TetrahedralMeshBase, findNonCellTets_2_nonfaceTris) {
+    TetrahedralMesh &mesh = this->mesh_;
+
+    generate_tet_without_cells_and_faces(mesh);
+
+    // find expected tets
+    std::vector<VertexHandle> all_vertices;
+    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        all_vertices.push_back(*v_it);
+    }
+    std::set<std::set<VertexHandle>> expected_tets;
+    std::set<VertexHandle> expected_tet;
+    expected_tet.insert(all_vertices[0]);
+    expected_tet.insert(all_vertices[1]);
+    expected_tet.insert(all_vertices[2]);
+    expected_tet.insert(all_vertices[3]);
+    expected_tets.insert(expected_tet);
+    expected_tet.clear();
+    expected_tet.insert(all_vertices[1]);
+    expected_tet.insert(all_vertices[2]);
+    expected_tet.insert(all_vertices[3]);
+    expected_tet.insert(all_vertices[4]);
+    expected_tets.insert(expected_tet);
+
+    auto found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    EXPECT_EQ(found_tets.size(), 2);
+    EXPECT_EQ(found_tets, expected_tets);
+
+    // test mixed case
+    std::vector<VertexHandle> vertices_cell0(expected_tets.begin()->size());
+    std::copy(expected_tets.begin()->begin(), expected_tets.begin()->end(), vertices_cell0.begin());
+    mesh.add_cell(vertices_cell0);
+    expected_tets.erase(expected_tets.begin());
+    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    EXPECT_EQ(found_tets.size(), 1);
+    EXPECT_EQ(found_tets, expected_tets);
+
+    generate_non_manifold_tet_3T1F(mesh);
+    all_vertices.clear();
+    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        all_vertices.push_back(*v_it);
+    }
+    expected_tets.clear();
+    expected_tet.clear();
+    expected_tet.insert(all_vertices[0]);
+    expected_tet.insert(all_vertices[1]);
+    expected_tet.insert(all_vertices[2]);
+    expected_tet.insert(all_vertices[3]);
+    expected_tets.insert(expected_tet);
+    expected_tet.clear();
+    expected_tet.insert(all_vertices[1]);
+    expected_tet.insert(all_vertices[2]);
+    expected_tet.insert(all_vertices[3]);
+    expected_tet.insert(all_vertices[4]);
+    expected_tets.insert(expected_tet);
+    expected_tet.clear();
+    expected_tet.insert(all_vertices[1]);
+    expected_tet.insert(all_vertices[2]);
+    expected_tet.insert(all_vertices[3]);
+    expected_tet.insert(all_vertices[5]);
+    expected_tets.insert(expected_tet);
+
+    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    EXPECT_EQ(found_tets.size(), 3);
+    EXPECT_EQ(found_tets, expected_tets);
+
+    // check that no existing tet is found
+    generate_tetrahedral_mesh(mesh);
+    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    EXPECT_TRUE(found_tets.empty());
+
+    // test some invalid inputs
+    mesh.clear();
+    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    EXPECT_TRUE(found_tets.empty());
+}
+
+TEST_F(TetrahedralMeshBase, findNonCellTets_performance) {
+
+    TetrahedralMesh &mesh = this->mesh_;
+    generate_tetrahedral_mesh(mesh);
+
+    EXPECT_FALSE(OpenVolumeMesh::contains_void(mesh));
+
+    OpenVolumeMesh::IO::FileManager fileManager;
+    fileManager.readFile("Cuboid.ovm", mesh);
+
+    auto start = std::clock();
+    OpenVolumeMesh::find_non_cell_tets(mesh, true);
+    auto end = std::clock();
+    auto diff = end - start;
+    std::cout << "findNonCellTets time: " << diff << std::endl;
+    start = std::clock();
+    OpenVolumeMesh::find_non_cell_tets(mesh, false);
+    end = std::clock();
+    diff = end - start;
+    std::cout << "findNonCellTets time: " << diff << std::endl;
+    start = std::clock();
+    OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
+    end = std::clock();
+    diff = end - start;
+    std::cout << "findNonCellTets_2 time: " << diff << std::endl;
+    start = std::clock();
+    OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    end = std::clock();
+    diff = end - start;
+    std::cout << "findNonCellTets_2 time: " << diff << std::endl;
+    EXPECT_TRUE(true);
+}
