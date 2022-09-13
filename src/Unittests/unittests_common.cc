@@ -477,6 +477,7 @@ void TetrahedralMeshBase::generate_tri_tet_with_faces(TetrahedralMesh &_mesh) {
     }
 }
 
+//TODO: this is no tetmesh anymore, as there are polyhedra with 5 faces, 2 triangles and 3 quadrangles
 void TetrahedralMeshBase::generate_nested_tets(TetrahedralMesh &_mesh) {
     _mesh.clear();
 

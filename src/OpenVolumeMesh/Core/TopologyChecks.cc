@@ -51,7 +51,7 @@ namespace OpenVolumeMesh {
 
     std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces = true){
 
-        int counter = 0;
+//        int counter = 0;
 
 //        mesh_.create_private_property<int, Entity::Vertex>("visited");
         std::set<std::set<VertexHandle>> non_cell_tets;
@@ -136,7 +136,7 @@ namespace OpenVolumeMesh {
                                     if(partial_cell.find(*cv_it) != partial_cell.end()){
                                         found_vertices++;
                                     }
-                                    ++counter;
+//                                    ++counter;
                                 }
                                 if(found_vertices == 4){
                                     found_cell = true;
@@ -164,20 +164,28 @@ namespace OpenVolumeMesh {
                 }
             }
         }
-        std::cout << "Version 1: " << counter << std::endl;
+//        std::cout << "Version 1: " << counter << std::endl;
         return non_cell_tets;
     }
 
     std::set<std::set<VertexHandle>> find_non_cell_tets_2(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces) {
 
-        int counter = 0;
+//        int counter = 0;
 
         std::set<std::set<VertexHandle>> ret;
 
+        auto visited = mesh.request_vertex_property<bool>("visited");
+        for (auto v : mesh.vertices()) {
+            visited[v] = false;
+        }
+
         for(auto v: mesh.vertices()){
+            visited[v] = true;
             for (auto vv_it = mesh.vv_iter(v); vv_it.is_valid(); ++vv_it) {
+                if (visited[*vv_it]) continue;
                 for (auto vv_it_2 = mesh.vv_iter(v); vv_it_2.is_valid(); ++vv_it_2) {
                     if (*vv_it_2 == *vv_it) continue;
+                    if (visited[*vv_it_2]) continue;
                     // first, we check, if vv_it_2 is a neighbour of vv_it.
                     bool found = false;
                     for (auto vv_it_3 = mesh.vv_iter(*vv_it_2); vv_it_3.is_valid(); ++vv_it_3) {
@@ -224,7 +232,7 @@ namespace OpenVolumeMesh {
                                     *cv_it == *vv_it_3) {
                                     ++vertex_count;
                                 }
-                                ++counter;
+//                                ++counter;
                             }
                             if (vertex_count == 3) {
                                 found_cell = true;
@@ -253,7 +261,7 @@ namespace OpenVolumeMesh {
                 }
             }
         }
-        std::cout << "Version 2: " << counter << std::endl;
+//        std::cout << "Version 2: " << counter << std::endl;
         return ret;
     }
 

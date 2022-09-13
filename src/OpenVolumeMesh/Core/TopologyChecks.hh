@@ -18,6 +18,13 @@ namespace OpenVolumeMesh{
                                      const VertexHandle& vertex,
                                      const CellHandle& cell);
 
+    /**
+     *
+     * @param mesh
+     * @param only_check_faces only returns non_cell_tets, where the four faces exist, otherwise also return tets with
+     * missing faces
+     * @return
+     */
     std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
     std::set<std::set<VertexHandle>> find_non_cell_tets_2(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
