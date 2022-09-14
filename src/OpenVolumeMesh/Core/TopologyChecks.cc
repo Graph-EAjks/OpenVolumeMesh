@@ -300,12 +300,14 @@ namespace OpenVolumeMesh {
 
     bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh){
 
-        if (mesh.n_logical_vertices() == 0) {
+        //TODO: return (count_connected_components(mesh) == 1)?
+
+        if (mesh.n_logical_vertices() == 0) {//TODO: n_vertices?
 //        if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
             return false;
         }
 
-        auto visited_prop = mesh.request_vertex_property<bool>("visited");
+        auto visited_prop = mesh.request_vertex_property<bool>("visited", false);
 
         std::set<VertexHandle> to_visit;
         to_visit.insert(*mesh.vertices().first);
@@ -354,7 +356,7 @@ namespace OpenVolumeMesh {
             visited[root_vh] = true;
             ++n_vertices_found;
 
-            std::stack<VH> stack;
+            std::stack<VH> stack;//TODO: dequeue? See thread in merge request
             stack.push(root_vh);
             while(!stack.empty())
             {
@@ -538,6 +540,8 @@ namespace OpenVolumeMesh {
 
     bool no_double_edges(TetrahedralMeshTopologyKernel& mesh){
 
+        //TODO: return find_multi_edges(mesh).empty()?
+
         for(auto v: mesh.vertices()){
             auto visited = mesh.request_vertex_property<HalfEdgeHandle>("visited through", HalfEdgeHandle(-1));
 
@@ -555,6 +559,25 @@ namespace OpenVolumeMesh {
         }
 
         return true;
+    }
+
+    std::set<std::set<HEH>> find_multi_edges(TetrahedralMeshTopologyKernel& mesh) {
+
+        std::set<std::set<HEH>> multi_edges;
+        for(auto v: mesh.vertices()){
+            std::set<HEH> empty_heh_set;
+            auto multi_edge_list = mesh.request_vertex_property<std::set<HEH>>("multi_edge_list", empty_heh_set);
+
+            for(auto out_he: mesh.outgoing_halfedges(v)){
+                multi_edge_list[mesh.to_vertex_handle(out_he)].insert(out_he);
+            }
+            for (auto vv_it = mesh.vv_iter(v); vv_it.is_valid(); ++vv_it) {
+                if (multi_edge_list[*vv_it].size() > 1) {
+                    multi_edges.insert(multi_edge_list[*vv_it]);
+                }
+            }
+        }
+        return multi_edges;
     }
 
     void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh) {

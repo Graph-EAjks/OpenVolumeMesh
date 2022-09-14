@@ -43,6 +43,8 @@ namespace OpenVolumeMesh{
 
     bool no_double_edges(TetrahedralMeshTopologyKernel& mesh);
 
+    std::set<std::set<HEH>> find_multi_edges(TetrahedralMeshTopologyKernel& mesh);
+
     void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh);
 
     std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh);

@@ -117,6 +117,9 @@ TEST_F(TetrahedralMeshBase, single_connected_component) {
     VertexHandle v5 = mesh.add_vertex(p5);
     EXPECT_FALSE(OpenVolumeMesh::single_connected_component(mesh));
 
+    generate_tets_two_connected_components(mesh);
+    EXPECT_FALSE(OpenVolumeMesh::single_connected_component(mesh));
+
     // test invalid input
     mesh.clear();
     EXPECT_FALSE(OpenVolumeMesh::single_connected_component(mesh));
@@ -304,6 +307,35 @@ TEST_F(TetrahedralMeshBase, no_double_edges) {
     // Test invalid input
     mesh.clear();
     EXPECT_TRUE(OpenVolumeMesh::no_double_edges(mesh));
+}
+
+TEST_F(TetrahedralMeshBase, find_multi_edges) {
+    TetrahedralMesh &mesh = this->mesh_;
+    generate_tetrahedral_mesh(mesh);
+
+    EXPECT_TRUE(OpenVolumeMesh::find_multi_edges(mesh).empty());
+
+    auto heh = *mesh.halfedges_begin();
+    auto from_vertex = mesh.from_vertex_handle(heh);
+    auto to_vertex = mesh.to_vertex_handle(heh);
+    auto eh_2 = mesh.add_edge(from_vertex, to_vertex, true);
+    auto heh_2 = mesh.halfedge_handle(eh_2, 0);
+    if (mesh.to_vertex_handle(heh_2) != to_vertex) {
+        heh_2 = mesh.opposite_halfedge_handle(heh_2);
+        ASSERT_EQ(mesh.to_vertex_handle(heh_2), to_vertex);
+    }
+
+    EXPECT_EQ(OpenVolumeMesh::find_multi_edges(mesh).size(), 2);
+    std::set<std::set<HEH>> expectedMultiEdges;
+    std::set<HEH> expectedMultiEdge = {heh, heh_2};
+    expectedMultiEdges.insert(expectedMultiEdge);
+    expectedMultiEdge = {mesh.opposite_halfedge_handle(heh), mesh.opposite_halfedge_handle(heh_2)};
+    expectedMultiEdges.insert(expectedMultiEdge);
+    EXPECT_EQ(expectedMultiEdges, OpenVolumeMesh::find_multi_edges(mesh));
+
+    // Test invalid input
+    mesh.clear();
+    EXPECT_TRUE(OpenVolumeMesh::find_multi_edges(mesh).empty());
 }
 
 TEST_F(TetrahedralMeshBase, find_non_cell_tets) {
