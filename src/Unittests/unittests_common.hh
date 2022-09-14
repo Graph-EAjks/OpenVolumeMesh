@@ -151,6 +151,8 @@ protected:
   void generate_nested_tets(TetrahedralMesh& _mesh);
   // Generate a tet with with only three faces
   void generate_tet_3F(TetrahedralMesh& _mesh);
+  // Genrete two tets, which are not connected, so there are two connected components in the mesh
+  void generate_tets_two_connected_components(TetrahedralMesh& _mesh);
 
   //-------------------------------//
   // Non-manifold test tets. Note: They have no geometry, only topology

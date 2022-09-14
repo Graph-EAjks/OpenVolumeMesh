@@ -34,6 +34,8 @@ namespace OpenVolumeMesh{
 
     bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh);
 
+    size_t count_connected_components(TetrahedralMeshTopologyKernel& mesh);
+
     bool contains_void(TetrahedralMeshTopologyKernel&  mesh);
 
     bool manifold_vertex(TetrahedralMeshTopologyKernel& mesh,

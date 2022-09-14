@@ -939,3 +939,17 @@ TEST_F(TetrahedralMeshBase, findNonCellTets_performance) {
     std::cout << "findNonCellTets_2 time: " << diff << std::endl;
     EXPECT_TRUE(true);
 }
+
+TEST_F(TetrahedralMeshBase, countConnectedComponents) {
+
+    TetrahedralMesh &mesh = this->mesh_;
+    mesh.clear();
+    EXPECT_EQ(0, OpenVolumeMesh::count_connected_components(mesh));
+
+    generate_tetrahedral_mesh(mesh);
+    EXPECT_EQ(1, OpenVolumeMesh::count_connected_components(mesh));
+
+
+    generate_tets_two_connected_components(mesh);
+    EXPECT_EQ(2, OpenVolumeMesh::count_connected_components(mesh));
+}

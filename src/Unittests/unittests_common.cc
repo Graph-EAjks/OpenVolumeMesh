@@ -529,6 +529,23 @@ void TetrahedralMeshBase::generate_tet_3F(TetrahedralMesh &_mesh) {
 
 }
 
+void TetrahedralMeshBase::generate_tets_two_connected_components(TetrahedralMesh &_mesh) {
+    _mesh.clear();
+
+    VertexHandle vertices[8];
+    for (int i = 0; i < 8; ++i) {
+        vertices[i] = _mesh.add_vertex();
+    }
+
+    std::vector<std::vector<VertexHandle>> cells;
+    cells = {{vertices[0], vertices[1], vertices[2], vertices[3]},
+             {vertices[4], vertices[5], vertices[6], vertices[7]}};
+
+    for (auto cell : cells) {
+        _mesh.add_cell(cell);
+    }
+}
+
 void TetrahedralMeshBase::generate_non_manifold_tet_3T1F(TetrahedralMesh &_mesh) {
     _mesh.clear();
 

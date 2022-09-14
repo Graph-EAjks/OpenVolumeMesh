@@ -1,5 +1,6 @@
 #include <OpenVolumeMesh/Core/TopologyChecks.hh>
 #include <OpenVolumeMesh/Core/TopologicalLinkT_impl.hh>
+#include <stack>
 
 namespace OpenVolumeMesh {
 
@@ -194,11 +195,7 @@ namespace OpenVolumeMesh {
 
         //TODO: What's the difference between the following two lines?
 //        auto visited = mesh.request_vertex_property<bool>("visited");
-        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited");
-        //TODO: Is this necessary?
-        for (auto v : mesh.vertices()) {
-            visited[v] = false;
-        }
+        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
 
         for(auto v: mesh.vertices()){
             visited[v] = true;
@@ -303,8 +300,9 @@ namespace OpenVolumeMesh {
 
     bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh){
 
-        if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
-            return false; //TODO: it might be preferable to return true, as an empty mesh is connected (maybe not?)
+        if (mesh.n_logical_vertices() == 0) {
+//        if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
+            return false;
         }
 
         auto visited_prop = mesh.request_vertex_property<bool>("visited");
@@ -336,6 +334,42 @@ namespace OpenVolumeMesh {
 
 
         return all_visited;
+    }
+
+    // largely copied from OpenFlipper-Free::Plugin-InfoVolumeMeshObject::VolumeMeshAnalysis
+    size_t count_connected_components(TetrahedralMeshTopologyKernel& mesh) {
+        auto visited = mesh.request_vertex_property<bool>("visited", false);
+        size_t n_connected_components = 0;
+
+        size_t n_vertices_found = 0; // for early abort
+        size_t n_vertices = mesh.n_vertices(); //TODO: n_logical_vertices?
+
+        for (const auto &root_vh: mesh.vertices())
+        {
+            if(n_vertices_found == n_vertices)
+                break;
+            if (visited[root_vh])
+                continue;
+            ++n_connected_components;
+            visited[root_vh] = true;
+            ++n_vertices_found;
+
+            std::stack<VH> stack;
+            stack.push(root_vh);
+            while(!stack.empty())
+            {
+                const auto vh = stack.top(); stack.pop();
+                for (const auto &nb: mesh.vertex_vertices(vh))
+                {
+                    if (!visited[nb]) {
+                        visited[nb] = true;
+                        stack.push(nb);
+                        ++n_vertices_found;
+                    }
+                }
+            }
+        }
+        return n_connected_components;
     }
 
     bool contains_void(TetrahedralMeshTopologyKernel&  mesh){
