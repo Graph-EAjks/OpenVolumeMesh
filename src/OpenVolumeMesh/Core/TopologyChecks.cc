@@ -62,24 +62,35 @@ namespace OpenVolumeMesh {
             // check for all non-face triangles, if there exists a fourth vertex which forms a tet with the triangle
             for (auto triangle : non_face_tris) {
                 auto potential_tet_vertex = mesh.request_vertex_property<int>("potential_tet_vertex");
-                auto tri_vertex0 = *triangle.begin(), tri_vertex1 = *++triangle.begin(), tri_vertex2 = *++(++triangle.begin());
+                std::vector<VertexHandle> triangle_vertices;
+                for (auto tri_vertex : triangle) {
+                    triangle_vertices.push_back(tri_vertex);
+                }
+//                auto tri_vertex0 = *triangle.begin(), tri_vertex1 = *++triangle.begin(), tri_vertex2 = *++(++triangle.begin());
 
                 // iterate over the neighbors of tri_vertex0 and mark them as a potential tet extension
-                for (auto vv_it = mesh.vv_iter(tri_vertex0); vv_it.is_valid(); ++vv_it) {
+//                for (auto vv_it = mesh.vv_iter(tri_vertex0); vv_it.is_valid(); ++vv_it) {
+                for (auto vv_it = mesh.vv_iter(triangle_vertices[0]); vv_it.is_valid(); ++vv_it) {
                     ++potential_tet_vertex[*vv_it];
                 }
                 // iterate over the neighbors of tri_vertex1 and mark them as a potential tet extension
-                for (auto vv_it = mesh.vv_iter(tri_vertex1); vv_it.is_valid(); ++vv_it) {
+//                for (auto vv_it = mesh.vv_iter(tri_vertex1); vv_it.is_valid(); ++vv_it) {
+                for (auto vv_it = mesh.vv_iter(triangle_vertices[1]); vv_it.is_valid(); ++vv_it) {
                     ++potential_tet_vertex[*vv_it];
                 }
                 // iterate over the neighbors of tri_vertex2. If any of them is a neighbor of the first two vertices as well,
                 // then we found a non-cell tet
-                for (auto vv_it = mesh.vv_iter(tri_vertex2); vv_it.is_valid(); ++vv_it) {
+//                for (auto vv_it = mesh.vv_iter(tri_vertex2); vv_it.is_valid(); ++vv_it) {
+                for (auto vv_it = mesh.vv_iter(triangle_vertices[2]); vv_it.is_valid(); ++vv_it) {
                     if (potential_tet_vertex[*vv_it] == 2){
                         std::set<VertexHandle> non_cell_tet;
-                        non_cell_tet.insert(tri_vertex0);
-                        non_cell_tet.insert(tri_vertex1);
-                        non_cell_tet.insert(tri_vertex2);
+//                        non_cell_tet.insert(tri_vertex0);
+//                        non_cell_tet.insert(tri_vertex1);
+//                        non_cell_tet.insert(tri_vertex2);
+
+                        non_cell_tet.insert(triangle_vertices[0]);
+                        non_cell_tet.insert(triangle_vertices[1]);
+                        non_cell_tet.insert(triangle_vertices[2]);
                         non_cell_tet.insert(*vv_it);
                         non_cell_tets.insert(non_cell_tet);
                     }
@@ -111,7 +122,6 @@ namespace OpenVolumeMesh {
                         tet_vertices.insert(mesh.edge(*fe_it).to_vertex());
 
                         opposite_edge = *fe_it;
-                        //TODO: break ?
                     }
                 }
 
@@ -143,10 +153,18 @@ namespace OpenVolumeMesh {
                                 }
                             }
                             bool faces_exist = true;
-                            std::vector<std::vector<VertexHandle>> triangles = {{*partial_cell.begin(), *++partial_cell.begin(), *++(++partial_cell.begin())},
-                                                                                {*partial_cell.begin(), *++partial_cell.begin(), *++(++(++partial_cell.begin()))},
-                                                                                {*partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))},
-                                                                                {*++partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))}};
+                            std::vector<VertexHandle> cell_vertices;
+                            for (auto v : partial_cell) {
+                                cell_vertices.push_back(v);
+                            }
+                            std::vector<std::vector<VertexHandle>> triangles = {{cell_vertices[0], cell_vertices[1], cell_vertices[2]},
+                                                                                {cell_vertices[0], cell_vertices[1], cell_vertices[3]},
+                                                                                {cell_vertices[0], cell_vertices[2], cell_vertices[3]},
+                                                                                {cell_vertices[1], cell_vertices[2], cell_vertices[3]}};
+//                            std::vector<std::vector<VertexHandle>> triangles = {{*partial_cell.begin(), *++partial_cell.begin(), *++(++partial_cell.begin())},
+//                                                                                {*partial_cell.begin(), *++partial_cell.begin(), *++(++(++partial_cell.begin()))},
+//                                                                                {*partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))},
+//                                                                                {*++partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))}};
                             for (auto triangle : triangles) {
                                 faces_exist &= mesh.halfface(triangle).is_valid();
                             }
@@ -174,7 +192,10 @@ namespace OpenVolumeMesh {
 
         std::set<std::set<VertexHandle>> ret;
 
-        auto visited = mesh.request_vertex_property<bool>("visited");
+        //TODO: What's the difference between the following two lines?
+//        auto visited = mesh.request_vertex_property<bool>("visited");
+        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited");
+        //TODO: Is this necessary?
         for (auto v : mesh.vertices()) {
             visited[v] = false;
         }
