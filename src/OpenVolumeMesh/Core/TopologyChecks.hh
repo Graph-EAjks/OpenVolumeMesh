@@ -4,8 +4,11 @@
 #include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
 #include <OpenVolumeMesh/Core/TopologicalLink.hh>
+#include <OpenVolumeMesh/Core/detail/exceptions.hh>
 
 namespace OpenVolumeMesh{
+
+    //TODO: check, which functions rely on tet structure and which can be used for any mesh
 
     CellHandle cell_exists(const TetrahedralMeshTopologyKernel& mesh,
                                   const std::vector<VertexHandle>& cell_vertices);
@@ -25,29 +28,29 @@ namespace OpenVolumeMesh{
      * missing faces
      * @return
      */
-    std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
+    std::set<std::set<VertexHandle>> find_non_cell_tets(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
-    std::set<std::set<VertexHandle>> find_non_cell_tets_2(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
+    std::set<std::set<VertexHandle>> find_non_cell_tets_2(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle& edge);
 
-    bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh);
+    bool single_connected_component(const TetrahedralMeshTopologyKernel&  mesh);
 
-    size_t count_connected_components(TetrahedralMeshTopologyKernel& mesh);
+    size_t count_connected_components(const TetrahedralMeshTopologyKernel& mesh);
 
-    bool contains_void(TetrahedralMeshTopologyKernel&  mesh);
+    bool contains_void(const TetrahedralMeshTopologyKernel&  mesh);
 
-    bool manifold_vertex(TetrahedralMeshTopologyKernel& mesh,
+    bool manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
                          const VertexHandle& vertex);
 
-    bool no_double_edges(TetrahedralMeshTopologyKernel& mesh);
+    bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh);
 
-    std::set<std::set<HEH>> find_multi_edges(TetrahedralMeshTopologyKernel& mesh);
+    std::set<std::set<HEH>> find_multi_edges(const TetrahedralMeshTopologyKernel& mesh);
 
-    void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh);
+    void print_mesh_topology(const TetrahedralMeshTopologyKernel& mesh);
 
-    std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh);
+    std::set<std::set<VertexHandle>> find_non_face_triangles(const TetrahedralMeshTopologyKernel& mesh);
 
-    std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(TetrahedralMeshTopologyKernel& mesh, VertexHandle& vertex);
+    std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(const TetrahedralMeshTopologyKernel& mesh, const VertexHandle& vertex);
 }

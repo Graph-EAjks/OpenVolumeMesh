@@ -50,11 +50,10 @@ namespace OpenVolumeMesh {
                 c_vertices[3] == vertex;
     }
 
-    std::set<std::set<VertexHandle>> find_non_cell_tets(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces = true){
+    std::set<std::set<VertexHandle>> find_non_cell_tets(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces = true){
 
 //        int counter = 0;
 
-//        mesh_.create_private_property<int, Entity::Vertex>("visited");
         std::set<std::set<VertexHandle>> non_cell_tets;
 
         // TODO: Maybe it can be faster by marking some vertices/triangles as visited?
@@ -62,32 +61,25 @@ namespace OpenVolumeMesh {
             auto non_face_tris = OpenVolumeMesh::find_non_face_triangles(mesh);
             // check for all non-face triangles, if there exists a fourth vertex which forms a tet with the triangle
             for (auto triangle : non_face_tris) {
-                auto potential_tet_vertex = mesh.request_vertex_property<int>("potential_tet_vertex");
+                auto potential_tet_vertex = mesh.create_private_property<int, Entity::Vertex>("potential_tet_vertex");
                 std::vector<VertexHandle> triangle_vertices;
                 for (auto tri_vertex : triangle) {
                     triangle_vertices.push_back(tri_vertex);
                 }
-//                auto tri_vertex0 = *triangle.begin(), tri_vertex1 = *++triangle.begin(), tri_vertex2 = *++(++triangle.begin());
 
                 // iterate over the neighbors of tri_vertex0 and mark them as a potential tet extension
-//                for (auto vv_it = mesh.vv_iter(tri_vertex0); vv_it.is_valid(); ++vv_it) {
                 for (auto vv_it = mesh.vv_iter(triangle_vertices[0]); vv_it.is_valid(); ++vv_it) {
                     ++potential_tet_vertex[*vv_it];
                 }
                 // iterate over the neighbors of tri_vertex1 and mark them as a potential tet extension
-//                for (auto vv_it = mesh.vv_iter(tri_vertex1); vv_it.is_valid(); ++vv_it) {
                 for (auto vv_it = mesh.vv_iter(triangle_vertices[1]); vv_it.is_valid(); ++vv_it) {
                     ++potential_tet_vertex[*vv_it];
                 }
                 // iterate over the neighbors of tri_vertex2. If any of them is a neighbor of the first two vertices as well,
                 // then we found a non-cell tet
-//                for (auto vv_it = mesh.vv_iter(tri_vertex2); vv_it.is_valid(); ++vv_it) {
                 for (auto vv_it = mesh.vv_iter(triangle_vertices[2]); vv_it.is_valid(); ++vv_it) {
                     if (potential_tet_vertex[*vv_it] == 2){
                         std::set<VertexHandle> non_cell_tet;
-//                        non_cell_tet.insert(tri_vertex0);
-//                        non_cell_tet.insert(tri_vertex1);
-//                        non_cell_tet.insert(tri_vertex2);
 
                         non_cell_tet.insert(triangle_vertices[0]);
                         non_cell_tet.insert(triangle_vertices[1]);
@@ -99,9 +91,10 @@ namespace OpenVolumeMesh {
             }
         }
 
-        for(auto v: mesh.vertices()){
+        for(auto v : mesh.vertices()){
 
-            auto neighbor = mesh.request_vertex_property<bool>("neighbor");
+//            auto neighbor = mesh.request_vertex_property<bool>("neighbor");
+            auto neighbor = mesh.create_private_property<bool, Entity::Vertex>("neighbor");
 
             for(auto vv_it = mesh.vv_iter(v); vv_it.is_valid(); ++vv_it){
                 neighbor[*vv_it] = true;
@@ -155,17 +148,13 @@ namespace OpenVolumeMesh {
                             }
                             bool faces_exist = true;
                             std::vector<VertexHandle> cell_vertices;
-                            for (auto v : partial_cell) {
-                                cell_vertices.push_back(v);
+                            for (auto v2 : partial_cell) {
+                                cell_vertices.push_back(v2);
                             }
                             std::vector<std::vector<VertexHandle>> triangles = {{cell_vertices[0], cell_vertices[1], cell_vertices[2]},
                                                                                 {cell_vertices[0], cell_vertices[1], cell_vertices[3]},
                                                                                 {cell_vertices[0], cell_vertices[2], cell_vertices[3]},
                                                                                 {cell_vertices[1], cell_vertices[2], cell_vertices[3]}};
-//                            std::vector<std::vector<VertexHandle>> triangles = {{*partial_cell.begin(), *++partial_cell.begin(), *++(++partial_cell.begin())},
-//                                                                                {*partial_cell.begin(), *++partial_cell.begin(), *++(++(++partial_cell.begin()))},
-//                                                                                {*partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))},
-//                                                                                {*++partial_cell.begin(), *++(++partial_cell.begin()), *++(++(++partial_cell.begin()))}};
                             for (auto triangle : triangles) {
                                 faces_exist &= mesh.halfface(triangle).is_valid();
                             }
@@ -173,8 +162,8 @@ namespace OpenVolumeMesh {
                             if(!found_cell && (!only_check_faces || faces_exist)){
 
                                 if(partial_cell.size() != 4){
-                                    std::cout<<" ERROR - tet does not contain 4 vertices"<<std::endl;
-                                    return {};
+                                    throw Core::detail::invalid_topology_error("tet does not contain 4 vertices");
+                                    return {};//TODO: is this dead code? I think so, but not sure
                                 }
                                 non_cell_tets.insert(partial_cell);
                             }
@@ -187,14 +176,12 @@ namespace OpenVolumeMesh {
         return non_cell_tets;
     }
 
-    std::set<std::set<VertexHandle>> find_non_cell_tets_2(TetrahedralMeshTopologyKernel& mesh, bool only_check_faces) {
+    std::set<std::set<VertexHandle>> find_non_cell_tets_2(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces) {
 
 //        int counter = 0;
 
         std::set<std::set<VertexHandle>> ret;
 
-        //TODO: What's the difference between the following two lines?
-//        auto visited = mesh.request_vertex_property<bool>("visited");
         auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
 
         for(auto v: mesh.vertices()){
@@ -298,16 +285,13 @@ namespace OpenVolumeMesh {
         return vertex_link_intersection == link(mesh, edge);
     }
 
-    bool single_connected_component(TetrahedralMeshTopologyKernel&  mesh){
+    bool single_connected_component(const TetrahedralMeshTopologyKernel&  mesh){
 
-        //TODO: return (count_connected_components(mesh) == 1)?
-
-        if (mesh.n_logical_vertices() == 0) {//TODO: n_vertices?
-//        if (!mesh.vertices_begin().is_valid()) { // mesh contains no vertices, so it is empty
+        if (mesh.n_logical_vertices() == 0) {// mesh contains no vertices, so it is empty
             return false;
         }
 
-        auto visited_prop = mesh.request_vertex_property<bool>("visited", false);
+        auto visited_prop = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
 
         std::set<VertexHandle> to_visit;
         to_visit.insert(*mesh.vertices().first);
@@ -328,23 +312,23 @@ namespace OpenVolumeMesh {
 
         bool all_visited(true);
 
+        //TODO: count visited to be faster?
         for(auto v: mesh.vertices()){
             if(!visited_prop[v]){
                 all_visited = false;
             }
         }
 
-
         return all_visited;
     }
 
     // largely copied from OpenFlipper-Free::Plugin-InfoVolumeMeshObject::VolumeMeshAnalysis
-    size_t count_connected_components(TetrahedralMeshTopologyKernel& mesh) {
-        auto visited = mesh.request_vertex_property<bool>("visited", false);
+    size_t count_connected_components(const TetrahedralMeshTopologyKernel& mesh) {
+        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
         size_t n_connected_components = 0;
 
         size_t n_vertices_found = 0; // for early abort
-        size_t n_vertices = mesh.n_vertices(); //TODO: n_logical_vertices?
+        size_t n_vertices = mesh.n_logical_vertices();
 
         for (const auto &root_vh: mesh.vertices())
         {
@@ -356,7 +340,7 @@ namespace OpenVolumeMesh {
             visited[root_vh] = true;
             ++n_vertices_found;
 
-            std::stack<VH> stack;//TODO: dequeue? See thread in merge request
+            std::stack<VH> stack;//TODO: dequeue? See thread in merge request. Stack is ok, deque also, just not vector
             stack.push(root_vh);
             while(!stack.empty())
             {
@@ -374,9 +358,9 @@ namespace OpenVolumeMesh {
         return n_connected_components;
     }
 
-    bool contains_void(TetrahedralMeshTopologyKernel&  mesh){
+    bool contains_void(const TetrahedralMeshTopologyKernel&  mesh){
 
-        std::vector<FaceHandle> to_visit;
+        std::vector<FaceHandle> to_visit; //TODO: Stack? Queue? Dequeue? Same as above
 
         for(auto f: mesh.faces()){
             if(mesh.is_boundary(f)){
@@ -386,11 +370,12 @@ namespace OpenVolumeMesh {
         }
 
         if(!to_visit.size()){
+            //TODO: throw error
             std::cerr<<" couldn't find a boundary face, which is very weird"<<std::endl;
             return false;
         }
 
-        auto visited = mesh.request_face_property<bool>("visited");
+        auto visited = mesh.create_private_property<bool, Entity::Face>("visited", false);
 
         int iteration_count(0);
 
@@ -428,7 +413,7 @@ namespace OpenVolumeMesh {
         return false;
     }
 
-    bool manifold_vertex(TetrahedralMeshTopologyKernel& mesh,
+    bool manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
                          const VertexHandle& vertex){
 
 
@@ -477,9 +462,8 @@ namespace OpenVolumeMesh {
 
         //std::cout<<" -- initial boundary face : "<<initial_boundary_face<<": "<<mesh.face(initial_boundary_face)<<std::endl;
 
-
-        auto visited_edge = mesh.request_edge_property<bool>("visited");
-        auto visited_face = mesh.request_face_property<bool>("visited");
+        auto visited_edge = mesh.create_private_property<bool, Entity::Edge>("visited", false);
+        auto visited_face = mesh.create_private_property<bool, Entity::Face>("visited", false);
 
         EdgeHandle next_edge(-1);
 
@@ -538,12 +522,12 @@ namespace OpenVolumeMesh {
         return all_visited;
     }
 
-    bool no_double_edges(TetrahedralMeshTopologyKernel& mesh){
+    bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh){
 
-        //TODO: return find_multi_edges(mesh).empty()?
+        //TODO: return std::optional<std::pair<HEH, HEH>> which contains exactly one example of a double edge or nothing instead of bool
 
         for(auto v: mesh.vertices()){
-            auto visited = mesh.request_vertex_property<HalfEdgeHandle>("visited through", HalfEdgeHandle(-1));
+            auto visited = mesh.create_private_property<HalfEdgeHandle, Entity::Vertex>("visited through", HalfEdgeHandle(-1));
 
             for(auto out_he: mesh.outgoing_halfedges(v)){
                 auto visited_he = visited[mesh.to_vertex_handle(out_he)];
@@ -561,12 +545,12 @@ namespace OpenVolumeMesh {
         return true;
     }
 
-    std::set<std::set<HEH>> find_multi_edges(TetrahedralMeshTopologyKernel& mesh) {
+    std::set<std::set<HEH>> find_multi_edges(const TetrahedralMeshTopologyKernel& mesh) {
 
         std::set<std::set<HEH>> multi_edges;
         for(auto v: mesh.vertices()){
             std::set<HEH> empty_heh_set;
-            auto multi_edge_list = mesh.request_vertex_property<std::set<HEH>>("multi_edge_list", empty_heh_set);
+            auto multi_edge_list = mesh.create_private_property<std::set<HEH>, Entity::Vertex>("multi_edge_list", empty_heh_set);
 
             for(auto out_he: mesh.outgoing_halfedges(v)){
                 multi_edge_list[mesh.to_vertex_handle(out_he)].insert(out_he);
@@ -580,7 +564,7 @@ namespace OpenVolumeMesh {
         return multi_edges;
     }
 
-    void print_mesh_topology(TetrahedralMeshTopologyKernel& mesh) {
+    void print_mesh_topology(const TetrahedralMeshTopologyKernel& mesh) {
         std::cout << "Printing mesh topology: " << std::endl;
         std::cout << std::endl;
         std::cout << "Number ob vertices: " << mesh.n_vertices() << std::endl;
@@ -616,9 +600,9 @@ namespace OpenVolumeMesh {
         }
     }
 
-    std::set<std::set<VertexHandle>> find_non_face_triangles(TetrahedralMeshTopologyKernel& mesh) {
+    std::set<std::set<VertexHandle>> find_non_face_triangles(const TetrahedralMeshTopologyKernel& mesh) {
         std::set<std::set<VertexHandle>> found_faces;
-        auto visited = mesh.request_vertex_property<bool>("visited");
+        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
         for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
             auto vertex = *v_it;
             auto found_faces_by_vertex = find_non_face_triangles_around_vertex(mesh, vertex);
@@ -628,14 +612,14 @@ namespace OpenVolumeMesh {
         return found_faces;
     }
 
-    std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(TetrahedralMeshTopologyKernel& mesh, VertexHandle& vertex) {
+    std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(const TetrahedralMeshTopologyKernel& mesh, const VertexHandle& vertex) {
         std::set<std::set<VertexHandle>> res;
 
         // call visited property from find_non_face_triangles method to prevent unnecessary checks
-        auto visited = mesh.request_vertex_property<bool>("visited");
+        auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
 
         // mark the neighbors
-        auto neighbor_prop = mesh.request_vertex_property<bool>("neighbor_prop");
+        auto neighbor_prop = mesh.create_private_property<bool, Entity::Vertex>("neighbor_prop", false);
         std::set<VertexHandle> neighbors;
         for (auto vv_it = mesh.vv_iter(vertex); vv_it.is_valid(); ++vv_it) {
             if (!visited[*vv_it]) {
