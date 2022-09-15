@@ -522,6 +522,26 @@ namespace OpenVolumeMesh {
         return all_visited;
     }
 
+    std::optional<std::pair<HEH, HEH>> contains_double_edges(const TetrahedralMeshTopologyKernel& mesh) {
+        for(auto v: mesh.vertices()){
+            auto visited = mesh.create_private_property<HalfEdgeHandle, Entity::Vertex>("visited through", HalfEdgeHandle(-1));
+
+            for(auto out_he: mesh.outgoing_halfedges(v)){
+                auto visited_he = visited[mesh.to_vertex_handle(out_he)];
+                if(visited_he.idx() == -1){
+                    visited[mesh.to_vertex_handle(out_he)] = out_he;
+                }else{
+                    std::pair<HEH, HEH> ret;
+                    ret.first = visited_he;
+                    ret.second = out_he;
+                    return ret;
+                }
+            }
+        }
+        return std::nullopt;
+    }
+
+    /*
     bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh){
 
         //TODO: return std::optional<std::pair<HEH, HEH>> which contains exactly one example of a double edge or nothing instead of bool
@@ -544,6 +564,7 @@ namespace OpenVolumeMesh {
 
         return true;
     }
+     */
 
     std::set<std::set<HEH>> find_multi_edges(const TetrahedralMeshTopologyKernel& mesh) {
 

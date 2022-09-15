@@ -21,6 +21,8 @@ namespace OpenVolumeMesh{
                                      const VertexHandle& vertex,
                                      const CellHandle& cell);
 
+    //TODO: cell_conains_edge(), cell_contains_face, face_contains_edge, etc.?
+
     /**
      *
      * @param mesh
@@ -44,7 +46,8 @@ namespace OpenVolumeMesh{
     bool manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
                          const VertexHandle& vertex);
 
-    bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh);
+//    bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh);
+    std::optional<std::pair<HEH, HEH>> contains_double_edges(const TetrahedralMeshTopologyKernel& mesh);
 
     std::set<std::set<HEH>> find_multi_edges(const TetrahedralMeshTopologyKernel& mesh);
 

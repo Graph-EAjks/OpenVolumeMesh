@@ -291,22 +291,29 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
     EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex)); // mesh and vertex valid, but vertex not in mesh
 }
 
-TEST_F(TetrahedralMeshBase, no_double_edges) {
+TEST_F(TetrahedralMeshBase, contains_double_edges) {
     TetrahedralMesh &mesh = this->mesh_;
     generate_tetrahedral_mesh(mesh);
 
-    EXPECT_TRUE(OpenVolumeMesh::no_double_edges(mesh));
+    EXPECT_FALSE(OpenVolumeMesh::contains_double_edges(mesh).has_value());
 
     auto heh = *mesh.halfedges_begin();
     auto from_vertex = mesh.from_vertex_handle(heh);
     auto to_vertex = mesh.to_vertex_handle(heh);
     mesh.add_edge(from_vertex, to_vertex, true);
 
-    EXPECT_FALSE(OpenVolumeMesh::no_double_edges(mesh));
+    auto ret = OpenVolumeMesh::contains_double_edges(mesh);
+    EXPECT_TRUE(ret.has_value());
+    auto heh_0 = ret->first;
+    auto heh_1 = ret->second;
+    EXPECT_TRUE((mesh.to_vertex_handle(heh_0) == mesh.to_vertex_handle(heh_1)) ||
+                        (mesh.to_vertex_handle(heh_0) == mesh.from_vertex_handle(heh_1)));
+    EXPECT_TRUE((mesh.from_vertex_handle(heh_0) == mesh.to_vertex_handle(heh_1)) ||
+                (mesh.from_vertex_handle(heh_0) == mesh.from_vertex_handle(heh_1)));
 
     // Test invalid input
     mesh.clear();
-    EXPECT_TRUE(OpenVolumeMesh::no_double_edges(mesh));
+    EXPECT_FALSE(OpenVolumeMesh::contains_double_edges(mesh).has_value());
 }
 
 TEST_F(TetrahedralMeshBase, find_multi_edges) {
