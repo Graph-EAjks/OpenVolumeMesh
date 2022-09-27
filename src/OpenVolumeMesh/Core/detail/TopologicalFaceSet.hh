@@ -6,7 +6,7 @@
 #include <iostream>
 
 //#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
-#include <OpenVolumeMesh/Core/Handles.hh>
+#include "OpenVolumeMesh/Core/Handles.hh"
 
 namespace OpenVolumeMesh {
 
@@ -53,6 +53,8 @@ namespace OpenVolumeMesh {
         TopologicalFaceSet intersection(const TopologicalFaceSet &other) const;
 
         TopologicalFaceSet subtract(const TopologicalFaceSet &other) const;
+
+        void clear();
 
 
     private:

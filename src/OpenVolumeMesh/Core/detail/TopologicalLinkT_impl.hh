@@ -1,4 +1,4 @@
-#include <OpenVolumeMesh/Core/TopologicalLink.hh>
+#include "TopologicalLink.hh"
 
 
 namespace OpenVolumeMesh {

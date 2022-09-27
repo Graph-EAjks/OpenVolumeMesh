@@ -14,8 +14,8 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Core/Iterators.cc
     OpenVolumeMesh/Core/detail/internal_type_name.cc
     OpenVolumeMesh/Core/Properties/PropertyStorageBase.cc
-        OpenVolumeMesh/Core/TopologicalFaceSet.cc
-        OpenVolumeMesh/Core/TopologyChecks.cc
+        OpenVolumeMesh/Core/detail/TopologicalFaceSet.cc
+        OpenVolumeMesh/Core/detail/TopologyChecks.cc
     OpenVolumeMesh/IO/enums.cc
     OpenVolumeMesh/IO/PropertyCodecs.cc
     OpenVolumeMesh/IO/detail/BinaryIStream.cc

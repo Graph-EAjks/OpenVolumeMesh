@@ -1,6 +1,6 @@
 #pragma once
 
-#include <OpenVolumeMesh/Core/TopologicalFaceSet.hh>
+#include "TopologicalFaceSet.hh"
 
 namespace OpenVolumeMesh {
 /* Computes the 'Link' of a vertex in the topological sense */

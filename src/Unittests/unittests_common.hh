@@ -5,6 +5,7 @@
 #include <OpenVolumeMesh/Mesh/TetrahedralMesh.hh>
 #include <OpenVolumeMesh/FileManager/TypeNames.hh>
 #include <OpenVolumeMesh/Geometry/VectorT.hh>
+#include <OpenVolumeMesh/Core/detail/TopologicalFaceSet.hh>
 
 #ifdef __clang__
 #  pragma GCC diagnostic ignored "-Weverything"
@@ -129,7 +130,7 @@ protected:
   }
 
   // Generate a basic tetrahedral mesh consisting of one tet
-  void generate_tetrahedral_mesh(TetrahedralMesh& _mesh);
+  static void generate_tetrahedral_mesh(TetrahedralMesh& _mesh);
   // Generate a basic tetrahedral mesh consisting of two tets sharing exactly one face
   void generate_tetrahedral_mesh_2(TetrahedralMesh& _mesh);
   // generate a basic tetrahedral _mesh consisting of one tet. However, the tet cell does not exist, while all
@@ -189,6 +190,35 @@ protected:
 
   // This member will be accessible in all tests
   TetrahedralMesh mesh_;
+};
+
+// simple test base for TopologicalLink and TopologicalFaceSet
+
+class TopologicalLinkBase: public testing::Test {
+
+protected:
+
+    typedef OpenVolumeMesh::VertexHandle    VertexHandle;
+    typedef OpenVolumeMesh::HalfEdgeHandle  HalfEdgeHandle;
+    typedef OpenVolumeMesh::EdgeHandle      EdgeHandle;
+    typedef OpenVolumeMesh::HalfFaceHandle  HalfFaceHandle;
+    typedef OpenVolumeMesh::FaceHandle      FaceHandle;
+    typedef OpenVolumeMesh::CellHandle      CellHandle;
+
+    // The order of the _vertices is important, as other code relies on _vertices 0 and 4 being incident to all three tets
+    void generate_triTet(TetrahedralMesh& _mesh, std::vector<VertexHandle>& _vertices);
+};
+
+class TopologicalFaceSetBase: public testing::Test {
+
+protected:
+
+    typedef OpenVolumeMesh::TopologicalFaceSet TopologicalFaceSet;
+
+    void generate_set_of_tet(TopologicalFaceSet& _set);
+
+    TopologicalFaceSet set;
+
 };
 
 

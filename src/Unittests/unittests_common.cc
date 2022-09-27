@@ -567,3 +567,20 @@ void TetrahedralMeshBase::generate_non_manifold_tet_3T1F(TetrahedralMesh &_mesh)
     _mesh.add_edge(vertices[2], vertices[5]);
     _mesh.add_edge(vertices[3], vertices[5]);
 }
+
+void TopologicalLinkBase::generate_triTet(TetrahedralMesh &_mesh, std::vector<VertexHandle>& _vertices) {
+    _vertices.clear();
+    _mesh.clear();
+
+    for (int i = 0; i < 5; ++i) {
+        _vertices.push_back(_mesh.add_vertex());
+    }
+
+    _mesh.add_cell({_vertices[0], _vertices[1], _vertices[2], _vertices[4]});
+    _mesh.add_cell({_vertices[0], _vertices[2], _vertices[3], _vertices[4]});
+    _mesh.add_cell({_vertices[0], _vertices[3], _vertices[1], _vertices[4]});
+}
+
+void TopologicalFaceSetBase::generate_set_of_tet(TopologicalFaceSet &_set) {
+    _set.clear();
+}

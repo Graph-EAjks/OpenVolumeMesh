@@ -1,5 +1,5 @@
-#include <OpenVolumeMesh/Core/TopologyChecks.hh>
-#include <OpenVolumeMesh/Core/TopologicalLinkT_impl.hh>
+#include "OpenVolumeMesh/Core/TopologyChecks.hh"
+#include "TopologicalLinkT_impl.hh"
 #include <stack>
 
 namespace OpenVolumeMesh {
@@ -48,6 +48,7 @@ namespace OpenVolumeMesh {
                 c_vertices[1] == vertex ||
                 c_vertices[2] == vertex ||
                 c_vertices[3] == vertex;
+
     }
 
     std::set<std::set<VertexHandle>> find_non_cell_tets(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces = true){

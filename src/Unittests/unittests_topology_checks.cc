@@ -2,6 +2,7 @@
 #include "OpenVolumeMesh/FileManager/FileManager.hh"
 
 #include <OpenVolumeMesh/Core/TopologyChecks.hh>
+#include <OpenVolumeMesh/Core/detail/TopologicalLinkT_impl.hh>
 
 using namespace OpenVolumeMesh;
 
@@ -946,6 +947,7 @@ TEST_F(TetrahedralMeshBase, findNonCellTets_2_nonFaceTris) {
     EXPECT_TRUE(found_tets.empty());
 }
 
+/*
 TEST_F(TetrahedralMeshBase, findNonCellTets_performance) {
 
     TetrahedralMesh &mesh = this->mesh_;
@@ -978,6 +980,7 @@ TEST_F(TetrahedralMeshBase, findNonCellTets_performance) {
     std::cout << "findNonCellTets_2 time: " << diff << std::endl;
     EXPECT_TRUE(true);
 }
+ */
 
 TEST_F(TetrahedralMeshBase, countConnectedComponents) {
 
@@ -991,4 +994,185 @@ TEST_F(TetrahedralMeshBase, countConnectedComponents) {
 
     generate_tets_two_connected_components(mesh);
     EXPECT_EQ(2, OpenVolumeMesh::count_connected_components(mesh));
+}
+
+TEST_F(TopologicalLinkBase, faceSetTest_link) {
+
+    TetrahedralMesh tetMesh;
+    std::vector<VertexHandle> mesh_vertices;
+    generate_triTet(tetMesh, mesh_vertices);
+
+    // manually compute link of one of the vertices incident to all cells
+    // first, find one of the two vertices incident to all tets and find the other one, called opposite
+    // we can assume that vertices 0 and 4 are incident to all tets, see TopologicalLinkBase::generate_triTet()
+    VertexHandle vertex = mesh_vertices[0];
+    VertexHandle opposite = mesh_vertices[4];
+    // all vertices apart from the original are in the link
+    std::set<VertexHandle> vertices = {
+            mesh_vertices[1], mesh_vertices[2], mesh_vertices[3], mesh_vertices[4]
+    };
+    ASSERT_EQ(vertices.size(), 4);
+    // the six edges that aren't incident to the original vertex are in the link
+    std::set<EdgeHandle> edges;
+    for (auto e_it = tetMesh.edges_begin(); e_it != tetMesh.edges_end(); ++e_it) {
+        auto heh = tetMesh.halfedge_handle(*e_it, 0);
+        if (tetMesh.to_vertex_handle(heh) == vertex ||
+            tetMesh.from_vertex_handle(heh) == vertex) {
+            continue;
+        }
+        edges.insert(*e_it);
+    }
+    ASSERT_EQ(edges.size(), 6);
+    // the three faces incident to the opposite vertex are in the link
+    std::set<FaceHandle> faces;
+    for (auto f_it = tetMesh.faces_begin(); f_it != tetMesh.faces_end(); ++f_it) {
+        bool vertex_found = false;
+        for (auto fv_it = tetMesh.fv_iter(*f_it); fv_it.valid(); ++fv_it) {
+            if ( *fv_it == vertex) {
+                vertex_found = true;
+                break;
+            }
+        }
+        if (!vertex_found) {
+            faces.insert(*f_it);
+        }
+    }
+    ASSERT_EQ(faces.size(), 3);
+    std::set<CellHandle> cells;
+    // there is no cell in the link
+    ASSERT_EQ(cells.size(), 0);
+
+    TopologicalFaceSet expectedLink = {vertices,edges, faces, cells};
+    TopologicalFaceSet result = OpenVolumeMesh::link(tetMesh, vertex);
+    EXPECT_EQ(expectedLink, result);
+
+    // same for the link of an edge of a tritet, first one of the three edges, which are incident to only one tet
+    vertices.clear();
+    edges.clear();
+    faces.clear();
+    cells.clear();
+    // choose an edge, which is only incident to one cell, i.e. the valence is 2
+    EdgeHandle edge;
+    for (auto e_it = tetMesh.edges_begin(); e_it != tetMesh.edges_end(); ++e_it) {
+        if (tetMesh.valence(*e_it) == 2) {
+            edge = *e_it;
+            break;
+        }
+    }
+    auto heh = tetMesh.halfedge_handle(edge, 0);
+    // the two vertices not incident to the edge but to the cell are in the link
+    auto cell = *tetMesh.ec_iter(edge); // there should only be one incident cell
+    for (auto cv_it = tetMesh.cv_iter(cell); cv_it.valid(); ++cv_it) {
+        if (*cv_it != tetMesh.to_vertex_handle(heh) &&
+            *cv_it != tetMesh.from_vertex_handle(heh)) {
+            vertices.insert(*cv_it);
+        }
+    }
+    ASSERT_EQ(vertices.size(), 2);
+    // the edge not adjacent to the original edge but incident to the cell is in the link
+    cell = *tetMesh.ec_iter(edge); //dito
+    for (auto ce_it = tetMesh.ce_iter(cell); ce_it.is_valid(); ++ce_it) {
+        auto ce_heh = tetMesh.halfedge_handle(*ce_it, 0);
+        if (tetMesh.to_vertex_handle(ce_heh) != tetMesh.to_vertex_handle(heh) &&
+            tetMesh.to_vertex_handle(ce_heh)!= tetMesh.from_vertex_handle(heh) &&
+            tetMesh.from_vertex_handle(ce_heh) != tetMesh.to_vertex_handle(heh) &&
+            tetMesh.from_vertex_handle(ce_heh)!= tetMesh.from_vertex_handle(heh)) {
+            edges.insert(*ce_it);
+        }
+    }
+    ASSERT_EQ(edges.size(), 1);
+    // There is no face in the link
+    ASSERT_EQ(faces.size(), 0);
+    // there are no cells in the link
+    ASSERT_EQ(cells.size(), 0);
+
+    expectedLink = { vertices, edges, faces, cells};
+    result = OpenVolumeMesh::link(tetMesh, edge);
+    EXPECT_EQ(expectedLink, result);
+
+    // second, another edge, this time one that is incident to two cells
+    vertices.clear();
+    edges.clear();
+    faces.clear();
+    cells.clear();
+    // as we know, that the central edge, which is incident to all three cells, is edge(0,4), we can just take edge(0,1)
+    bool found = false;
+    for (auto out_heh_iter = tetMesh.outgoing_halfedges(mesh_vertices[0]).first; out_heh_iter.is_valid(); ++out_heh_iter) {
+        if (tetMesh.to_vertex_handle(*out_heh_iter) == mesh_vertices[1]) {
+            edge = tetMesh.edge_handle(*out_heh_iter);
+            heh = *out_heh_iter;
+            found = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(found);
+    // all vertices not incident to this edge are in its link
+    for (auto v_it = tetMesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        if (*v_it != tetMesh.from_vertex_handle(heh) &&
+            *v_it != tetMesh.to_vertex_handle(heh)) {
+            vertices.insert(*v_it);
+        }
+    }
+    ASSERT_EQ(vertices.size(), 3);
+    // all (both) edges incident only to link vertices and incident to one of the two incident cells are in the link
+    // i.e. both edges incident only to link vertices with valence 3
+    for (auto e_it = tetMesh.edges_begin(); e_it.is_valid(); ++e_it) {
+        auto heh_it = tetMesh.halfedge_handle(*e_it, 0);
+        if (((vertices.find(tetMesh.to_vertex_handle(heh_it))) != vertices.end()) &&
+            ((vertices.find(tetMesh.from_vertex_handle(heh_it))) != vertices.end()) &&
+            (tetMesh.valence(*e_it) == 3)) {
+            edges.insert(*e_it);
+        }
+    }
+    ASSERT_EQ(edges.size(), 2);
+    // There are no faces in the link
+    ASSERT_EQ(faces.size(), 0);
+    // There are no cells in the link
+    ASSERT_EQ(cells.size(), 0);
+    expectedLink = {vertices, edges, faces, cells};
+    result = link(tetMesh, edge);
+    EXPECT_EQ(expectedLink, result);
+
+    // third, even another edge, this time the one with three incident cells
+    vertices.clear();
+    edges.clear();
+    faces.clear();
+    cells.clear();
+    // again, we know that the edge(0,4) is the one we are looking for
+    found = false;
+    for (auto out_heh_iter = tetMesh.outgoing_halfedges(mesh_vertices[0]).first; out_heh_iter.is_valid(); ++out_heh_iter) {
+        if (tetMesh.to_vertex_handle(*out_heh_iter) == mesh_vertices[4]) {
+            edge = tetMesh.edge_handle(*out_heh_iter);
+            heh = *out_heh_iter;
+            found = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(found);
+    // all vertices not incident to the edge are in the link
+    for (auto v_it = tetMesh.vertices_begin(); v_it.is_valid(); ++v_it) {
+        if (*v_it != tetMesh.from_vertex_handle(heh) &&
+            *v_it != tetMesh.to_vertex_handle(heh)) {
+            vertices.insert(*v_it);
+        }
+    }
+    ASSERT_EQ(vertices.size(), 3);
+    // all edges not adjacent to the edge are in the link
+    for (auto e_it = tetMesh.edges_begin(); e_it.is_valid(); ++e_it) {
+        auto heh_it = tetMesh.halfedge_handle(*e_it, 0);
+        if (tetMesh.from_vertex_handle(heh) != tetMesh.from_vertex_handle(heh_it) &&
+            tetMesh.from_vertex_handle(heh) != tetMesh.to_vertex_handle(heh_it) &&
+            tetMesh.to_vertex_handle(heh) != tetMesh.from_vertex_handle(heh_it) &&
+            tetMesh.to_vertex_handle(heh) != tetMesh.to_vertex_handle(heh_it)) {
+            edges.insert(*e_it);
+        }
+    }
+    ASSERT_EQ(edges.size(), 3);
+    // there are no faces in the link
+    ASSERT_EQ(faces.size(), 0);
+    // there are no cells in the link
+    ASSERT_EQ(cells.size(), 0);
+    expectedLink = { vertices, edges, faces, cells};
+    result = link(tetMesh, edge);
+    EXPECT_EQ(expectedLink, result);
 }

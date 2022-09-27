@@ -3,7 +3,7 @@
 #include <OpenVolumeMesh/Config/Export.hh>
 #include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
-#include <OpenVolumeMesh/Core/TopologicalLink.hh>
+#include "OpenVolumeMesh/Core/detail/TopologicalLink.hh"
 #include <OpenVolumeMesh/Core/detail/exceptions.hh>
 
 namespace OpenVolumeMesh{
@@ -21,7 +21,7 @@ namespace OpenVolumeMesh{
                                      const VertexHandle& vertex,
                                      const CellHandle& cell);
 
-    //TODO: cell_conains_edge(), cell_contains_face, face_contains_edge, etc.?
+    //TODO: cell_conains_edge(), cell_contains_face, face_contains_edge, etc.? Should these be here or in TetrahedralMeshTopologyKernel?
 
     /**
      *

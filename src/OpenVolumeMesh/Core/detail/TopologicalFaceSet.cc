@@ -1,4 +1,4 @@
-#include <OpenVolumeMesh/Core/TopologicalFaceSet.hh>
+#include "TopologicalFaceSet.hh"
 
 
 namespace OpenVolumeMesh {
@@ -121,6 +121,13 @@ namespace OpenVolumeMesh {
         }
         std::cout << "}";
         return os;
+    }
+
+    void TopologicalFaceSet::clear() {
+        vertices_.clear();
+        edges_.clear();
+        faces_.clear();
+        cells_.clear();
     }
 
 }
