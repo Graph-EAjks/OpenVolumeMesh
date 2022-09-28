@@ -4,14 +4,14 @@
 
 namespace OpenVolumeMesh {
 
-    CellHandle cell_exists(const TetrahedralMeshTopologyKernel& mesh,
+    std::optional<CellHandle> cell_exists(const TetrahedralMeshTopologyKernel& mesh,
                            const std::vector<VertexHandle>& cell_vertices) {
         if(cell_vertices.size() == 4){
             for(auto vc_it = mesh.vc_iter(cell_vertices[0]); vc_it.is_valid(); ++vc_it){
                 int found_vertices_count(0);
                 for(auto cv_it = mesh.cv_iter(*vc_it); cv_it.is_valid(); ++cv_it){
                     if(std::find(cell_vertices.begin(), cell_vertices.end(), *cv_it) != cell_vertices.end()){
-                        found_vertices_count++;
+                        ++found_vertices_count;
                     }
                 }
 
@@ -20,7 +20,7 @@ namespace OpenVolumeMesh {
                 }
             }
         }
-        return CellHandle(-1);
+        return std::nullopt;
     }
 
     bool face_contains_vertex(const TetrahedralMeshTopologyKernel& mesh,
@@ -274,6 +274,8 @@ namespace OpenVolumeMesh {
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle edge){
 
+        return OpenVolumeMesh::link_condition(mesh, edge);
+
         auto from_vertex = mesh.edge(edge).from_vertex();
         auto to_vertex = mesh.edge(edge).to_vertex();
 
@@ -288,44 +290,35 @@ namespace OpenVolumeMesh {
 
     bool single_connected_component(const TetrahedralMeshTopologyKernel&  mesh){
 
-        if (mesh.n_logical_vertices() == 0) {// mesh contains no vertices, so it is empty
+        if (mesh.n_logical_vertices() == 0) {
+            // mesh contains no vertices, so it is empty, so there is not exactly one connected component
             return false;
         }
 
-        auto visited_prop = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
+        //TODO: check in other places, if normal property needs to be replaced by private property
+        auto detected_prop = mesh.create_private_property<bool, Entity::Vertex>("detected", false);
 
-//        std::set<VertexHandle> to_visit;
         std::stack<VertexHandle> to_visit;
-//        to_visit.insert(*mesh.vertices().first);
         to_visit.push(*mesh.vertices().first);
+        detected_prop[*mesh.vertices().first] = true;
+
+        size_t n_visited = 0;
 
         while(!to_visit.empty()){
-//            auto next = *to_visit.begin();
             auto next = to_visit.top();
-//            to_visit.erase(to_visit.begin());
             to_visit.pop();
 
-            visited_prop[next] = true;
+            ++n_visited;
 
-            for(auto out_he_it = mesh.outgoing_halfedges(next).first; out_he_it.is_valid(); ++out_he_it){
-                auto to_vertex = mesh.to_vertex_handle(*out_he_it);
-                if(!visited_prop[to_vertex]){
-//                    to_visit.insert(to_vertex);
-                    to_visit.push(to_vertex);
+            for (auto vv_it = mesh.vv_iter(next); vv_it.is_valid(); ++vv_it) {
+                if(!detected_prop[*vv_it]){
+                    detected_prop[*vv_it] = true;
+                    to_visit.push(*vv_it);
                 }
             }
         }
 
-        bool all_visited(true);
-
-        //TODO: count visited to be faster?
-        for(auto v: mesh.vertices()){
-            if(!visited_prop[v]){
-                all_visited = false;
-            }
-        }
-
-        return all_visited;
+        return (n_visited == mesh.n_logical_vertices());
     }
 
     // largely copied from OpenFlipper-Free::Plugin-InfoVolumeMeshObject::VolumeMeshAnalysis
@@ -427,8 +420,8 @@ namespace OpenVolumeMesh {
         return false;
     }
 
-    bool manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
-                         const VertexHandle vertex){
+    bool is_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
+                            const VertexHandle vertex){
 
 
         if (!mesh.is_valid(vertex)) {
@@ -638,43 +631,6 @@ namespace OpenVolumeMesh {
     }
      */
 
-    std::ostream &operator<<(std::ostream &os, const TetrahedralMeshTopologyKernel &mesh) {
-        os  << "Printing mesh topology: " << std::endl;
-        std::cout << std::endl;
-        std::cout << "Number ob vertices: " << mesh.n_vertices() << std::endl;
-        std::cout << std::endl;
-        std::cout << "Number of edges: " << mesh.n_edges() << std::endl;
-        int counter = 0;
-        for (auto e_it = mesh.edges_begin(); e_it.is_valid(); ++e_it) {
-            auto heh = mesh.halfedge_handle(*e_it, 0);
-            std::cout << counter << ": " << mesh.from_vertex_handle(heh).idx() << "-" << mesh.to_vertex_handle(heh).idx() << std::endl;
-            ++counter;
-        }
-        std::cout << std::endl;
-        std::cout << "Number of faces: " << mesh.n_faces() << std::endl;
-        counter = 0;
-        for (auto f_it = mesh.faces_begin(); f_it.is_valid(); ++f_it) {
-            std::cout << counter << ": ";
-            for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.is_valid(); ++f_he_it) {
-                std::cout << (*f_he_it).idx() << "-";
-            }
-            std::cout << '\b' << " " << std::endl;
-            ++counter;
-        }
-        std::cout << std::endl;
-        std::cout << "Number of cells: " << mesh.n_cells() << std::endl;
-        counter = 0;
-        for (auto c_it = mesh.cells_begin(); c_it.is_valid(); ++c_it) {
-            std::cout << counter << ": ";
-            for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.is_valid(); ++c_hf_it) {
-                std::cout << (*c_hf_it).idx() << "-";
-            }
-            std::cout << '\b' << " " << std::endl;
-            ++counter;
-        }
-        return os;
-    }
-
     std::set<std::set<VertexHandle>> find_non_face_triangles(const TetrahedralMeshTopologyKernel& mesh) {
         std::set<std::set<VertexHandle>> found_faces;
         auto visited = mesh.create_private_property<bool, Entity::Vertex>("visited", false);
@@ -716,5 +672,43 @@ namespace OpenVolumeMesh {
             }
         }
         return res;
+    }
+
+
+    std::ostream &operator<<(std::ostream &os, const TetrahedralMeshTopologyKernel &mesh) {
+        os  << "Printing mesh topology: " << std::endl;
+        std::cout << std::endl;
+        std::cout << "Number ob vertices: " << mesh.n_vertices() << std::endl;
+        std::cout << std::endl;
+        std::cout << "Number of edges: " << mesh.n_edges() << std::endl;
+        int counter = 0;
+        for (auto e_it = mesh.edges_begin(); e_it.is_valid(); ++e_it) {
+            auto heh = mesh.halfedge_handle(*e_it, 0);
+            std::cout << counter << ": " << mesh.from_vertex_handle(heh).idx() << "-" << mesh.to_vertex_handle(heh).idx() << std::endl;
+            ++counter;
+        }
+        std::cout << std::endl;
+        std::cout << "Number of faces: " << mesh.n_faces() << std::endl;
+        counter = 0;
+        for (auto f_it = mesh.faces_begin(); f_it.is_valid(); ++f_it) {
+            std::cout << counter << ": ";
+            for (auto f_he_it = mesh.fhe_iter(*f_it); f_he_it.is_valid(); ++f_he_it) {
+                std::cout << (*f_he_it).idx() << "-";
+            }
+            std::cout << '\b' << " " << std::endl;
+            ++counter;
+        }
+        std::cout << std::endl;
+        std::cout << "Number of cells: " << mesh.n_cells() << std::endl;
+        counter = 0;
+        for (auto c_it = mesh.cells_begin(); c_it.is_valid(); ++c_it) {
+            std::cout << counter << ": ";
+            for (auto c_hf_it = mesh.chf_iter(*c_it); c_hf_it.is_valid(); ++c_hf_it) {
+                std::cout << (*c_hf_it).idx() << "-";
+            }
+            std::cout << '\b' << " " << std::endl;
+            ++counter;
+        }
+        return os;
     }
 }

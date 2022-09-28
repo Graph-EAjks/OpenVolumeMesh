@@ -11,38 +11,37 @@ namespace OpenVolumeMesh {
         EdgeSet edges;
         FaceSet faces;
 
-        for (auto v = mesh.vv_iter(vertex); v.valid(); v++) {
+        // all neighbouring vertices are in the link
+        for (auto v = mesh.vv_iter(vertex); v.valid(); ++v) {
             vertices.insert(*v);
         }
 
-        for (auto c = mesh.vc_iter(vertex); c.valid(); c++) {
-            //std::cout<<" - checking neighbor cell "<<*c<<std::endl;
+        // all edges, which are opposite of the vertex in a face are in the link and all faces which are opposite of
+        // the vertex in a tet including all their edges are in the link.
+        for (auto c = mesh.vc_iter(vertex); c.valid(); ++c) {
 
-            for (auto hf = mesh.chf_iter(*c); hf.valid(); hf++) {
-                //std::cout<<" -- checking halfface "<<*hf<<std::endl;
+            for (auto hf = mesh.chf_iter(*c); hf.valid(); ++hf) {
                 bool found(false);
-                for (auto v = mesh.hfv_iter(*hf); v.valid(); v++) {
-                    //std::cout<<" --- checking vertex "<<*v<<std::endl;
+                for (auto v = mesh.hfv_iter(*hf); v.valid(); ++v) {
                     if (*v == vertex) {
                         found = true;
                         break;
                     }
                 }
+
+                // the face does not contain the original vertex, so it is on the opposite side of the tet
                 if (!found) {
-                    //std::cout<<" --> face "<<mesh.face_handle(*hf)<<" is opposite"<<std::endl;
                     faces.insert(mesh.face_handle(*hf));
-                    for (auto e = mesh.hfe_iter(*hf); e.valid(); e++) {
-                        // std::cout<<" ----> inserting edge "<<*e<<std::endl;
-                        edges.insert(*e);
-                        //vertices.insert(mesh.edge(*e).from_vertex());
-                        //vertices.insert(mesh.edge(*e).to_vertex());
+                    for (auto e = mesh.hfe_iter(*hf); e.valid(); ++e) {
+                        edges.insert(*e); // an edge might be inserted more than once, but that's ok as edges is a set
                     }
                 }
             }
         }
 
-        for (auto f = mesh.vf_iter(vertex); f.valid(); f++) {
-            for (auto e = mesh.fe_iter(*f); e.valid(); e++) {
+        // also include edges which are not part of an incident cell of the vertex, but only of an incident face
+        for (auto f = mesh.vf_iter(vertex); f.valid(); ++f) {
+            for (auto e = mesh.fe_iter(*f); e.valid(); ++e) {
                 bool found(false);
                 if (mesh.edge(*e).to_vertex() == vertex ||
                     mesh.edge(*e).from_vertex() == vertex) {
@@ -62,33 +61,25 @@ namespace OpenVolumeMesh {
     TopologicalFaceSet link(const MeshT &mesh,
                             const EdgeHandle edge) {
 
-
         VertexSet vertices;
         EdgeSet edges;
 
         auto from_vertex = mesh.edge(edge).from_vertex();
         auto to_vertex = mesh.edge(edge).to_vertex();
 
-        //std::cout<<" building edge link for edge "<<edge<<" : "<<from_vertex<<" -> "<<to_vertex<<std::endl;
+        // all edges opposite of a tet including their end vertices are in the link
+        for (auto c = mesh.ec_iter(edge); c.valid(); ++c) {
 
-        //std::cout<<" cell count : "<<mesh.n_cells()<<std::endl;
-
-        for (auto c = mesh.ec_iter(edge); c.valid(); c++) {
-            //std::cout<<" -- checking cell "<<*c<<std::endl;
-
-            for (auto e = mesh.ce_iter(*c); e.valid(); e++) {
+            for (auto e = mesh.ce_iter(*c); e.valid(); ++e) {
 
                 auto other_from_vertex = mesh.edge(*e).from_vertex();
                 auto other_to_vertex = mesh.edge(*e).to_vertex();
 
-                //std::cout<<" ---- checking edge "<<*e<<" : "<<other_from_vertex<<" -> "<<other_to_vertex<<std::endl;
-
+                // check if found edge is adjacent to the original edge
                 if (from_vertex != other_from_vertex &&
                     from_vertex != other_to_vertex &&
                     to_vertex != other_from_vertex &&
                     to_vertex != other_to_vertex) {
-
-                    //std::cout<<" ----> found link edge "<<std::endl;
 
                     edges.insert(*e);
                     vertices.insert(other_from_vertex);
@@ -97,9 +88,9 @@ namespace OpenVolumeMesh {
             }
         }
 
-
-        for (auto f = mesh.ef_iter(edge); f.valid(); f++) {
-            for (auto v = mesh.fv_iter(*f); v++;) {
+        // also check for neighbouring vertices not incident to the same cell
+        for (auto f = mesh.ef_iter(edge); f.valid(); ++f) {
+            for (auto v = mesh.fv_iter(*f); ++v;) {
                 if (*v != mesh.edge(edge).to_vertex() &&
                     *v != mesh.edge(edge).from_vertex()) {
                     vertices.insert(*v);
@@ -134,6 +125,7 @@ namespace OpenVolumeMesh {
 
         auto vertex_link_intersection = link(mesh, from_vertex).intersection(link(mesh, to_vertex));
 
+        //TODO: comment why this holds
         if (vertex_link_intersection.faces().size()) {
             return false;
         }

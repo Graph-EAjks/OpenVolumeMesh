@@ -5,7 +5,6 @@
 #include <set>
 #include <iostream>
 
-//#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
 #include "OpenVolumeMesh/Core/Handles.hh"
 
 /**
@@ -23,12 +22,12 @@ namespace OpenVolumeMesh {
 /** \brief  a set of Faces in the topological sense
  * i.e. vertices, edges, triangles and tetrahedra are all 'faces'
  * This, however, only stores the first three because it's meant to be used to represent the
- * "Link" of a vertex or an edge (see Links.hh)
+ * "Link" of a vertex or an edge (see TopologicalLink.hh)
  */
     class TopologicalFaceSet {
     public:
 
-        TopologicalFaceSet() {};
+        TopologicalFaceSet() = default;
 
         TopologicalFaceSet(const std::initializer_list<OpenVolumeMesh::VertexHandle> &vertices,
                            const std::initializer_list<OpenVolumeMesh::EdgeHandle> &edges,
@@ -36,14 +35,19 @@ namespace OpenVolumeMesh {
                            const std::initializer_list<OpenVolumeMesh::CellHandle> &cells);
 
 
-        TopologicalFaceSet(const VertexSet &vertices,
-                           const EdgeSet &edges,
-                           const FaceSet &faces,
-                           const CellSet &cells);
+        TopologicalFaceSet(VertexSet vertices,
+                           EdgeSet edges,
+                           FaceSet faces,
+                           CellSet cells);
 
         bool operator==(const TopologicalFaceSet &other) const;
 
         bool operator!=(const TopologicalFaceSet &other) const;
+
+        /* Computes the per-face-type intersection between two sets.*/
+        TopologicalFaceSet intersection(const TopologicalFaceSet &other) const;
+
+        TopologicalFaceSet subtract(const TopologicalFaceSet &other) const;
 
         const VertexSet &vertices() const;
 
@@ -53,13 +57,7 @@ namespace OpenVolumeMesh {
 
         const CellSet &cells() const;
 
-        /* Computes the per-face-type intersection between two sets.*/
-        TopologicalFaceSet intersection(const TopologicalFaceSet &other) const;
-
-        TopologicalFaceSet subtract(const TopologicalFaceSet &other) const;
-
         void clear();
-
 
     private:
 

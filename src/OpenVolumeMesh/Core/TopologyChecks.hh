@@ -10,7 +10,7 @@ namespace OpenVolumeMesh{
 
     //TODO: check, which functions rely on tet structure and which can be used for any mesh
 
-    CellHandle cell_exists(const TetrahedralMeshTopologyKernel& mesh,
+    std::optional<CellHandle> cell_exists(const TetrahedralMeshTopologyKernel& mesh,
                                   const std::vector<VertexHandle>& cell_vertices);
 
     bool face_contains_vertex(const TetrahedralMeshTopologyKernel& mesh,
@@ -34,6 +34,7 @@ namespace OpenVolumeMesh{
 
     std::set<std::set<VertexHandle>> find_non_cell_tets_2(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
+    //TODO: test, check if needed here or if it suffices to have it in TopologicalLink.hh
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle edge);
 
@@ -43,18 +44,16 @@ namespace OpenVolumeMesh{
 
     bool contains_void(const TetrahedralMeshTopologyKernel&  mesh);
 
-    bool manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
-                         const VertexHandle vertex);
+    bool is_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
+                            const VertexHandle vertex);
 
-//    bool no_double_edges(const TetrahedralMeshTopologyKernel& mesh);
     std::optional<std::pair<HEH, HEH>> contains_double_edges(const TetrahedralMeshTopologyKernel& mesh);
 
     std::set<std::set<HEH>> find_multi_edges(const TetrahedralMeshTopologyKernel& mesh);
 
-//    void print_mesh_topology(const TetrahedralMeshTopologyKernel& mesh);
-    std::ostream &operator<<(std::ostream &os, const TetrahedralMeshTopologyKernel &mesh);
-
     std::set<std::set<VertexHandle>> find_non_face_triangles(const TetrahedralMeshTopologyKernel& mesh);
 
     std::set<std::set<VertexHandle>> find_non_face_triangles_around_vertex(const TetrahedralMeshTopologyKernel& mesh, const VertexHandle vertex);
+
+    std::ostream &operator<<(std::ostream &os, const TetrahedralMeshTopologyKernel &mesh);
 }

@@ -13,6 +13,7 @@ TEST_F(TetrahedralMeshBase, cell_exists) {
     auto cell_vertices = mesh.get_cell_vertices(*mesh.cells_begin());
     auto cell = OpenVolumeMesh::cell_exists(mesh, cell_vertices);
     // all four vertices should define the tet
+    EXPECT_TRUE(cell.has_value());
     EXPECT_EQ(cell, *mesh.cells_begin());
 
     // test, if cell is not found, if one vertex is missing
@@ -20,7 +21,7 @@ TEST_F(TetrahedralMeshBase, cell_exists) {
     cell_vertices = mesh.get_cell_vertices(*mesh.cells_begin());
     cell_vertices.pop_back();
     cell = OpenVolumeMesh::cell_exists(mesh, cell_vertices);
-    EXPECT_EQ(cell, CellHandle(-1));
+    EXPECT_FALSE(cell.has_value());
 
     // test, if cell is not found for four wrong vertices
     cell_vertices = mesh.get_cell_vertices(*mesh.cells_begin());
@@ -29,22 +30,23 @@ TEST_F(TetrahedralMeshBase, cell_exists) {
     auto cell_vertices_new = {cell_vertices[0], cell_vertices[1], cell_vertices[2], v5 };
     auto cell_new = mesh.add_cell(cell_vertices_new);
     cell = OpenVolumeMesh::cell_exists(mesh, cell_vertices_new);
+    EXPECT_TRUE(cell.has_value());
     EXPECT_EQ(cell, cell_new); // just to make sure, the new cell is setup correctly
     auto cell_vertices_inexistant = {cell_vertices[0], cell_vertices[1], cell_vertices[3], v5 };
     cell = OpenVolumeMesh::cell_exists(mesh, cell_vertices_inexistant);
-    EXPECT_EQ(cell, CellHandle(-1));
+    EXPECT_FALSE(cell.has_value());
 
     // test, if it returns an invalid cell for an invalid input
     generate_tetrahedral_mesh(mesh);
     std::vector<VertexHandle> empty_vertices;
     cell = OpenVolumeMesh::cell_exists(mesh, empty_vertices);
-    EXPECT_EQ(cell, CellHandle(-1)); // valid mesh but invalid vertex list
+    EXPECT_FALSE(cell.has_value()); // valid mesh but invalid vertex list
     cell_vertices = mesh.get_cell_vertices(*mesh.cells_begin());
     mesh.clear();
     cell = OpenVolumeMesh::cell_exists(mesh, cell_vertices);
-    EXPECT_EQ(cell, CellHandle(-1)); // empty mesh but valid vertex list
+    EXPECT_FALSE(cell.has_value()); // empty mesh but valid vertex list
     cell = OpenVolumeMesh::cell_exists(mesh, empty_vertices);
-    EXPECT_EQ(cell, CellHandle(-1)); // empty mesh and empty vertex list
+    EXPECT_FALSE(cell.has_value()); // empty mesh and empty vertex list
 }
 
 TEST_F(TetrahedralMeshBase, face_contains_vertex) {
@@ -62,7 +64,7 @@ TEST_F(TetrahedralMeshBase, face_contains_vertex) {
         for (auto face_vertex : mesh.face_vertices(face)) {
             if (vertex == face_vertex) {
                 found_vertex = true;
-                continue;
+                break;
             }
         }
         if (!found_vertex) {
@@ -161,7 +163,7 @@ TEST_F(TetrahedralMeshBase, contains_void) {
     EXPECT_FALSE(OpenVolumeMesh::contains_void(mesh));
 }
 
-TEST_F(TetrahedralMeshBase, manifold_vertex) {
+TEST_F(TetrahedralMeshBase, is_manifold_vertex) {
     // ------------------------------ //
     // test some manifold meshes
     // ------------------------------ //
@@ -170,7 +172,7 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
 
     auto vertex = *mesh.vertices_begin();
 
-    EXPECT_TRUE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_tetrahedral_mesh_2(mesh); // Two tets sharing exactly one face
     //Assume vertex 0 is in the common edge between the two cells
@@ -178,7 +180,7 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
     ASSERT_TRUE(OpenVolumeMesh::cell_contains_vertex(mesh, vertex, *mesh.cells_begin()));
     ASSERT_TRUE(OpenVolumeMesh::cell_contains_vertex(mesh, vertex, *++mesh.cells_begin()));
 
-    EXPECT_TRUE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     // ------------------------------ //
     // test some non-manifold meshes
@@ -193,7 +195,7 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
 //    for (CellHandle c : mesh.vertex_cells(vertex))
 //        std::cout << c << std::endl;
 
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_2T1E(mesh); // Two tets sharing exactly one edge
     vertex = *mesh.vertices_begin();
@@ -204,8 +206,8 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
     ASSERT_TRUE(OpenVolumeMesh::cell_contains_vertex(mesh, vertex2, *mesh.cells_begin()));
     ASSERT_TRUE(OpenVolumeMesh::cell_contains_vertex(mesh, vertex2, *++mesh.cells_begin()));
 
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex2));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex2));
 
     generate_non_manifold_tet_6T1E(mesh); // Two fans of three tets each sharing exactly one edge
     vertex = *mesh.vertices_begin();
@@ -216,8 +218,8 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
         ASSERT_TRUE(OpenVolumeMesh::cell_contains_vertex(mesh, vertex2, *c_it));
     }
 
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex2));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex2));
 
     generate_non_manifold_tet_1T1F1E(mesh); // One tet and one face sharing exactly one edge
     vertex = *mesh.vertices_begin();
@@ -228,13 +230,13 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
     ASSERT_EQ(mesh.valence(vertex), 4);
     ASSERT_EQ(mesh.valence(vertex2), 4);
 
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex2));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex2));
 
     generate_non_manifold_tet_2F1E(mesh); // Two faces sharing exactly one edge
     vertex = *mesh.vertices_begin();
 
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_3T1V3E(mesh); // Three tets sharing exactly one vertex and pairwise sharing exactly one edge
     vertex = *mesh.vertices_begin();
@@ -245,51 +247,51 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
         ++count;
     }
     ASSERT_EQ(count, 3);
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_1V(mesh); // One isolated vertex
     vertex = *mesh.vertices_begin();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_1E(mesh); // One isolated edge
     vertex = *mesh.vertices_begin();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_1F(mesh); // One isolated face
     vertex = *mesh.vertices_begin();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_1T1F1V(mesh); // One tet and one face sharing exactly one vertex
     // Assume vertex 0 is shared by the tet and the face
     vertex = *mesh.vertices_begin();
     ASSERT_EQ(mesh.valence(vertex), 5);
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_2F1V(mesh); // Two faces sharing exactly one vertex
     // Assume vertex 0 is shared by the two faces
     vertex = *mesh.vertices_begin();
     ASSERT_EQ(mesh.valence(vertex), 4);
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     generate_non_manifold_tet_1F1E1V(mesh); //  One tet and one edge sharing exactly one vertex
     // Assume vertex 0 is share by the face and the edge
     vertex = *mesh.vertices_begin();
     ASSERT_EQ(mesh.valence(vertex), 3);
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
     // ------------------------------ //
     // Test some invalid inputs
     // ------------------------------ //
     vertex.reset();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex)); // vertex not valid
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // vertex not valid
     mesh.clear();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex)); // mesh and vertex not valid
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // mesh and vertex not valid
     generate_non_manifold_tet_1V(mesh); // One isolated vertex
     vertex = *mesh.vertices_begin();
     mesh.clear();
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex)); // mesh not valid
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // mesh not valid
     generate_non_manifold_tet_1V(mesh);
-    EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex)); // mesh and vertex valid, but vertex not in mesh
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // mesh and vertex valid, but vertex not in mesh
 }
 
 TEST_F(TetrahedralMeshBase, contains_double_edges) {

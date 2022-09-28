@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "TopologicalFaceSet.hh"
 
 
@@ -10,11 +12,14 @@ namespace OpenVolumeMesh {
             : vertices_(vertices), edges_(edges), faces_(faces), cells_(cells) {}
 
 
-    TopologicalFaceSet::TopologicalFaceSet(const std::set<OpenVolumeMesh::VertexHandle> &vertices,
-                                           const std::set<OpenVolumeMesh::EdgeHandle> &edges,
-                                           const std::set<OpenVolumeMesh::FaceHandle> &faces,
-                                           const std::set<OpenVolumeMesh::CellHandle> &cells)
-            : vertices_(vertices), edges_(edges), faces_(faces), cells_(cells) {}
+    TopologicalFaceSet::TopologicalFaceSet(std::set<OpenVolumeMesh::VertexHandle> vertices,
+                                           std::set<OpenVolumeMesh::EdgeHandle> edges,
+                                           std::set<OpenVolumeMesh::FaceHandle> faces,
+                                           std::set<OpenVolumeMesh::CellHandle> cells)
+                                           :vertices_(std::move(vertices)),
+                                           edges_(std::move(edges)),
+                                           faces_(std::move(faces)),
+                                           cells_(std::move(cells)) {}
 
 
     bool TopologicalFaceSet::operator==(const TopologicalFaceSet &other) const {
@@ -65,7 +70,6 @@ namespace OpenVolumeMesh {
 
         return {vertices, edges, faces, cells};
     }
-
 
     TopologicalFaceSet TopologicalFaceSet::subtract(const TopologicalFaceSet &other) const {
 
@@ -129,5 +133,4 @@ namespace OpenVolumeMesh {
         faces_.clear();
         cells_.clear();
     }
-
 }
