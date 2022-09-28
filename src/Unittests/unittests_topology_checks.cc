@@ -1234,3 +1234,55 @@ TEST_F(TopologicalLinkBase, faceSetTest_linkCondition) {
     ASSERT_TRUE(found);
     EXPECT_FALSE(link_condition(tetMesh, edge));
 }
+
+TEST_F(TopologicalLinkBase, faceSetTest_intersection_and_subtraction) {
+    TetrahedralMesh tetMesh;
+    std::vector<VertexHandle> vertices;
+    generate_triTet(tetMesh, vertices);
+    std::vector<EdgeHandle> edges;
+    std::vector<FaceHandle> faces;
+    std::vector<CellHandle> cells;
+
+    for (auto e_it = tetMesh.edges_begin(); e_it.is_valid(); ++e_it) {
+        edges.push_back(*e_it);
+    }
+    for (auto f_it = tetMesh.faces_begin(); f_it.is_valid(); ++f_it) {
+        faces.push_back(*f_it);
+    }
+    for (auto c_it = tetMesh.cells_begin(); c_it.is_valid(); ++c_it) {
+        cells.push_back(*c_it);
+    }
+    ASSERT_EQ(vertices.size(), 5);
+    ASSERT_EQ(edges.size(), 10);
+    ASSERT_EQ(faces.size(), 9);
+    ASSERT_EQ(cells.size(), 3);
+
+    std::set<VertexHandle> vertexSet1 = {vertices[0], vertices[1]};
+    std::set<VertexHandle> vertexSet2 = {vertices[1], vertices[2]};
+    std::set<EdgeHandle> edgeSet1 = {edges[0], edges[1]};
+    std::set<EdgeHandle> edgeSet2 = {edges[1], edges[2]};
+    std::set<FaceHandle> faceSet1 = {faces[0], faces[1]};
+    std::set<FaceHandle> faceSet2 = {faces[1], faces[2]};
+    std::set<CellHandle> cellSet1 = {cells[0], cells[1]};
+    std::set<CellHandle> cellSet2 = {cells[1], cells[2]};
+
+    std::set<VertexHandle> expected_vertex_intersection = {vertices[1]};
+    std::set<EdgeHandle> expected_edge_intersection = {edges[1]};
+    std::set<FaceHandle> expected_face_intersection = {faces[1]};
+    std::set<CellHandle> expected_cell_intersection = {cells[1]};
+
+    std::set<VertexHandle> expected_vertex_subtraction = {vertices[0]};
+    std::set<EdgeHandle> expected_edge_subtraction = {edges[0]};
+    std::set<FaceHandle> expected_face_subtraction = {faces[0]};
+    std::set<CellHandle> expected_cell_subtraction = {cells[0]};
+
+    TopologicalFaceSet tfs1 = {vertexSet1, edgeSet1, faceSet1, cellSet1};
+    TopologicalFaceSet tfs2 = {vertexSet2, edgeSet2, faceSet2, cellSet2};
+    TopologicalFaceSet expected_intersection = {expected_vertex_intersection, expected_edge_intersection,
+                                                expected_face_intersection, expected_cell_intersection};
+    TopologicalFaceSet expected_subtraction = {expected_vertex_subtraction, expected_edge_subtraction,
+                                               expected_face_subtraction, expected_cell_subtraction};
+
+    EXPECT_EQ(expected_intersection, tfs1.intersection(tfs2));
+    EXPECT_EQ(expected_subtraction, tfs1.subtract(tfs2));
+}
