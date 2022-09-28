@@ -581,6 +581,23 @@ void TopologicalLinkBase::generate_triTet(TetrahedralMesh &_mesh, std::vector<Ve
     _mesh.add_cell({_vertices[0], _vertices[3], _vertices[1], _vertices[4]});
 }
 
+void TopologicalLinkBase::generate_triangle_without_face(TetrahedralMesh &_mesh) {
+    _mesh.clear();
+    std::vector<VertexHandle> vertices;
+
+    for (int i = 0; i < 6; ++i) {
+        vertices.push_back(_mesh.add_vertex());
+    }
+
+    _mesh.add_face({vertices[0], vertices[1], vertices[5]});
+    _mesh.add_face({vertices[1], vertices[2], vertices[3]});
+    _mesh.add_face({vertices[0], vertices[2], vertices[4]});
+    _mesh.add_face({vertices[0], vertices[4], vertices[5]});
+    _mesh.add_face({vertices[1], vertices[3], vertices[5]});
+    _mesh.add_face({vertices[2], vertices[3], vertices[4]});
+    _mesh.add_face({vertices[3], vertices[4], vertices[5]});
+}
+
 void TopologicalFaceSetBase::generate_set_of_tet(TopologicalFaceSet &_set) {
     _set.clear();
 }

@@ -207,6 +207,9 @@ protected:
 
     // The order of the _vertices is important, as other code relies on _vertices 0 and 4 being incident to all three tets
     void generate_triTet(TetrahedralMesh& _mesh, std::vector<VertexHandle>& _vertices);
+    // generates a triangle outside another triangle, where each vertex of the inner triangle is connected to two
+    // vertices of the outer triangle. This leads to the outer triangle not having a face.
+    void generate_triangle_without_face(TetrahedralMesh& _mesh);
 };
 
 class TopologicalFaceSetBase: public testing::Test {

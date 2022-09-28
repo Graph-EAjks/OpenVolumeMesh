@@ -1176,3 +1176,61 @@ TEST_F(TopologicalLinkBase, faceSetTest_link) {
     result = link(tetMesh, edge);
     EXPECT_EQ(expectedLink, result);
 }
+
+TEST_F(TopologicalLinkBase, faceSetTest_linkCondition) {
+    TetrahedralMesh tetMesh;
+    std::vector<VertexHandle> vertices;
+    generate_triTet(tetMesh, vertices);
+
+    // first, we check the link condition for the central edge, incident to three cells, for this edge, the link
+    // condition should be true
+    // we know that the edge(0,4) is the one we are looking for, see TopologicalLinkBase::generate_triTet();
+    bool found = false;
+    EdgeHandle edge;
+    for (auto out_heh_iter = tetMesh.outgoing_halfedges(vertices[0]).first; out_heh_iter.is_valid(); ++out_heh_iter) {
+        if (tetMesh.to_vertex_handle(*out_heh_iter) == vertices[4]) {
+            edge = tetMesh.edge_handle(*out_heh_iter);
+            found = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(found);
+    EXPECT_TRUE(link_condition(tetMesh, edge));
+
+    // second, check the link condition for one of the three edges incident to only one cell (i.e. incident to two faces)
+    // in this case, the link condition should not be fulfilled
+    for (auto e_it = tetMesh.edges_begin(); e_it != tetMesh.edges_end(); ++e_it) {
+        if (tetMesh.valence(*e_it) == 2) {
+            edge = *e_it;
+            break;
+        }
+    }
+    EXPECT_FALSE(link_condition(tetMesh, edge));
+
+    // third, check it for the last kind of edges in the tritet, the one incident to two cells. In this case, the link
+    // condition should be fulfilled again
+    // as we know, that the central edge, which is incident to all three cells, is edge(0,4), we can just take edge(0,1)
+    found = false;
+    for (auto out_heh_iter = tetMesh.outgoing_halfedges(vertices[0]).first; out_heh_iter.is_valid(); ++out_heh_iter) {
+        if (tetMesh.to_vertex_handle(*out_heh_iter) == vertices[1]) {
+            edge = tetMesh.edge_handle(*out_heh_iter);
+            found = true;
+            break;
+        }
+    }
+    ASSERT_TRUE(found);
+    EXPECT_TRUE(link_condition(tetMesh, edge));
+
+    // check the link condition for a triangle, which is not a face, as described in TopologicalLinkBase::generate_triangle_without_face
+    generate_triangle_without_face(tetMesh);
+    // find one of the border edges, i.e. an edge incident to only one face
+    found = false;
+    for (auto e_it = tetMesh.edges_begin(); e_it.is_valid(); ++e_it) {
+        if (tetMesh.valence(*e_it) == 1) {
+            edge = *e_it;
+            found = true;
+        }
+    }
+    ASSERT_TRUE(found);
+    EXPECT_FALSE(link_condition(tetMesh, edge));
+}
