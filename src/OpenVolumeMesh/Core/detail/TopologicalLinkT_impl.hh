@@ -3,9 +3,9 @@
 
 namespace OpenVolumeMesh {
 
-    template<class _MESH>
-    TopologicalFaceSet link(const _MESH &mesh,
-                            const VertexHandle &vertex) {
+    template<class MeshT>
+    TopologicalFaceSet link(const MeshT &mesh,
+                            const VertexHandle vertex) {
 
         VertexSet vertices;
         EdgeSet edges;
@@ -25,6 +25,7 @@ namespace OpenVolumeMesh {
                     //std::cout<<" --- checking vertex "<<*v<<std::endl;
                     if (*v == vertex) {
                         found = true;
+                        break;
                     }
                 }
                 if (!found) {
@@ -57,9 +58,9 @@ namespace OpenVolumeMesh {
     }
 
 
-    template<class _MESH>
-    TopologicalFaceSet link(const _MESH &mesh,
-                            const EdgeHandle &edge) {
+    template<class MeshT>
+    TopologicalFaceSet link(const MeshT &mesh,
+                            const EdgeHandle edge) {
 
 
         VertexSet vertices;
@@ -112,9 +113,9 @@ namespace OpenVolumeMesh {
     }
 
 
-    template<class _MESH>
-    TopologicalFaceSet link_outsiders(const _MESH &mesh,
-                                      const OpenVolumeMesh::EdgeHandle &edge) {
+    template<class MeshT>
+    TopologicalFaceSet link_outsiders(const MeshT &mesh,
+                                      const OpenVolumeMesh::EdgeHandle edge) {
 
         auto edge_link = link(mesh, edge);
         auto from_vertex_link = link(mesh, mesh.edge(edge).from_vertex());
@@ -124,9 +125,9 @@ namespace OpenVolumeMesh {
     }
 
 
-    template<class _MESH>
-    bool link_condition(const _MESH &mesh,
-                        const EdgeHandle &edge) {
+    template<class MeshT>
+    bool link_condition(const MeshT &mesh,
+                        const EdgeHandle edge) {
 
         auto from_vertex = mesh.edge(edge).from_vertex();
         auto to_vertex = mesh.edge(edge).to_vertex();
@@ -141,9 +142,9 @@ namespace OpenVolumeMesh {
     }
 
 
-    template<class _MESH>
-    bool link_condition(const _MESH &mesh,
-                        const OpenVolumeMesh::HalfEdgeHandle &heh) {
+    template<class MeshT>
+    bool link_condition(const MeshT &mesh,
+                        const OpenVolumeMesh::HalfEdgeHandle heh) {
 
         return link_condition(mesh, mesh.edge_handle(heh));
     }

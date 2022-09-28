@@ -8,6 +8,10 @@
 //#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
 #include "OpenVolumeMesh/Core/Handles.hh"
 
+/**
+ * See class TopologicalLink for a description of this class
+ */
+
 namespace OpenVolumeMesh {
 
     using VertexSet = std::set<OpenVolumeMesh::VertexHandle>;

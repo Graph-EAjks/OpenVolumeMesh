@@ -190,8 +190,8 @@ TEST_F(TetrahedralMeshBase, manifold_vertex) {
 
     vertex = *mesh.vertices_begin();
 
-    for (CellHandle c : mesh.vertex_cells(vertex))
-        std::cout << c << std::endl;
+//    for (CellHandle c : mesh.vertex_cells(vertex))
+//        std::cout << c << std::endl;
 
     EXPECT_FALSE(OpenVolumeMesh::manifold_vertex(mesh, vertex));
 
@@ -991,7 +991,6 @@ TEST_F(TetrahedralMeshBase, countConnectedComponents) {
     generate_tetrahedral_mesh(mesh);
     EXPECT_EQ(1, OpenVolumeMesh::count_connected_components(mesh));
 
-
     generate_tets_two_connected_components(mesh);
     EXPECT_EQ(2, OpenVolumeMesh::count_connected_components(mesh));
 }
@@ -1285,4 +1284,6 @@ TEST_F(TopologicalLinkBase, faceSetTest_intersection_and_subtraction) {
 
     EXPECT_EQ(expected_intersection, tfs1.intersection(tfs2));
     EXPECT_EQ(expected_subtraction, tfs1.subtract(tfs2));
+    EXPECT_TRUE(expected_intersection == tfs1.intersection(tfs2)); // to test ==
+    EXPECT_FALSE(expected_subtraction != tfs1.subtract(tfs2)); // to test !=
 }
