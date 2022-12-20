@@ -21,8 +21,6 @@ namespace OpenVolumeMesh{
                                      const VertexHandle vertex,
                                      const CellHandle cell);
 
-    //TODO: cell_contains_edge(), cell_contains_face, face_contains_edge, etc.? Should these be here or in TetrahedralMeshTopologyKernel?
-
     /**
      *
      * @param mesh
