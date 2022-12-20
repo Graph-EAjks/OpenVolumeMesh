@@ -163,6 +163,8 @@ namespace OpenVolumeMesh {
                             if(!found_cell && (!only_check_faces || faces_exist)){
 
                                 if(partial_cell.size() != 4){
+                                    // It should not be possible to reach this part since we check earlier for the amount
+                                    // of vertices
                                     throw Core::detail::invalid_topology_error("tet does not contain 4 vertices");
                                     return {};//TODO: is this dead code? I think so, but not sure
                                 }
@@ -228,7 +230,7 @@ namespace OpenVolumeMesh {
                         if (!found) {
                             break; //vv_it_3 is not a neighbour of vv_it_2
                         }
-                        // now, we know, that v, vv_it, v_it_2 and vv_it_3 form a tet, now we need to check if the cell exists
+                        // now, we know, that v, vv_it, vv_it_2 and vv_it_3 form a tet, now we need to check if the cell exists
                         bool found_cell = false;
                         for (auto vc_it = mesh.vc_iter(v); vc_it.is_valid(); ++vc_it) {
                             int vertex_count = 0;
@@ -274,7 +276,7 @@ namespace OpenVolumeMesh {
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle edge){
 
-        return OpenVolumeMesh::link_condition(mesh, edge);
+//        return OpenVolumeMesh::link_condition(mesh, edge);
 
         auto from_vertex = mesh.edge(edge).from_vertex();
         auto to_vertex = mesh.edge(edge).to_vertex();
@@ -312,12 +314,14 @@ namespace OpenVolumeMesh {
 
             for (auto vv_it = mesh.vv_iter(next); vv_it.is_valid(); ++vv_it) {
                 if(!detected_prop[*vv_it]){
+                    // only add each vertex exactly once to the stack
                     detected_prop[*vv_it] = true;
                     to_visit.push(*vv_it);
                 }
             }
         }
 
+        // every vertex was visited at most once, so if this condition holds, every vertex must have been visited
         return (n_visited == mesh.n_logical_vertices());
     }
 
@@ -376,6 +380,7 @@ namespace OpenVolumeMesh {
         }
 
         if(!to_visit.size()){
+            // It should not be possible to reach this part
             throw Core::detail::invalid_topology_error("There is no boundary face, which is impossible");
         }
 
@@ -440,8 +445,14 @@ namespace OpenVolumeMesh {
             }
         }
         // if an incident face is incident to no cell, then it is not part of a tet
-        for (auto vc_it = mesh.vc_iter(vertex); vc_it.is_valid(); ++vc_it) {
-            if (mesh.valence(*vc_it) < 1) {
+        for (auto vf_it = mesh.vf_iter(vertex); vf_it.is_valid(); ++vf_it) {
+            auto cells = mesh.face_cells(*vf_it);
+            if (cells.size() != 2) {
+                // Every face has two incident cells, so it should not be possible to reach this part
+                return false;
+            }
+            if (!mesh.is_valid(cells.at(0)) && !mesh.is_valid(cells.at(1))) {
+                // At least one of the incident cells of the face has to exist
                 return false;
             }
         }
@@ -460,7 +471,7 @@ namespace OpenVolumeMesh {
         }
 
         if(initial_boundary_face.idx() == -1){
-//            std::cerr<<" couldn't find boundary face adjacent to boundary vertex. returning false"<<std::endl;
+            // This should be impossible
             return false;
         }
 

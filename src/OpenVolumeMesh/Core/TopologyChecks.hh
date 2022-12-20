@@ -21,7 +21,7 @@ namespace OpenVolumeMesh{
                                      const VertexHandle vertex,
                                      const CellHandle cell);
 
-    //TODO: cell_conains_edge(), cell_contains_face, face_contains_edge, etc.? Should these be here or in TetrahedralMeshTopologyKernel?
+    //TODO: cell_contains_edge(), cell_contains_face, face_contains_edge, etc.? Should these be here or in TetrahedralMeshTopologyKernel?
 
     /**
      *
@@ -32,9 +32,10 @@ namespace OpenVolumeMesh{
      */
     std::set<std::set<VertexHandle>> find_non_cell_tets(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
+    // achieves the same as find_non_cell_tets but is a lot faster
     std::set<std::set<VertexHandle>> find_non_cell_tets_2(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
-    //TODO: test, check if needed here or if it suffices to have it in TopologicalLink.hh
+    //TODO: not used, exists also in TopologicalLink class
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle edge);
 

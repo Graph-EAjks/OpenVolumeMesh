@@ -279,6 +279,16 @@ TEST_F(TetrahedralMeshBase, is_manifold_vertex) {
     ASSERT_EQ(mesh.valence(vertex), 3);
     EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
+    generate_tet_without_cell(mesh); // One tet with edges and faces but no cell
+    vertex = *mesh.vertices_begin();
+    ASSERT_EQ(mesh.valence(vertex), 3);
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
+
+    generate_mesh_with_internal_vertex(mesh); // cube consisting of 12 vertices with vertex 0 in the center
+    vertex = *mesh.vertices_begin();
+    ASSERT_EQ(mesh.valence(vertex), 4);
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
+
     // ------------------------------ //
     // Test some invalid inputs
     // ------------------------------ //
@@ -1207,6 +1217,7 @@ TEST_F(TopologicalLinkBase, faceSetTest_linkCondition) {
         }
     }
     EXPECT_FALSE(link_condition(tetMesh, edge));
+    OpenVolumeMesh::link_condition(tetMesh, edge);
 
     // third, check it for the last kind of edges in the tritet, the one incident to two cells. In this case, the link
     // condition should be fulfilled again

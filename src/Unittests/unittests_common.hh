@@ -154,6 +154,8 @@ protected:
   void generate_tet_3F(TetrahedralMesh& _mesh);
   // Genrete two tets, which are not connected, so there are two connected components in the mesh
   void generate_tets_two_connected_components(TetrahedralMesh& _mesh);
+  // Generate mesh consisting of 12 cells forming a cube with one internal vertex
+  void generate_mesh_with_internal_vertex(TetrahedralMesh& _mesh);
 
   //-------------------------------//
   // Non-manifold test tets. Note: They have no geometry, only topology
