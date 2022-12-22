@@ -449,154 +449,6 @@ TEST_F(TetrahedralMeshBase, find_non_cell_tets) {
 
     /*
     generate_nested_tets(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_EQ(res.size(), 2);
-//    std::vector<VertexHandle> all_vertices;
-    all_vertices.clear();
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        all_vertices.push_back(*v_it);
-    }
-//    std::vector<std::vector<VertexHandle>> expected_tets_vertices = {
-    expected_tets_vertices = {
-            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[3]},
-            {all_vertices[4], all_vertices[5], all_vertices[6], all_vertices[7]}
-    };
-//    std::set<std::set<VertexHandle>> expected_tets;
-    expected_tets.clear();
-//    std::set<VertexHandle> expected_tet;
-    for (auto expectedTetVertices : expected_tets_vertices) {
-        expected_tet.clear();
-        for (auto expected_vertex : expectedTetVertices) {
-            expected_tet.insert(expected_vertex);
-        }
-        expected_tets.insert(expected_tet);
-    }
-    EXPECT_EQ(expected_tets, res);
-    res = OpenVolumeMesh::find_non_cell_tets(mesh, false);
-    EXPECT_EQ(res.size(), 2);
-    EXPECT_EQ(expected_tets, res);
-    */
-
-    // Don't detect a tet with some faces missing
-    generate_tet_3F(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_EQ(res.size(), 0);
-    res = OpenVolumeMesh::find_non_cell_tets(mesh, false);
-    EXPECT_EQ(res.size(), 1);
-    expected_tets.clear();
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        all_vertices.push_back(*v_it);
-    }expected_tets_vertices = {
-            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[3]}
-    };
-    expected_tets.clear();
-    for (auto expectedTetVertices : expected_tets_vertices) {
-        expected_tet.clear();
-        for (auto expected_vertex : expectedTetVertices) {
-            expected_tet.insert(expected_vertex);
-        }
-        expected_tets.insert(expected_tet);
-    }
-    EXPECT_EQ(expected_tets, res);
-
-    // test some invalid inputs
-    mesh.clear();
-    res = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(res.empty());
-}
-
-// same as test before, but uses find_non_cell_tets_2
-TEST_F(TetrahedralMeshBase, find_non_cell_tets_2) {
-    TetrahedralMesh &mesh = this->mesh_;
-    generate_tetrahedral_mesh(mesh);
-
-    EXPECT_TRUE(OpenVolumeMesh::find_non_cell_tets_2(mesh, true).empty());
-    EXPECT_TRUE(OpenVolumeMesh::find_non_cell_tets_2(mesh, false).empty());
-
-    generate_non_manifold_tet_3T1V3E(mesh);
-
-    // find the "missing tet" in the mesh manually
-    std::set<VertexHandle> tet_vertices;
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        // there are 7 vertices. 3 with valence 3 outside the missing tet, 3 with valence 5, defining one face of the
-        // missing tet and one central vertex with valence 6, being the last vertex of the missing tet.
-        if (mesh.valence(*v_it) == 5 || mesh.valence(*v_it) == 6) {
-            tet_vertices.insert(*v_it);
-        }
-    }
-    ASSERT_EQ(tet_vertices.size(), 4);
-    std::set<std::set<VertexHandle>> res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
-    EXPECT_TRUE(res.empty());
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_EQ(res.size(), 1);
-    std::set<VertexHandle> found_tet = *res.begin();
-    EXPECT_EQ(tet_vertices, found_tet);
-    std::vector<VertexHandle> face_vertices = {*++mesh.vertices_begin(), *++(++(++mesh.vertices_begin())), *++(++mesh.vertices_begin())};
-//    print_mesh_topology(mesh);
-    mesh.add_face(face_vertices);
-//    print_mesh_topology(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
-    EXPECT_EQ(res.size(), 1);
-    found_tet = *res.begin();
-    EXPECT_EQ(tet_vertices, found_tet);
-
-    generate_tet_without_cell(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
-    EXPECT_EQ(res.size(), 1);
-    tet_vertices.clear();
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        tet_vertices.insert(*v_it);
-    }
-    found_tet = *res.begin();
-    EXPECT_EQ(tet_vertices, found_tet);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_EQ(res.size(), 1);
-    found_tet = *res.begin();
-    EXPECT_EQ(tet_vertices, found_tet);
-
-    generate_tri_tet_with_faces(mesh);
-//    print_mesh_topology(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
-    EXPECT_EQ(res.size(), 3);
-    std::vector<VertexHandle> all_vertices;
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        all_vertices.push_back(*v_it);
-    }
-    std::vector<std::vector<VertexHandle>> expected_tets_vertices = {
-            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[4]},
-            {all_vertices[0], all_vertices[1], all_vertices[3], all_vertices[4]},
-            {all_vertices[0], all_vertices[2], all_vertices[3], all_vertices[4]}
-    };
-    std::set<std::set<VertexHandle>> expected_tets;
-    std::set<VertexHandle> expected_tet;
-    for (auto expected_tet_vertices : expected_tets_vertices) {
-        expected_tet.clear();
-        for (auto expected_vertex : expected_tet_vertices) {
-            expected_tet.insert(expected_vertex);
-        }
-        expected_tets.insert(expected_tet);
-    }
-    EXPECT_EQ(expected_tets, res);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    expected_tets_vertices = {
-            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[4]},
-            {all_vertices[0], all_vertices[1], all_vertices[3], all_vertices[4]},
-            {all_vertices[0], all_vertices[2], all_vertices[3], all_vertices[4]},
-            {all_vertices[0], all_vertices[1], all_vertices[2], all_vertices[3]},
-            {all_vertices[1], all_vertices[2], all_vertices[3], all_vertices[4]},
-    };
-    for (auto expected_tet_vertices : expected_tets_vertices) {
-        expected_tet.clear();
-        for (auto expected_vertex : expected_tet_vertices) {
-            expected_tet.insert(expected_vertex);
-        }
-        expected_tets.insert(expected_tet);
-    }
-    EXPECT_EQ(res.size(), 5);
-    EXPECT_EQ(expected_tets, res);
-
-    /*
-    generate_nested_tets(mesh);
     res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
     EXPECT_EQ(res.size(), 2);
 //    std::vector<VertexHandle> all_vertices;
@@ -620,16 +472,16 @@ TEST_F(TetrahedralMeshBase, find_non_cell_tets_2) {
         expected_tets.insert(expected_tet);
     }
     EXPECT_EQ(expected_tets, res);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    res = OpenVolumeMesh::find_non_cell_tets(mesh, false);
     EXPECT_EQ(res.size(), 2);
     EXPECT_EQ(expected_tets, res);
      */
 
     // Don't detect a tet with some faces missing
     generate_tet_3F(mesh);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
+    res = OpenVolumeMesh::find_non_cell_tets(mesh, true);
     EXPECT_EQ(res.size(), 0);
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
+    res = OpenVolumeMesh::find_non_cell_tets(mesh, false);
     EXPECT_EQ(res.size(), 1);
     expected_tets.clear();
     for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
@@ -649,7 +501,7 @@ TEST_F(TetrahedralMeshBase, find_non_cell_tets_2) {
 
     // test some invalid inputs
     mesh.clear();
-    res = OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
+    res = OpenVolumeMesh::find_non_cell_tets(mesh, true);
     EXPECT_TRUE(res.empty());
 }
 
@@ -869,130 +721,6 @@ TEST_F(TetrahedralMeshBase, findNonCellTets_nonFaceTris) {
     found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
     EXPECT_TRUE(found_tets.empty());
 }
-
-
-// same as previous test, but uses the second variant of find_non_cell_tets_nonFaceTris
-TEST_F(TetrahedralMeshBase, findNonCellTets_2_nonFaceTris) {
-    TetrahedralMesh &mesh = this->mesh_;
-
-    generate_tet_without_cells_and_faces(mesh);
-
-    // find expected tets
-    std::vector<VertexHandle> all_vertices;
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        all_vertices.push_back(*v_it);
-    }
-    std::set<std::set<VertexHandle>> expected_tets;
-    std::set<VertexHandle> expected_tet;
-    expected_tet.insert(all_vertices[0]);
-    expected_tet.insert(all_vertices[1]);
-    expected_tet.insert(all_vertices[2]);
-    expected_tet.insert(all_vertices[3]);
-    expected_tets.insert(expected_tet);
-    expected_tet.clear();
-    expected_tet.insert(all_vertices[1]);
-    expected_tet.insert(all_vertices[2]);
-    expected_tet.insert(all_vertices[3]);
-    expected_tet.insert(all_vertices[4]);
-    expected_tets.insert(expected_tet);
-
-    auto found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_EQ(found_tets.size(), 2);
-    EXPECT_EQ(found_tets, expected_tets);
-    found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(found_tets.empty());
-
-    // test mixed case
-    std::vector<VertexHandle> vertices_cell0(expected_tets.begin()->size());
-    std::copy(expected_tets.begin()->begin(), expected_tets.begin()->end(), vertices_cell0.begin());
-    mesh.add_cell(vertices_cell0);
-    expected_tets.erase(expected_tets.begin());
-    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_EQ(found_tets.size(), 1);
-    EXPECT_EQ(found_tets, expected_tets);
-    found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(found_tets.empty());
-
-    generate_non_manifold_tet_3T1F(mesh);
-    all_vertices.clear();
-    for (auto v_it = mesh.vertices_begin(); v_it.is_valid(); ++v_it) {
-        all_vertices.push_back(*v_it);
-    }
-    expected_tets.clear();
-    expected_tet.clear();
-    expected_tet.insert(all_vertices[0]);
-    expected_tet.insert(all_vertices[1]);
-    expected_tet.insert(all_vertices[2]);
-    expected_tet.insert(all_vertices[3]);
-    expected_tets.insert(expected_tet);
-    expected_tet.clear();
-    expected_tet.insert(all_vertices[1]);
-    expected_tet.insert(all_vertices[2]);
-    expected_tet.insert(all_vertices[3]);
-    expected_tet.insert(all_vertices[4]);
-    expected_tets.insert(expected_tet);
-    expected_tet.clear();
-    expected_tet.insert(all_vertices[1]);
-    expected_tet.insert(all_vertices[2]);
-    expected_tet.insert(all_vertices[3]);
-    expected_tet.insert(all_vertices[5]);
-    expected_tets.insert(expected_tet);
-
-    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_EQ(found_tets.size(), 3);
-    EXPECT_EQ(found_tets, expected_tets);
-    found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(found_tets.empty());
-
-    // check that no existing tet is found
-    generate_tetrahedral_mesh(mesh);
-    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_TRUE(found_tets.empty());
-    found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(found_tets.empty());
-
-    // test some invalid inputs
-    mesh.clear();
-    found_tets = OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    EXPECT_TRUE(found_tets.empty());
-    found_tets = OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    EXPECT_TRUE(found_tets.empty());
-}
-
-/*
-TEST_F(TetrahedralMeshBase, findNonCellTets_performance) {
-
-    TetrahedralMesh &mesh = this->mesh_;
-    generate_tetrahedral_mesh(mesh);
-
-    EXPECT_FALSE(OpenVolumeMesh::contains_void(mesh));
-
-    OpenVolumeMesh::IO::FileManager fileManager;
-    fileManager.readFile("Cuboid.ovm", mesh);
-
-    auto start = std::clock();
-    OpenVolumeMesh::find_non_cell_tets(mesh, true);
-    auto end = std::clock();
-    auto diff = end - start;
-    std::cout << "findNonCellTets time: " << diff << std::endl;
-    start = std::clock();
-    OpenVolumeMesh::find_non_cell_tets(mesh, false);
-    end = std::clock();
-    diff = end - start;
-    std::cout << "findNonCellTets time: " << diff << std::endl;
-    start = std::clock();
-    OpenVolumeMesh::find_non_cell_tets_2(mesh, true);
-    end = std::clock();
-    diff = end - start;
-    std::cout << "findNonCellTets_2 time: " << diff << std::endl;
-    start = std::clock();
-    OpenVolumeMesh::find_non_cell_tets_2(mesh, false);
-    end = std::clock();
-    diff = end - start;
-    std::cout << "findNonCellTets_2 time: " << diff << std::endl;
-    EXPECT_TRUE(true);
-}
- */
 
 TEST_F(TetrahedralMeshBase, countConnectedComponents) {
 

@@ -30,9 +30,6 @@ namespace OpenVolumeMesh{
      */
     std::set<std::set<VertexHandle>> find_non_cell_tets(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
 
-    // achieves the same as find_non_cell_tets but is a lot faster
-    std::set<std::set<VertexHandle>> find_non_cell_tets_2(const TetrahedralMeshTopologyKernel& mesh, bool only_check_faces);
-
     //TODO: not used, exists also in TopologicalLink class
     bool link_condition(const TetrahedralMeshTopologyKernel& mesh,
                         const EdgeHandle edge);
