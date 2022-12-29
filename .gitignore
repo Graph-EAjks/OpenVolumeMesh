@@ -17,3 +17,4 @@ cppcheck.log
 /cmake-build-*
 CMakeUserPresets.json
 *.orig
+.cache
