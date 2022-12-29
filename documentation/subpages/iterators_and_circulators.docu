@@ -22,18 +22,28 @@ The following sections provide a concise overview of the iterators that come alo
 
 \subsection intrinsic_iterators Intrinsic Iterators
 
-\li OpenVolumeMesh::VertexIter: 
-    Iterate over all vertices of a mesh.
-\li OpenVolumeMesh::EdgeIter:
-    Iterate over all edges of a mesh.
-\li OpenVolumeMesh::HalfEdgeIter:
-    Iterate over all half-edges of a mesh.
-\li OpenVolumeMesh::FaceIter:
-    Iterate over all faces of a mesh.
-\li OpenVolumeMesh::HalfFaceIter:
-    Iterate over all half-faces of a mesh.
-\li OpenVolumeMesh::CellIter:
-    Iterate over all cells of a mesh.
+These iterators enumerate all non-deleted entities of a given type:
+
+| Iterator Type | range-for    | begin              | end              |
+| ------------- | ------------ | ------------------ | ---------------- |
+| VertexIter    | .vertices()  | .vertices_begin()  | .vertices_end()  |
+| EdgeIter      | .edges()     | .edges_begin()     | .edges_end()     |
+| HalfEdgeIter  | .halfedges() | .halfedges_begin() | .halfedges_end() |
+| FaceIter      | .faces()     | .faces_begin()     | .faces_end()     |
+| HalfFaceIter  | .halffaces() | .halffaces_begin() | .halffaces_end() |
+| CellIter      | .cells()     | .cells_begin()     | .cells_end()     |
+
+\subsection top_down_iterators Top-down navigation
+
+
+- Given an EdgeHandle `eh`, 
+    - TopologyKernel::from_vertex_handle(EdgeHandle)
+    - \ref TopologyKernel::from_vertex_handle(EdgeHandle)
+    - @ref TopologyKernel::from_vertex_handle(EdgeHandle)
+    - [fvh](@ref TopologyKernel::from_vertex_handle(eh))
+
+
+\li OpenVolumeMesh::HalfFaceHalfEdgeIter:
 \li OpenVolumeMesh::CellVertexIter:
     Iterate over all vertices of a given cell.
 
