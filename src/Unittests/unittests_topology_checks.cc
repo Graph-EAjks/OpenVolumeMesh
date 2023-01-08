@@ -289,6 +289,22 @@ TEST_F(TetrahedralMeshBase, is_manifold_vertex) {
     ASSERT_EQ(mesh.valence(vertex), 4);
     EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex));
 
+
+    generate_non_manifold_tet_tricky(mesh);
+    ASSERT_EQ(mesh.valence(VertexHandle(0)),8);
+
+    //two boundary triangle fans share the edge (0,2) and those vertices should thus be non-manifold
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(0)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(1)));
+    EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(2)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(3)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(4)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(5)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(6)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(7)));
+    EXPECT_TRUE(OpenVolumeMesh::is_manifold_vertex(mesh, VertexHandle(8)));
+
+
     // ------------------------------ //
     // Test some invalid inputs
     // ------------------------------ //
@@ -302,7 +318,10 @@ TEST_F(TetrahedralMeshBase, is_manifold_vertex) {
     EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // mesh not valid
     generate_non_manifold_tet_1V(mesh);
     EXPECT_FALSE(OpenVolumeMesh::is_manifold_vertex(mesh, vertex)); // mesh and vertex valid, but vertex not in mesh
+
 }
+
+
 
 TEST_F(TetrahedralMeshBase, contains_double_edges) {
     TetrahedralMesh &mesh = this->mesh_;

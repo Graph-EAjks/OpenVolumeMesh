@@ -386,6 +386,26 @@ void TetrahedralMeshBase::generate_non_manifold_tet_1F1E1V(TetrahedralMesh &_mes
     _mesh.add_edge(vertices[0], vertices[3]);
 }
 
+void TetrahedralMeshBase::generate_non_manifold_tet_tricky(TetrahedralMesh &_mesh) {
+    _mesh.clear();
+
+    VertexHandle vertices[9];
+    for (int i = 0; i < 9; ++i) {
+        vertices[i] = _mesh.add_vertex();
+    }
+    const auto& v = vertices;
+
+    _mesh.add_cell({v[0], v[1], v[3], v[6]});
+    _mesh.add_cell({v[0], v[2], v[1], v[5]});
+    _mesh.add_cell({v[0], v[4], v[2], v[7]});
+    _mesh.add_cell({v[0], v[3], v[4], v[8]});
+
+    _mesh.add_cell({v[0], v[6], v[5], v[1]});
+    _mesh.add_cell({v[0], v[7], v[8], v[4]});
+    _mesh.add_cell({v[0], v[8], v[6], v[3]});
+}
+
+
 void TetrahedralMeshBase::generate_tet_without_cell(TetrahedralMesh &_mesh) {
     _mesh.clear();
 

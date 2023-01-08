@@ -297,6 +297,14 @@ namespace OpenVolumeMesh {
         return false;
     }
 
+    std::ostream& operator<<(std::ostream& os, const std::vector<VertexHandle>& vs){
+        for(auto v: vs){
+            os<<" "<<v;
+        }
+        return os;
+    }
+
+
     bool is_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
                             const VertexHandle vertex){
 
@@ -347,54 +355,53 @@ namespace OpenVolumeMesh {
             return false;
         }
 
-        //std::cout<<" ----------------------------"<<std::endl;
-        //std::cout<<" checking vertex "<<vertex<<std::endl;
-
-        //std::cout<<" -- initial boundary face : "<<initial_boundary_face<<": "<<mesh.face(initial_boundary_face)<<std::endl;
-
+        // the rest of the test relies on the fact that a boundary 2-manifold vertex
+        // should only be incident to a single (closed) boundary triangle fan.
+        // it thus starts from an incident boundary face and goes from boundary face
+        // to one of its neighbor, _without passing twice by the same boundary edge_
+        // if there are still unvisited boundary faces incident to the vertex,
+        // it's not 2-manifold.
         auto visited_edge = mesh.create_private_property<bool, Entity::Edge>("visited", false);
         auto visited_face = mesh.create_private_property<bool, Entity::Face>("visited", false);
 
         EdgeHandle next_edge(-1);
 
-        //visit all vertices of the initial face
+        //visit all edges of the initial face
         for(auto fe_it = mesh.fe_iter(initial_boundary_face); fe_it.is_valid(); ++fe_it){
             if(mesh.edge(*fe_it).to_vertex() == vertex ||
                mesh.edge(*fe_it).from_vertex() == vertex){
                 visited_edge[*fe_it] = true;
-                //std::cout<<" ---- visited edge "<<*fe_it<<" and marked it as current edge"<<std::endl;
                 next_edge = *fe_it;
             }
         }
         visited_face[initial_boundary_face] = true;
 
         while(next_edge.idx() != -1){
-            //std::cout<<" --------- "<<std::endl;
 
             auto current_edge = next_edge;
             next_edge = EdgeHandle(-1);
 
             //circulate through boundary faces around edge to find the next one
+            bool found_next_face(false);
             for(auto ef_it = mesh.ef_iter(current_edge); ef_it.is_valid(); ++ef_it){
-                //std::cout<<" -- checking face "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
-                if(mesh.is_boundary(*ef_it) && ! visited_face[*ef_it]){
+
+                if(mesh.is_boundary(*ef_it) && !visited_face[*ef_it]){
                     //found a neighboring face to both current_edge and vertex
                     //so visit the next edge and use it as next current_edge
-
-                    //std::cout<<" ---- neighbor face: "<<*ef_it<<": "<<mesh.face(*ef_it)<<std::endl;
+                    visited_face[*ef_it] = true;
 
                     for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.is_valid(); ++fe_it){
-                        if(mesh.is_boundary(*fe_it)&&
+                        if(mesh.is_boundary(*fe_it)&&//this condition should probably be removed since all edges incident to a boundary face are boundary edges by definition
                            (mesh.edge(*fe_it).to_vertex() == vertex ||
                             mesh.edge(*fe_it).from_vertex() == vertex) &&
                            !visited_edge[*fe_it]){
                             visited_edge[*fe_it] = true;
                             next_edge = *fe_it;
-                            //std::cout<<" ---- next neighbor edge: "<<*fe_it<<": "<<mesh.edge(*fe_it)<<std::endl;
+                            break;
                         }
                     }
+                    break;
                 }
-                visited_face[*ef_it] = true;
             }
         }
 
@@ -405,9 +412,6 @@ namespace OpenVolumeMesh {
                 all_visited &= visited_face[*vf_it];
             }
         }
-//        if(!all_visited){
-//            std::cout<<" vertex "<<vertex<<" is non-manifold"<<std::endl;
-//        }
 
         return all_visited;
     }

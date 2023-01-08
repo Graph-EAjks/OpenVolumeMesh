@@ -189,6 +189,9 @@ protected:
   void generate_non_manifold_tet_1F1E1V(TetrahedralMesh& _mesh);
   // Generate a non-manifold tetrahedral _mesh, consisting of three tets, sharing exactly one face. Only vertices and edges
   void generate_non_manifold_tet_3T1F(TetrahedralMesh& _mesh);
+  // Generate a mesh with two vertices incident to two distinct closed fans of boundary triangles that both share an edge
+  void generate_non_manifold_tet_tricky(TetrahedralMesh &_mesh);
+
 
   // This member will be accessible in all tests
   TetrahedralMesh mesh_;
