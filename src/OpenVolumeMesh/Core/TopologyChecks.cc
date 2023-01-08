@@ -305,8 +305,8 @@ namespace OpenVolumeMesh {
     }
 
 
-    bool is_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
-                            const VertexHandle vertex){
+    bool is_boundary_2_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
+                                       const VertexHandle vertex){
 
 
         if (!mesh.is_valid(vertex)) {
@@ -391,8 +391,7 @@ namespace OpenVolumeMesh {
                     visited_face[*ef_it] = true;
 
                     for(auto fe_it = mesh.fe_iter(*ef_it); fe_it.is_valid(); ++fe_it){
-                        if(mesh.is_boundary(*fe_it)&&//this condition should probably be removed since all edges incident to a boundary face are boundary edges by definition
-                           (mesh.edge(*fe_it).to_vertex() == vertex ||
+                        if((mesh.edge(*fe_it).to_vertex() == vertex ||
                             mesh.edge(*fe_it).from_vertex() == vertex) &&
                            !visited_edge[*fe_it]){
                             visited_edge[*fe_it] = true;

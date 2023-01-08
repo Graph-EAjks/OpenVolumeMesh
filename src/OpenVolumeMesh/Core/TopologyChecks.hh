@@ -40,8 +40,8 @@ namespace OpenVolumeMesh{
 
     bool contains_void(const TetrahedralMeshTopologyKernel&  mesh);
 
-    bool is_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
-                            const VertexHandle vertex);
+    bool is_boundary_2_manifold_vertex(const TetrahedralMeshTopologyKernel& mesh,
+                                       const VertexHandle vertex);
 
     std::optional<std::pair<HEH, HEH>> contains_double_edges(const TetrahedralMeshTopologyKernel& mesh);
 
