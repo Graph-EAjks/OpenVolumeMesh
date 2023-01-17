@@ -12,6 +12,7 @@ int main(int _argc, char** _argv) {
     success &= test_single_connected_component();
     success &= test_count_connected_components();
     success &= test_contains_void();
+    success &= test_link_condition();
 
     if (success) {
         std::cout << "success!" << std::endl;
@@ -195,6 +196,84 @@ bool test_contains_void() {
     return success;
 }
 
+bool test_link_condition() {
+
+    generate_tritet(mesh);
+    // The vertices 0 and 4 are the ones incident to all three tets.
+    std::vector<VH> vertices;
+    for (auto vertex = mesh.vertices_begin(); vertex != mesh.vertices_end(); ++vertex) {
+        vertices.push_back(*vertex);
+    }
+
+    auto from_vertex = vertices.at(0);
+    auto to_vertex = vertices.at(4);
+
+    // The link of vertex 0 should be:
+    // vertices: 1, 2, 3, 4
+    // edges: (1,2), (2,3), (3,1), (1,4), (2,4), (3,4) These are exactly all edges which are not incident to from_vertex
+    // faces: (1,2,4), (2,3,4), (3,1,4) These are exactly all faces for which all incident edges are in the link
+    std::set<VH> expected_vertices_link_from_vertex = {vertices[1], vertices[2], vertices[3], vertices[4]};
+    std::set<EH> expected_edges_link_from_vertex;
+    for (auto edge = mesh.edges_begin(); edge != mesh.edges_end(); ++edge) {
+        if (mesh.from_vertex_handle(edge->halfedge_handle(0)) != from_vertex &&
+            mesh.to_vertex_handle(edge->halfedge_handle(0)) != from_vertex) {
+            // The edge is not incident to from_vertex
+            expected_edges_link_from_vertex.insert(*edge);
+        }
+    }
+    std::set<FH> expected_faces_link_from_vertex;
+    for (auto face = mesh.faces_begin(); face != mesh.faces_end(); ++face) {
+        // Check for the face, if there is an incident edge which is not in the link. If there is no such edge, the face is in the link too
+        bool found_invalid_edge = false;
+        for (auto hedge : mesh.face_halfedges(*face)) {
+            auto edge = mesh.edge_handle(hedge);
+            auto it = expected_edges_link_from_vertex.find(edge);
+            if (it == expected_edges_link_from_vertex.end()) {
+                found_invalid_edge = true;
+                break;
+            }
+        }
+        if (!found_invalid_edge) {
+            expected_faces_link_from_vertex.insert(*face);
+        }
+    }
+    auto link_from_vertex = link(mesh, from_vertex);
+    if (!std::equal(expected_vertices_link_from_vertex.begin(), expected_vertices_link_from_vertex.end(), link_from_vertex.vertices().begin())) {
+        std::cerr << "vertices in link of from_vertex do not correspond to expected vertices in Topo_checks_examples::test_link_condition." << std::endl;
+        return false;
+    }
+    if (!std::equal(expected_edges_link_from_vertex.begin(), expected_edges_link_from_vertex.end(), link_from_vertex.edges().begin())) {
+        std::cerr << "edges in link of from_vertex do not correspond to expected edges in Topo_checks_examples::test_link_condition." << std::endl;
+        return false;
+    }
+    if (!std::equal(expected_faces_link_from_vertex.begin(), expected_faces_link_from_vertex.end(), link_from_vertex.faces().begin())) {
+        std::cerr << "faces in link of from_vertex do not correspond to expected edges in Topo_checks_examples::test_link_condition." << std::endl;
+        return false;
+    }
+    auto link_to_vertex = link(mesh, to_vertex);
+
+
+    bool found = false;
+    EdgeHandle edge;
+    for (auto out_heh_iter = mesh.outgoing_halfedges(vertices[0]).first; out_heh_iter.is_valid(); ++out_heh_iter) {
+        if (mesh.to_vertex_handle(*out_heh_iter) == vertices[4]) {
+            edge = mesh.edge_handle(*out_heh_iter);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        std::cerr << "central edge in tritet not found in Topo_checks_examples." << std::endl;
+        return false;
+    }
+    if (!link_condition(mesh, edge)) {
+        std::cerr << "link condition not satisfied but it should be satisfied." << std::endl;
+        return false;
+    }
+    return true;
+}
+
 /**
  * We now define some mesh generators. As we are only interested in the topology and not in the
  * geometry, we don't need to specify coordinates for the vertices.
@@ -276,7 +355,7 @@ void generate_mesh_with_void(TetrahedralMesh& _mesh) {
 
     // First, we import a large mesh which contains several non-boundary cells
     OpenVolumeMesh::IO::FileManager fileManager;
-    //TODO: "End of file reached while searching for input!" is printed, but it seems it works correctly
+    //TODO: "End of file reached while searching for input!" is printed, but it seems to work correctly. There already is a todo in FileManager::FileManagerT_impl.hh
     fileManager.readFile("Files/Cuboid.ovm", _mesh);
 
     // Then, we look for a non-boundary cell and remove it, so that a void is created
@@ -302,4 +381,20 @@ void generate_mesh_with_void(TetrahedralMesh& _mesh) {
     }
 
     _mesh.delete_cell(cell_to_remove);
+}
+
+// generated a tritet, where vertices 0 and 4 are incident to all three tets.
+void generate_tritet(TetrahedralMesh& _mesh) {
+    _mesh.clear();
+
+    // Create vertices
+    VertexHandle vertices[8];
+    for (int i = 0; i < 5; ++i) {
+        vertices[i] = _mesh.add_vertex();
+    }
+
+    // Create cells
+    _mesh.add_cell(vertices[0], vertices[1], vertices[2], vertices[4]);
+    _mesh.add_cell(vertices[0], vertices[2], vertices[3], vertices[4]);
+    _mesh.add_cell(vertices[0], vertices[3], vertices[1], vertices[4]);
 }
