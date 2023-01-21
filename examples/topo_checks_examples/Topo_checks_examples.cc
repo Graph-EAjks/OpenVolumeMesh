@@ -267,6 +267,34 @@ bool test_link_condition() {
         std::cerr << "central edge in tritet not found in Topo_checks_examples." << std::endl;
         return false;
     }
+
+    // The link of the central edge are the three edges which are not incident to any of the end vertices of the central edge
+    // and the three vertices which are not incident to the central edge.
+    std::set<VH> expected_vertices_link_edge = {vertices[1], vertices[2], vertices[3]};
+    std::set<EH> expected_edges_link_edge;
+    for (auto edge = mesh.edges_begin(); edge != mesh.edges_end(); ++edge) {
+        if (mesh.from_vertex_handle(edge->halfedge_handle(0)) != from_vertex &&
+            mesh.to_vertex_handle(edge->halfedge_handle(0)) != from_vertex &&
+            mesh.from_vertex_handle(edge->halfedge_handle(0)) != to_vertex &&
+            mesh.to_vertex_handle(edge->halfedge_handle(0)) != to_vertex) {
+            expected_edges_link_edge.insert(*edge);
+        }
+    }
+    auto link_edge = link(mesh, edge);
+    if (!std::equal(expected_vertices_link_edge.begin(), expected_vertices_link_edge.end(), link_edge.vertices().begin())) {
+        std::cerr << "vertices in link of edge do not correspond to expected vertices in Topo_checks_examples::test_link_condition." << std::endl;
+        return false;
+    }
+    if (!std::equal(expected_edges_link_edge.begin(), expected_edges_link_edge.end(), link_edge.edges().begin())) {
+        std::cerr << "edges in link of edge do not correspond to expected vertices in Topo_checks_examples::test_link_condition." << std::endl;
+        return false;
+    }
+    if (!link_edge.faces().empty()) {
+        std::cerr << "There are some faces in the link of the central edge, where there should not be any in Topo_checks_examples::test_link_condition" << std::endl;
+        return false;
+    }
+
+    // As the intersection of the links of the two vertices is the same as the link of the edge, the link condition should hold.
     if (!link_condition(mesh, edge)) {
         std::cerr << "link condition not satisfied but it should be satisfied." << std::endl;
         return false;
