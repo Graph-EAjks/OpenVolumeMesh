@@ -34,10 +34,6 @@ set_target_properties(topo_checks_examples PROPERTIES
         CXX_EXTENSIONS NO
 )
 
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/topo_checks_examples/Files"
-        DESTINATION "${CMAKE_BINARY_DIR}/Build/bin"
-        )
-
 #[[=
 if(WIN32)
   # copy exe file to "Build" directory
