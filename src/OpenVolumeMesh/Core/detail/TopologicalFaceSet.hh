@@ -1,5 +1,4 @@
-#ifndef FACESET_HH
-#define FACESET_HH
+#pragma once
 
 #include <initializer_list>
 #include <set>
@@ -72,5 +71,3 @@ namespace OpenVolumeMesh {
     std::ostream &operator<<(std::ostream &os, const TopologicalFaceSet &face);
 
 }
-
-#endif // FACESET_HH

@@ -1,7 +1,5 @@
-#ifndef OPENVOLUMEMESH_TOPO_CHECKS_EXAMPLES_HH
-#define OPENVOLUMEMESH_TOPO_CHECKS_EXAMPLES_HH
+#pragma once
 
-// C++ includes
 #include <iostream>
 #include <vector>
 
@@ -33,5 +31,3 @@ void generate_mesh_with_void(TetrahedralMesh& _mesh);
 void generate_tritet(TetrahedralMesh& _mesh);
 
 TetrahedralMesh mesh;
-
-#endif //OPENVOLUMEMESH_TOPO_CHECKS_EXAMPLES_HH
