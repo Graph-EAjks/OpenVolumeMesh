@@ -126,7 +126,7 @@ namespace OpenVolumeMesh {
                                                                                 {v,*vv_it_2, *vv_it_3},
                                                                                 {*vv_it,*vv_it_2, *vv_it_3}};
                             for (auto triangle : triangles) {
-                                faces_exist &= mesh.halfface(triangle).is_valid();
+                                faces_exist &= mesh.find_halfface(triangle).is_valid();
                             }
                         }
                         if (!found_cell && faces_exist) {
@@ -551,7 +551,7 @@ namespace OpenVolumeMesh {
                     std::set<VertexHandle> found_triangle = {vertex, neighbor, *vv_it};
                     std::vector<VertexHandle> triangle_vector(found_triangle.size());
                     std::copy(found_triangle.begin(), found_triangle.end(), triangle_vector.begin());
-                    if (!mesh.halfface(triangle_vector).is_valid()) {
+                    if (!mesh.find_halfface(triangle_vector).is_valid()) {
                         res.insert(found_triangle);
                     }
                 }
