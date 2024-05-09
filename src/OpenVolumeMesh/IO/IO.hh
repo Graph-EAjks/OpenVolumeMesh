@@ -1,6 +1,9 @@
 #pragma once
 
 #include <OpenVolumeMesh/IO/ovmb_read.hh>
+#include <OpenVolumeMesh/IO/ovmb_write.hh>
+#include <OpenVolumeMesh/IO/ReadOptions.hh>
+#include <OpenVolumeMesh/IO/WriteOptions.hh>
 #include <OpenVolumeMesh/FileManager/FileManager.hh>
 #include <filesystem>
 #include <stdexcept>
@@ -39,6 +42,26 @@ ReadResult read_mesh(
         return ok ? ReadResult::Ok : ReadResult::OtherError;
     } else {
         return ReadResult::UnknownExtension;
+    }
+}
+
+template<typename MeshT>
+WriteResult write_mesh(
+        std::string const&_filename,
+        MeshT const &_mesh,
+        ReadOptions const&options)
+{
+    const auto path = std::filesystem::path(_filename);
+    const std::string ext = path.extension();
+
+    if (ext == "ovmb") {
+        return ovmb_write(_filename.c_str(), _mesh, options);
+    } else if (ext == "ovm") {
+        FileManager file_manager;
+        auto ok = file_manager.writeFile(_filename, _mesh);
+        return ok ? WriteResult::Ok : WriteResult::Error;
+    } else {
+        return WriteResult::UnknownExtension;
     }
 }
 
