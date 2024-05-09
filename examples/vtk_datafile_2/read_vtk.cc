@@ -37,7 +37,11 @@ int main (int argc, char* argv[]) {
   
   OpenVolumeMesh::GeometricPolyhedralMeshV3d mesh;
 
-  vtk.readFile("../examples/vtk_datafile_2/vtk_files/s01c_cube.vtk", mesh, true, true);
+  if (argc != 3) {
+      std::cerr << "Usage: " << argv[0] << " <in.vtk> <out.ovm(b)>" << std::endl;
+      return 1;
+  }
+  vtk.readFile(argv[1], mesh, true, true);
 
   std::cout << mesh.n_vertices() << " vertices" << std::endl;
   std::cout << mesh.n_cells() << " tetrahedra" << std::endl;
