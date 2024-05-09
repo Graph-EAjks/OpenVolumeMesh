@@ -47,6 +47,7 @@ enum class ReadResult {
     CannotOpenFile,
     BadStream,
     IncompatibleMesh,
+    UnknownExtension,
     };
 OVM_EXPORT const char* to_string(ReadResult);
 
