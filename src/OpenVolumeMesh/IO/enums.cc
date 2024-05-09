@@ -14,7 +14,7 @@ const char* to_string(ReadCompatibility rc)
         "MeshTopologyIncompatible",
         "MeshHandleIncompatible",
         "FileVersionUnsupported",
-        "InvalidFile"
+        "InvalidFile",
     };
     size_t idx = static_cast<size_t>(rc);
     if (idx >= strings.size())
@@ -54,13 +54,14 @@ const char* to_string(ReadState rs) {
 }
 
 const char* to_string(ReadResult result) {
-    static const std::array<const char*, 6> strings {
+    static const std::array<const char*, 7> strings {
         "Ok",
         "OtherError",
         "InvalidFile",
         "CannotOpenFile",
         "BadStream",
         "IncompatibleMesh",
+        "UnknownExtension",
     };
 
     size_t idx = static_cast<size_t>(result);
