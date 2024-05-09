@@ -71,11 +71,12 @@ const char* to_string(ReadResult result) {
     return strings[idx];
 }
 const char* to_string(WriteResult result) {
-    static const std::array<const char*, 4> strings {
+    static const std::array<const char*, 5> strings {
         "Ok",
         "Error",
         "CannotOpenFile",
         "BadStream",
+        "UnknownExtension",
     };
 
     size_t idx = static_cast<size_t>(result);

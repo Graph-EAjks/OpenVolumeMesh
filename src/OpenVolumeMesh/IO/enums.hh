@@ -56,6 +56,7 @@ enum class WriteResult {
     Error,
     CannotOpenFile,
     BadStream,
+    UnknownExtension,
 };
 OVM_EXPORT const char* to_string(WriteResult);
 
