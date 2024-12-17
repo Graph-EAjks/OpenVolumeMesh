@@ -411,15 +411,22 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
         enable_deferred_deletion(true);
 
     std::vector<HalfFaceHandle> incident_halffaces_with_cells;
+    std::vector<HalfFaceHandle> incident_faces_with_no_cells;
     for (HalfEdgeHalfFaceIter hehf_it = hehf_iter(_heh); hehf_it.valid(); ++hehf_it)
     {
         CellHandle ch = incident_cell(*hehf_it);
         if (ch.is_valid())
             incident_halffaces_with_cells.push_back(*hehf_it);
+        else{
+            CellHandle op_ch = incident_cell(opposite_halfface_handle(*hehf_it));
+            if(!op_ch.is_valid())
+                incident_faces_with_no_cells.push_back(*hehf_it);
+        }
+
+
     }
 
     std::vector<std::pair<CellHandle, std::array<VertexHandle, 4>>> new_cells;
-
     for (auto hfh : incident_halffaces_with_cells)
     {
         CellHandle ch = incident_cell(hfh);
@@ -432,6 +439,23 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
         new_cells.emplace_back(ch, std::array<VertexHandle, 4>{_vh, vertices[1], vertices[2], vertices[3]});
     }
 
+    using FaceTriplet = std::tuple<HalfFaceHandle, HalfFaceHandle, FaceHandle>;
+    std::vector<std::pair<FaceTriplet, std::array<VertexHandle, 3>>> new_faces;
+    for (auto hfh : incident_faces_with_no_cells)
+    {
+        //HalfFaceHandle hfh = halfface_handle(fh, 0);
+        std::vector<VertexHandle> vertices = get_halfface_vertices(hfh, from_vertex_handle(_heh));
+
+        HalfFaceHandle op_hfh = opposite_halfface_handle(hfh);
+        FaceHandle fh = face_handle(hfh);
+
+        delete_face(fh);
+
+        FaceTriplet triplet = {hfh, op_hfh, fh};
+        new_faces.emplace_back(triplet, std::array<VertexHandle, 3>{vertices[0], _vh, vertices[2]});
+        new_faces.emplace_back(triplet, std::array<VertexHandle, 3>{_vh, vertices[1], vertices[2]});
+    }
+
     delete_edge(edge_handle(_heh));
 
     for (const auto &n: new_cells) {
@@ -440,6 +464,18 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
         copy_property_elements(n.first, newCell);
     }
 
+    for (const auto &n: new_faces) {
+        const auto &vhs = n.second;
+        HalfFaceHandle newHalfFace = add_halfface(vhs[0], vhs[1], vhs[2]);
+
+        //properties update. Incomplete so leaving this one out for now
+        /*HalfFaceHandle newOpHalfFace = opposite_halfface_handle(newHalfFace);
+        FaceHandle newFace = face_handle(newHalfFace);
+
+        copy_property_elements(std::get<0>(n.first), newHalfFace);
+        copy_property_elements(std::get<1>(n.first), newOpHalfFace);
+        copy_property_elements(std::get<2>(n.first), newFace);*/
+    }
 
     enable_deferred_deletion(deferred_deletion_tmp);
 
