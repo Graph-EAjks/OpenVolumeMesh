@@ -9,9 +9,11 @@ endif()
 # Add target for first example
 add_executable(simple_mesh simple_mesh/simple_mesh.cc)
 add_executable(read_vtk vtk_datafile_2/read_vtk.cc)
+add_executable(ovm2obj ovm2obj/ovm2obj.cc)
 
 target_link_libraries(simple_mesh OpenVolumeMesh::OpenVolumeMesh)
 target_link_libraries(read_vtk OpenVolumeMesh::OpenVolumeMesh)
+target_link_libraries(ovm2obj OpenVolumeMesh::OpenVolumeMesh)
 
 set_target_properties (simple_mesh PROPERTIES
     CXX_STANDARD ${OVM_CXX_STANDARD}
