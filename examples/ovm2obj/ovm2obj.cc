@@ -26,6 +26,7 @@ public:
 
     }
     void serialize() {
+        os << "o cells\n";
         n_vertices = 0;
         for (const auto ch: mesh.cells()) {
             serialize_cell(ch);
@@ -38,7 +39,9 @@ public:
 protected:
     size_t serialize_point(VH vh) {
         const auto &p = mesh.vertex(vh);
-        os << "v " << p[0] << " " << p[1] << " " << p[2] << "\n";
+        os << "v " << p[0] << " "
+                   << p[1] << " "
+                   << p[2] << "\n";
         return ++n_vertices; //1-based indexing
     }
     void serialize_cell(CH ch) {
@@ -46,13 +49,15 @@ protected:
         for (const auto vh: mesh.cell_vertices(ch)) {
             vh2vi[vh] = serialize_point(vh);
         }
+        const auto bary = mesh.barycenter(ch);
+        os << "vn " << bary[0] << " " << bary[1] << " " << bary[2] << "\n";
         for (const auto hfh: mesh.cell_halffaces(ch)) {
             os << "f";
             // flip orientation on purpose:
             auto opp_hfh = mesh.opposite_halfface_handle(hfh);
             for (const auto heh: mesh.halfface_halfedges(opp_hfh)) {
                 auto vi = vh2vi[mesh.to_vertex_handle(heh)];
-                os << " " << vi;
+                os << " " << vi << "//-1";
             }
             os << "\n";
         }
