@@ -7,6 +7,8 @@
 #include <OpenVolumeMesh/Mesh/PolyhedralMesh.hh>
 #include <OpenVolumeMesh/IO/IO.hh>
 #include <OpenVolumeMesh/Unstable/SmartHandles.hh>
+#include <OpenVolumeMesh/Attribs/NormalAttrib.hh>
+
 #include "tinyusdz.hh"
 #include "usda-writer.hh"
 
@@ -23,9 +25,14 @@ using HEH = OVM::HEH;
 using HFH = OVM::HFH;
 using Vec3d = OVM::Vec3d;
 
-void ovm2usd(Mesh const& mesh, tinyusdz::Stage &stage)
+
+void ovm2usd(Mesh& mesh, tinyusdz::Stage &stage)
 {
+  auto normal_attrib = OVM::NormalAttrib(mesh);
+  normal_attrib.update_face_normals();
+
   std::vector<tinyusdz::value::point3f> vertex_pos;
+  std::vector<tinyusdz::value::normal3f> face_normals;
 
   std::vector<std::array<double, 3>> vertex_bary;
   //std::vector<std::vector<size_t>> face_indices;
@@ -57,7 +64,8 @@ void ovm2usd(Mesh const& mesh, tinyusdz::Stage &stage)
       vertex_bary.push_back({bary[0], bary[1], bary[2]});
     }
     auto cv = mesh.cell_vertices(_ch);
-    for (const auto hfh: ch.halffaces()) {
+    for (const auto _hfh: ch.halffaces()) {
+      auto hfh = _hfh.opposite_handle();
       size_t n_verts = 0;
       if (maybe_feature_face) {
         face_feature_id.push_back(maybe_feature_face->at(hfh.face_handle()));
@@ -67,6 +75,11 @@ void ovm2usd(Mesh const& mesh, tinyusdz::Stage &stage)
         face_flat_indices.push_back(vi);
         ++n_verts;
       }
+      const auto &n = normal_attrib[hfh];
+      face_normals.push_back({
+          (float)n[0],
+          (float)n[1],
+          (float)n[2]});
       face_valences.push_back(n_verts);
     }
   }
@@ -99,9 +112,38 @@ void ovm2usd(Mesh const& mesh, tinyusdz::Stage &stage)
     tinyusdz::primvar::PrimVar sharp_face_var;
     sharp_face_var.set_value(sharp_face);
     sharp_face_attr.set_var(std::move(sharp_face_var));
+
+    sharp_face_attr.variability() = tinyusdz::Variability::Uniform;
+    //tinyusdz::AttrMeta meta;
+    //meta.interpolation = tinyusdz::Interpolation::Uniform;
+    //sharp_face_attr.metas() = meta;
+
     tinyusdz::Property sharp_face_prop(sharp_face_attr, /* custom*/false);
     usd_mesh.props.emplace("primvars:sharp_face", sharp_face_prop);
   }
+  if(1) {
+
+    usd_mesh.normals.set_value(face_normals);
+    usd_mesh.normals.metas().interpolation = tinyusdz::Interpolation::Uniform;
+    //usd_mesh.normals.metas().interpolation = tinyusdz::Interpolation::Uniform;
+    //usd_mesh.normals.set_value(normals);
+  }
+#if 0
+  if (0){
+    tinyusdz::Attribute uv_attr;
+    std::vector<bool> uv(usd_mesh.get_faceVertexCounts().size(), true);
+    tinyusdz::primvar::PrimVar uv_var;
+    uv_var.set_value(sharp_face);
+    uv_attr.set_var(std::move(sharp_face_var));
+
+    tinyusdz::AttrMeta meta;
+    meta.interpolation = tinyusdz::Interpolation::Uniform;
+    uv_attr.metas() = meta;
+
+    tinyusdz::Property uv_prop(sharp_face_attr, /* custom*/false);
+    usd_mesh.props.emplace("primvars:uv", sharp_face_prop);
+  }
+#endif
 
   tinyusdz::Prim meshPrim(usd_mesh);
   tinyusdz::Prim xformPrim(xform);
@@ -149,7 +191,7 @@ int main(int argc, char** argv) {
 
     std::string warn;
     std::string err;
-    bool ret = tinyusdz::usda::SaveAsUSDA("output.usda", stage, &warn, &err);
+    bool ret = tinyusdz::usda::SaveAsUSDA(path_out, stage, &warn, &err);
 
     if (warn.size()) {
       std::cout << "WARN: " << warn << "\n";
