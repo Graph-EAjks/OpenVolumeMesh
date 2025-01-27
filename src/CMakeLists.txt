@@ -156,6 +156,7 @@ export(EXPORT OpenVolumeMeshTargets
 
 if (OVM_ENABLE_APPLICATIONS)
     add_subdirectory(FileConverter)
+    add_subdirectory(Tools)
 endif()
 
 if (OVM_ENABLE_UNITTESTS)
