@@ -86,15 +86,29 @@ void ovm2usd(Mesh const& mesh, tinyusdz::Stage &stage)
 
   tinyusdz::GeomMesh usd_mesh;
   usd_mesh.name = "cells";
+  std::cout << "n vert " << vertex_pos.size() <<std::endl;
+  std::cout << "n fval " << face_valences.size() <<std::endl;
+  std::cout << "n ff " << face_flat_indices.size() <<std::endl;
   usd_mesh.points.set_value(std::move(vertex_pos));
   usd_mesh.faceVertexCounts.set_value(std::move(face_valences));
   usd_mesh.faceVertexIndices.set_value(std::move(face_flat_indices));
+
+  if(1) {
+    tinyusdz::Attribute sharp_face_attr;
+    std::vector<bool> sharp_face(usd_mesh.get_faceVertexCounts().size(), true);
+    tinyusdz::primvar::PrimVar sharp_face_var;
+    sharp_face_var.set_value(sharp_face);
+    sharp_face_attr.set_var(std::move(sharp_face_var));
+    tinyusdz::Property sharp_face_prop(sharp_face_attr, /* custom*/false);
+    usd_mesh.props.emplace("primvars:sharp_face", sharp_face_prop);
+  }
 
   tinyusdz::Prim meshPrim(usd_mesh);
   tinyusdz::Prim xformPrim(xform);
 
   xformPrim.children().emplace_back(std::move(meshPrim));
-  stage.add_root_prim(std::move(xformPrim));
+//stage.add_root_prim(std::move(xformPrim));
+  stage.root_prims().emplace_back(std::move(xformPrim));
   //
   //        tinyusdz::Attribute uvAttr;
   //std::vector<tinyusdz::value::texcoord2f> uvs;
@@ -119,7 +133,11 @@ int main(int argc, char** argv) {
     const auto path_in = argv[1];
     const auto path_out = argv[2];
 
-    OVM::IO::read_file(path_in, mesh, false, false);
+    bool success = OVM::IO::read_file(path_in, mesh, false, false);
+    if (!success) {
+      std::cerr << "Failed to read input mesh." << std::endl;
+      return 1;
+    }
 
     // Create an empty object
 
