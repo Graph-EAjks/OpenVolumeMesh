@@ -73,13 +73,8 @@ void NormalAttrib<GeomKernelT>::update_vertex_normals() {
 }
 
 template <class GeomKernelT>
-void NormalAttrib<GeomKernelT>::update_face_normals() {
-
-    if(!kernel_->has_face_bottom_up_incidences()) {
-        std::cerr << "Error: update_normals() needs bottom-up incidences!" << std::endl;
-        return;
-    }
-
+void NormalAttrib<GeomKernelT>::update_face_normals()
+{
     for (const auto &_fh: kernel_->faces()) {
         f_normals_[_fh] = kernel_->normal(_fh.halfface_handle(0));
     }
