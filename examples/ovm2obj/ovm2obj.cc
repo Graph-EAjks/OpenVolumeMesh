@@ -16,17 +16,32 @@ using EH = OVM::EH;
 using HEH = OVM::HEH;
 using HFH = OVM::HFH;
 
-class SerializeObj {
+class SerializeCellsPLY {
 public:
-    SerializeObj(std::ostream &_os, Mesh const&_mesh)
-        : os{_os}
+    SerializeCellsPLY(std::filesystem::path const &path, Mesh const&_mesh)
+        : os{path.c_str()}
         , mesh{_mesh}
     {
         os << std::setprecision(17);
-
     }
     void serialize() {
-        os << "o cells\n";
+        os << "ply\nformat ascii 1.0\n";
+        auto n_corners = mesh.n_cells() * 8; // XXX TODO for hex meshes
+        auto n_faces = mesh.n_cells() * 6; // XXX TODO for hex meshes
+        os << "element vertex " << n_corners << "\n";
+        os << "property float x\n"
+           << "property float y\n"
+           << "property float z\n"
+           << "property float bary_x\n"
+           << "property float bary_y\n"
+           << "property float bary_z\n"
+           << "property float ch\n"
+           ;
+        os << "element face " << n_faces << "\n"
+           << "property list uchar int vertex_indices\n"
+           << "property float feat\n";
+        os << "end_header\n";
+        faces.reserve(n_faces);
         n_vertices = 0;
         for (const auto ch: mesh.cells()) {
             serialize_cell(ch);
@@ -35,37 +50,111 @@ public:
             break;
 #endif
         }
+        for (const auto &[verts, f_id]: faces) {
+            os << verts.size();
+            for (const auto v: verts) {
+                os << " " << v;
+            }
+            os << " " << f_id;
+            os << "\n";
+        }
     }
 protected:
-    size_t serialize_point(VH vh) {
+    size_t serialize_point(VH vh, OVM::Vec3d const& bary, CH ch) {
         const auto &p = mesh.vertex(vh);
-        os << "v " << p[0] << " "
-                   << p[1] << " "
-                   << p[2] << "\n";
-        return ++n_vertices; //1-based indexing
+        os << p[0] << " "
+           << p[1] << " "
+           << p[2] << " "
+           << bary[0] << " "
+           << bary[1] << " "
+           << bary[2] << " "
+           << ch.idx() << "\n";
+        return n_vertices++;
     }
     void serialize_cell(CH ch) {
+        const auto bary = mesh.barycenter(ch);
         auto vh2vi = std::unordered_map<VH, int>{};
         for (const auto vh: mesh.cell_vertices(ch)) {
-            vh2vi[vh] = serialize_point(vh);
+            vh2vi[vh] = serialize_point(vh, bary, ch);
         }
-        const auto bary = mesh.barycenter(ch);
-        os << "vn " << bary[0] << " " << bary[1] << " " << bary[2] << "\n";
+        std::vector<int> face;
         for (const auto hfh: mesh.cell_halffaces(ch)) {
-            os << "f";
+            auto f_id = feature_face[hfh.face_handle()];
+            face.clear();
             // flip orientation on purpose:
             auto opp_hfh = mesh.opposite_halfface_handle(hfh);
             for (const auto heh: mesh.halfface_halfedges(opp_hfh)) {
                 auto vi = vh2vi[mesh.to_vertex_handle(heh)];
-                os << " " << vi << "//-1";
+                face.push_back(vi);
             }
-            os << "\n";
+            faces.emplace_back(std::move(face), f_id);
         }
 
     }
 private:
-    std::ostream &os;
+    std::ofstream os;
     Mesh const &mesh;
+    OVM::PropertyPtr<int,OVM::Entity::Face> feature_face = *mesh.get_face_property<int>("AlgoHex::FeatureFaces");
+    std::vector<std::pair<std::vector<int>, int>> faces; // XXX todo 4 for hex
+    size_t n_vertices = 0;
+};
+
+class SerializeFeaturesOBJ {
+public:
+    SerializeFeaturesOBJ(std::filesystem::path const &path, Mesh const&_mesh)
+        : os{path.c_str()}
+        , mesh{_mesh}
+    {
+        os << std::setprecision(17);
+
+    }
+    void serialize() {
+        if (auto maybe_feature_vert = mesh.get_vertex_property<int>("AlgoHex::FeatureVertices")) {
+            auto feature_vert = *maybe_feature_vert;
+            new_object("feature_verts");
+            for (const auto vh: mesh.vertices()) {
+                if (feature_vert[vh]) {
+                    serialize_point(vh);
+                }
+            }
+        }
+        if (auto maybe_feature_edge = mesh.get_edge_property<int>("AlgoHex::FeatureEdges")) {
+            new_object("feature_edges");
+            auto feature_edge = *maybe_feature_edge;
+            for (const auto eh: mesh.edges()) {
+                auto f_id = feature_edge[eh];
+                if (!f_id) continue;
+                auto v_from = mesh.to_vertex_handle(eh.halfedge_handle(0));
+                auto v_to = mesh.to_vertex_handle(eh.halfedge_handle(1));
+                auto vi0 = serialize_point(v_from);
+                auto vi1 = serialize_point(v_to);
+                os << "vt " << f_id << " " << 0 << "\n";
+                //os << "l " << vi0 << "/-1 " << vi1 << "/-1\n";
+                os << "l " << vi0 << "/-1 " << vi1 << "/-1\n";
+            }
+        }
+    }
+protected:
+    void new_object(std::string const &name) {
+        std::cout << name << std::endl;
+        os << "o " << name << "\n";
+        //n_vertices = 0;
+        //vi.fill(0);
+    }
+    size_t serialize_point(VH vh) {
+        if (vi[vh] > 0) return vi[vh];
+        const auto &p = mesh.vertex(vh);
+        os << "v " << p[0] << " "
+                   << p[1] << " "
+                   << p[2] << "\n";
+        auto vidx = ++n_vertices; //1-based indexing
+        vi[vh] = vidx;
+        return vidx;
+    }
+private:
+    std::ofstream os;
+    Mesh const &mesh;
+    OVM::PropertyPtr<int,OVM::Entity::Vertex> vi = mesh.create_private_property<int, OVM::Entity::Vertex>();
     size_t n_vertices = 0;
 };
 
@@ -73,17 +162,18 @@ int main(int argc, char** argv) {
 
     Mesh mesh;
 
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <in.ovm(b)> <out.obj>\n";
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <in.ovm(b)> <cells.ply> <features.obj>\n";
         return 1;
     }
     const auto path_in = argv[1];
-    const auto path_out = argv[2];
+    const auto path_out_cells = argv[2];
+    const auto path_out_features = argv[3];
 
     OVM::IO::read_file(path_in, mesh, false, false);
 
-    std::ofstream of(path_out);
-    SerializeObj{of, mesh}.serialize();
+    SerializeCellsPLY{path_out_cells, mesh}.serialize();
+    SerializeFeaturesOBJ{path_out_features, mesh}.serialize();
 
 
     return 0;
