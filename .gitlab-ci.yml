@@ -1,57 +1,42 @@
-gcc-c++11:
-  script: "CI/ci-linux.sh gcc C++11"
+gcc-c++17:
+  script: "CI/ci-linux.sh gcc C++17"
   tags:
     - Linux
 
-clang-c++11:
-  script: "CI/ci-linux.sh clang C++11"
+clang-c++17:
+  script: "CI/ci-linux.sh clang C++17"
   tags:
     - Linux
 
-macos-c++11:
-  script: "CI/ci-mac.sh C++11"
+macos-M1-c++17:
+  script: "CI/ci-mac.sh C++17"
   tags:
-    - Apple
+    - AppleM1
 
 cppcheck:
   script: "CI/ci-cppcheck.sh"
+  allow_failure: true
   tags:
     - Linux
   artifacts:
     paths:
       - cppcheck.log
 
-VS2017-64-bit:
+VS2019-32-bit:
   variables:
-    BUILD_PLATFORM: "VS2017"
-    ARCHITECTURE:   "x64"
-  script: "CI\\Windows.bat"
-  tags:
-    - VS2015
-
-VS2017-32-bit:
-  variables:
-    BUILD_PLATFORM: "VS2017"
+    BUILD_PLATFORM: "VS2019"
     ARCHITECTURE:   "x32"
   script: "CI\\Windows.bat"
   tags:
-    - VS2017
+    - VS2019
 
-VS2015-64-bit:
+VS2019-64-bit:
   variables:
-    BUILD_PLATFORM: "VS2015"
+    BUILD_PLATFORM: "VS2019"
     ARCHITECTURE:   "x64"
   script: "CI\\Windows.bat"
   tags:
-    - VS2015
-
-VS2015-32-bit:
-  variables:
-    BUILD_PLATFORM: "VS2015"
-    ARCHITECTURE:   "x32"
-  script: "CI\\Windows.bat"
-  tags:
-    - VS2015
+    - VS2019
 
 doc:
   script: "CI/ci-doc.sh"

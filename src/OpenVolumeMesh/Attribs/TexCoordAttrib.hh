@@ -36,9 +36,9 @@
 
 #include <cassert>
 
-#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Attribs/OpenVolumeMeshStatus.hh>
-#include <OpenVolumeMesh/Core/PropertyDefines.hh>
+#include <OpenVolumeMesh/Core/Properties/PropertyPtr.hh>
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
 
 namespace OpenVolumeMesh {
@@ -57,12 +57,10 @@ public:
     // Vertices
     //==================
     const TexCoordT& operator[](const VertexHandle& _h) const {
-        assert((unsigned int)_h.idx() < kernel_.n_vertices());
         return vtexcoord_prop_[_h];
     }
 
     TexCoordT& operator[](const VertexHandle& _h) {
-        assert((unsigned int)_h.idx() < kernel_.n_vertices());
         vertex_texcoords_available_ = true;
         return vtexcoord_prop_[_h];
     }
@@ -73,10 +71,7 @@ public:
 
 
 private:
-
     VertexPropertyT<TexCoordT> vtexcoord_prop_;
-
-    TopologyKernel& kernel_;
 
     bool vertex_texcoords_available_;
 

@@ -143,6 +143,8 @@ public:
     typedef class HalfFaceSheetHalfFaceIter HalfFaceSheetHalfFaceIter;
     typedef class HexVertexIter HexVertexIter;
 
+    using TopologyKernel::is_valid;
+
     CellSheetCellIter csc_iter(CellHandle _ref_h, const unsigned char _orthDir, int _max_laps = 1) const {
         return CellSheetCellIter(_ref_h, _orthDir, this, _max_laps);
     }
@@ -177,7 +179,8 @@ public:
 
     inline HalfFaceHandle opposite_halfface_handle_in_cell(HalfFaceHandle _hfh, CellHandle _ch) const {
 
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_hfh));
+        assert(is_valid(_ch));
 
         if(orientation(_hfh, _ch) == XF) return xback_halfface(_ch);
         if(orientation(_hfh, _ch) == XB) return xfront_halfface(_ch);
@@ -190,50 +193,43 @@ public:
     }
 
     inline HalfFaceHandle xfront_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[XF];
     }
 
     inline HalfFaceHandle xback_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[XB];
     }
 
     inline HalfFaceHandle yfront_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[YF];
     }
 
     inline HalfFaceHandle yback_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[YB];
     }
 
     inline HalfFaceHandle zfront_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[ZF];
     }
 
     inline HalfFaceHandle zback_halfface(CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         return TopologyKernel::cell(_ch).halffaces()[ZB];
     }
 
     unsigned char orientation(HalfFaceHandle _hfh, CellHandle _ch) const {
-
-        assert((unsigned int)_ch.idx() < TopologyKernel::cells_.size());
+        assert(is_valid(_ch));
 
         std::vector<HalfFaceHandle> halffaces = TopologyKernel::cell(_ch).halffaces();
         for(unsigned int i = 0; i < halffaces.size(); ++i) {
@@ -305,9 +301,7 @@ public:
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
             n_hf = TopologyKernel::opposite_halfface_handle(n_hf);
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
-            HalfEdgeHandle o_he = TopologyKernel::opposite_halfedge_handle(n_he);
-            if(o_he == TopologyKernel::InvalidHalfEdgeHandle) break;
-            n_hf = TopologyKernel::adjacent_halfface_in_cell(n_hf, o_he);
+            n_hf = TopologyKernel::adjacent_halfface_in_cell(n_hf, n_he);
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
             else return n_hf;
         }
@@ -321,9 +315,7 @@ public:
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
             n_hf = TopologyKernel::opposite_halfface_handle(n_hf);
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
-            HalfEdgeHandle o_he = TopologyKernel::opposite_halfedge_handle(n_he);
-            if(o_he == TopologyKernel::InvalidHalfEdgeHandle) break;
-            n_hf = TopologyKernel::adjacent_halfface_in_cell(n_hf, o_he);
+            n_hf = TopologyKernel::adjacent_halfface_in_cell(n_hf, n_he);
             if(n_hf == TopologyKernel::InvalidHalfFaceHandle) break;
             else return TopologyKernel::opposite_halfface_handle(n_hf);
         }
@@ -374,4 +366,3 @@ private:
 };
 
 } // Namespace OpenVolumeMesh
-

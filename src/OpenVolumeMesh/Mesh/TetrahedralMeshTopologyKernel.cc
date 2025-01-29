@@ -358,12 +358,12 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 
                 HalfEdgeHandle heh = add_halfedge(newStart, newEnd);
                 newHalfedges.push_back(heh);
-                swap_halfedge_properties(hf.halfedges()[j], heh);
+                swap_property_elements(hf.halfedges()[j], heh);
             }
 
             HalfFaceHandle hfh = add_halfface(newHalfedges);
             newHalffaces.push_back(hfh);
-            swap_halfface_properties(c.halffaces()[hf_idx], hfh);
+            swap_property_elements(c.halffaces()[hf_idx], hfh);
         }
 
         delete_cell(ch);
@@ -392,7 +392,7 @@ VertexHandle TetrahedralMeshTopologyKernel::collapse_edge(HalfEdgeHandle _heh)
 
     for (const auto &n: new_cells) {
         CellHandle newCell = add_cell(std::move(n.second));
-        swap_cell_properties(n.first, newCell);
+        swap_property_elements(n.first, newCell);
     }
 
 
@@ -437,7 +437,7 @@ void TetrahedralMeshTopologyKernel::split_edge(HalfEdgeHandle _heh, VertexHandle
     for (const auto &n: new_cells) {
         const auto &vhs = n.second;
         CellHandle newCell = add_cell(vhs[0], vhs[1], vhs[2], vhs[3]);
-        copy_cell_properties(n.first, newCell);
+        copy_property_elements(n.first, newCell);
     }
 
 
@@ -475,7 +475,7 @@ void TetrahedralMeshTopologyKernel::split_face(FaceHandle _fh, VertexHandle _vh)
     for (const auto &n: new_cells) {
         const auto &vhs = n.second;
         CellHandle newCell = add_cell(vhs[0], vhs[1], vhs[2], vhs[3]);
-        copy_cell_properties(n.first, newCell);
+        copy_property_elements(n.first, newCell);
     }
 
     enable_deferred_deletion(deferred_deletion_tmp);

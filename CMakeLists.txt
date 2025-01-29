@@ -3,7 +3,7 @@ cmake_policy(VERSION 3.12.0)
 
 
 project (OpenVolumeMesh
-    VERSION 2.1.0
+    VERSION 3.0.5
     LANGUAGES CXX
     HOMEPAGE_URL https://openvolumemesh.org/
     )
@@ -23,9 +23,16 @@ set(OVM_BUILD_DOCUMENTATION ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolume
 
 
 if (OVM_STANDALONE_BUILD)
+    option(BUILD_SHARED_LIBS "Build shared library (*.dll, *.so, *.dylib) instead of static library (*.a, *.lib)" OFF)
+
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Build/bin")
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Build/lib")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Build/lib")
+    if(MSVC)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Build/bin")
+    else(MSVC)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Build/lib")
+    endif(MSVC)
+
     set(OVM_TARGET_PREFIX "")
     enable_testing()
     option(STL_DEBUG "Enable STL debug checks. Warning: This must be consistent across the whole build! Not compatible with the libc++ shipped with Apple XCode as of 2019." OFF)
@@ -39,11 +46,13 @@ if (OVM_STANDALONE_BUILD)
         add_definitions(-D_GLIBCXX_DEBUG=1)
         add_definitions(-D_GLIBCXX_DEBUG_PEDANTIC=1)
     endif()
-    set(OVM_CXX_STANDARD 11 CACHE STRING "C++ standard version to use")
-    set_property(CACHE OVM_CXX_STANDARD PROPERTY STRINGS 11 14 17 20)
+    set(OVM_CXX_STANDARD 17 CACHE STRING "C++ standard version to use")
+    set_property(CACHE OVM_CXX_STANDARD PROPERTY STRINGS 17 20)
     set(CMAKE_CXX_STANDARD ${OVM_CXX_STANDARD})
     set(CMAKE_CXX_STANDARD_REQUIRED YES)
     set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 else()
     # OVM_TARGET_PREFIX is prepended to targets with generic names,
     # i.e., "doc", "unittests"

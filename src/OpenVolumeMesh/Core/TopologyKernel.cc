@@ -39,8 +39,10 @@
 #include <queue>
 
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
+#include <OpenVolumeMesh/Core/detail/swap_bool.hh>
 
 namespace OpenVolumeMesh {
+
 
 // Initialize constants
 const VertexHandle      TopologyKernel::InvalidVertexHandle   = VertexHandle(-1);
@@ -51,6 +53,7 @@ const HalfFaceHandle    TopologyKernel::InvalidHalfFaceHandle = HalfFaceHandle(-
 const CellHandle        TopologyKernel::InvalidCellHandle     = CellHandle(-1);
 
 //========================================================================================
+
 void TopologyKernel::reserve_vertices(size_t n)
 {
     ResourceManager::reserve_vprops(n);
@@ -76,6 +79,16 @@ void TopologyKernel::reserve_cells(size_t n)
     ResourceManager::reserve_cprops(n);
     cells_.reserve(n);
     cell_deleted_.reserve(n);
+}
+
+void TopologyKernel::add_n_vertices(size_t n)
+{
+    resize_vprops(n_vertices_ + n);
+    n_vertices_ += n;
+    vertex_deleted_.resize(n_vertices_, false);
+    if(has_vertex_bottom_up_incidences()) {
+        outgoing_hes_per_vertex_.resize(n_vertices_);
+    }
 }
 
 VertexHandle TopologyKernel::add_vertex() {
@@ -112,7 +125,7 @@ EdgeHandle TopologyKernel::add_edge(VertexHandle _fromVertex,
         if(has_vertex_bottom_up_incidences()) {
 
             assert((size_t)_fromVertex.idx() < outgoing_hes_per_vertex_.size());
-            std::vector<HalfEdgeHandle>& ohes = outgoing_hes_per_vertex_[_fromVertex.idx()];
+            std::vector<HalfEdgeHandle>& ohes = outgoing_hes_per_vertex_[_fromVertex];
             for(std::vector<HalfEdgeHandle>::const_iterator he_it = ohes.begin(),
                     he_end = ohes.end(); he_it != he_end; ++he_it) {
                 if(halfedge(*he_it).to_vertex() == _toVertex) {
@@ -143,8 +156,8 @@ EdgeHandle TopologyKernel::add_edge(VertexHandle _fromVertex,
         assert((size_t)_fromVertex.idx() < outgoing_hes_per_vertex_.size());
         assert((size_t)_toVertex.idx() < outgoing_hes_per_vertex_.size());
 
-        outgoing_hes_per_vertex_[_fromVertex.idx()].push_back(halfedge_handle(eh, 0));
-        outgoing_hes_per_vertex_[_toVertex.idx()].push_back(halfedge_handle(eh, 1));
+        outgoing_hes_per_vertex_[_fromVertex].push_back(halfedge_handle(eh, 0));
+        outgoing_hes_per_vertex_[_toVertex].push_back(halfedge_handle(eh, 1));
     }
 
     // Create item for edge bottom-up incidences
@@ -200,8 +213,8 @@ FaceHandle TopologyKernel::add_face(std::vector<HalfEdgeHandle> _halfedges, bool
             assert((size_t)heh.idx() < incident_hfs_per_he_.size());
             assert((size_t)opp.idx() < incident_hfs_per_he_.size());
 
-            incident_hfs_per_he_[heh.idx()].push_back(halfface_handle(fh, 0));
-            incident_hfs_per_he_[opp.idx()].push_back(halfface_handle(fh, 1));
+            incident_hfs_per_he_[heh].push_back(halfface_handle(fh, 0));
+            incident_hfs_per_he_[opp].push_back(halfface_handle(fh, 1));
         }
     }
 
@@ -277,7 +290,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
 
     HalfEdgeHandle heh = halfedge_handle(_eh, 0);
     assert((size_t)heh.idx() < incident_hfs_per_he_.size());
-    auto &incident_hfs = incident_hfs_per_he_[heh.idx()];
+    auto &incident_hfs = incident_hfs_per_he_[heh];
 
     const size_t n_hfs = incident_hfs.size();
 
@@ -290,6 +303,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
     // Start with one incident halfface and go into the first direction
     auto start_hf = incident_hfs.front();
     auto cur_hf = start_hf;
+    auto cur_heh = heh;
 
     do {
         new_halffaces.push_back(cur_hf);
@@ -302,7 +316,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
                 || is_deleted(incident_cell(cur_hf)))
             break;
 
-        cur_hf = adjacent_halfface_in_cell(cur_hf, heh);
+        cur_hf = adjacent_halfface_in_cell(cur_hf, cur_heh);
         if(cur_hf == InvalidHalfFaceHandle) {
             return;
         }
@@ -318,6 +332,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
     if(new_halffaces.size() != incident_hfs.size()) {
 
         cur_hf = start_hf;
+        cur_heh = opposite_halfedge_handle(heh);
 
         while(true) {
             cur_hf = opposite_halfface_handle(cur_hf);
@@ -328,7 +343,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
                 break;
             }
 
-            cur_hf = adjacent_halfface_in_cell(cur_hf, heh);
+            cur_hf = adjacent_halfface_in_cell(cur_hf, cur_heh);
             if (cur_hf == InvalidHalfFaceHandle) {
                 return;
             }
@@ -347,7 +362,7 @@ void TopologyKernel::reorder_incident_halffaces(EdgeHandle _eh) {
         incident_hfs = std::move(new_halffaces);
         // update incident halffaces of the opposite halfedge:
         std::transform(incident_hfs.rbegin(), incident_hfs.rend(),
-                incident_hfs_per_he_[opposite_halfedge_handle(heh).idx()].begin(),
+                incident_hfs_per_he_[opposite_halfedge_handle(heh)].begin(),
                 opposite_halfface_handle);
     }
 #if 0
@@ -432,14 +447,14 @@ CellHandle TopologyKernel::add_cell(std::vector<HalfFaceHandle> _halffaces, bool
     // Update face bottom-up incidences
     if(has_face_bottom_up_incidences()) {
 
-        const auto &cell_halffaces = cells_[ch.idx()].halffaces();
+        const auto &cell_halffaces = cells_[ch].halffaces();
         std::set<EdgeHandle> cell_edges;
         for(const auto &hfh: cell_halffaces) {
             assert((size_t)hfh.idx() < incident_cell_per_hf_.size());
 
 #ifndef NDEBUG
             if(_topologyCheck) {
-                if(incident_cell_per_hf_[hfh.idx()] != InvalidCellHandle) {
+                if(incident_cell_per_hf_[hfh] != InvalidCellHandle) {
                     // Shouldn't this situation be dealt with before adding the
                     // cell and return InvalidCellHandle in this case?
                     // Mike: Not if the user intends to add non-manifold
@@ -451,7 +466,7 @@ CellHandle TopologyKernel::add_cell(std::vector<HalfFaceHandle> _halffaces, bool
 #endif
 
             // Overwrite incident cell for current half-face
-            incident_cell_per_hf_[hfh.idx()] = ch;
+            incident_cell_per_hf_[hfh] = ch;
 
             // Collect all edges of cell
             for(const auto &eh: face_edges(face_handle(hfh))) {
@@ -495,14 +510,14 @@ void TopologyKernel::set_edge(EdgeHandle _eh, VertexHandle _fromVertex, VertexHa
         const HalfEdgeHandle heh1 = halfedge_handle(_eh, 1);
 
         std::vector<HalfEdgeHandle>::iterator h_end =
-        		std::remove(outgoing_hes_per_vertex_[fv.idx()].begin(), outgoing_hes_per_vertex_[fv.idx()].end(), heh0);
-        outgoing_hes_per_vertex_[fv.idx()].resize(h_end - outgoing_hes_per_vertex_[fv.idx()].begin());
+        		std::remove(outgoing_hes_per_vertex_[fv].begin(), outgoing_hes_per_vertex_[fv].end(), heh0);
+        outgoing_hes_per_vertex_[fv].resize(h_end - outgoing_hes_per_vertex_[fv].begin());
 
-        h_end = std::remove(outgoing_hes_per_vertex_[tv.idx()].begin(), outgoing_hes_per_vertex_[tv.idx()].end(), heh1);
-        outgoing_hes_per_vertex_[tv.idx()].resize(h_end - outgoing_hes_per_vertex_[tv.idx()].begin());
+        h_end = std::remove(outgoing_hes_per_vertex_[tv].begin(), outgoing_hes_per_vertex_[tv].end(), heh1);
+        outgoing_hes_per_vertex_[tv].resize(h_end - outgoing_hes_per_vertex_[tv].begin());
 
-        outgoing_hes_per_vertex_[_fromVertex.idx()].push_back(heh0);
-        outgoing_hes_per_vertex_[_toVertex.idx()].push_back(heh1);
+        outgoing_hes_per_vertex_[_fromVertex].push_back(heh0);
+        outgoing_hes_per_vertex_[_toVertex].push_back(heh1);
     }
 
     e.set_from_vertex(_fromVertex);
@@ -528,20 +543,20 @@ void TopologyKernel::set_face(FaceHandle _fh, const std::vector<HalfEdgeHandle>&
                 he_end = hes.end(); he_it != he_end; ++he_it) {
 
         	std::vector<HalfFaceHandle>::iterator h_end =
-        			std::remove(incident_hfs_per_he_[he_it->idx()].begin(),
-                        		incident_hfs_per_he_[he_it->idx()].end(), hf0);
-            incident_hfs_per_he_[he_it->idx()].resize(h_end - incident_hfs_per_he_[he_it->idx()].begin());
+        			std::remove(incident_hfs_per_he_[*he_it].begin(),
+                        		incident_hfs_per_he_[*he_it].end(), hf0);
+            incident_hfs_per_he_[*he_it].resize(h_end - incident_hfs_per_he_[*he_it].begin());
 
-            h_end =  std::remove(incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].begin(),
-                        		 incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].end(), hf1);
-            incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].resize(h_end - incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].begin());
+            h_end =  std::remove(incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].begin(),
+                        		 incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].end(), hf1);
+            incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].resize(h_end - incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].begin());
         }
 
         for(std::vector<HalfEdgeHandle>::const_iterator he_it = _hes.begin(),
                 he_end = _hes.end(); he_it != he_end; ++he_it) {
 
-            incident_hfs_per_he_[he_it->idx()].push_back(hf0);
-            incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].push_back(hf1);
+            incident_hfs_per_he_[*he_it].push_back(hf0);
+            incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].push_back(hf1);
         }
 
         // TODO: Reorder incident half-faces
@@ -564,13 +579,13 @@ void TopologyKernel::set_cell(CellHandle _ch, const std::vector<HalfFaceHandle>&
         for(std::vector<HalfFaceHandle>::const_iterator hf_it = hfs.begin(),
                 hf_end = hfs.end(); hf_it != hf_end; ++hf_it) {
 
-            incident_cell_per_hf_[hf_it->idx()] = InvalidCellHandle;
+            incident_cell_per_hf_[*hf_it] = InvalidCellHandle;
         }
 
         for(std::vector<HalfFaceHandle>::const_iterator hf_it = _hfs.begin(),
                 hf_end = _hfs.end(); hf_it != hf_end; ++hf_it) {
 
-            incident_cell_per_hf_[hf_it->idx()] = _ch;
+            incident_cell_per_hf_[*hf_it] = _ch;
         }
     }
 
@@ -734,33 +749,37 @@ void TopologyKernel::collect_garbage()
     deferred_deletion_ = false;
 
     for (int i = (int)n_cells(); i > 0; --i) {
-        if (is_deleted(CellHandle(i - 1))) {
-            cell_deleted_[i - 1] = false;
-            delete_cell_core(CellHandle(i - 1));
+        auto ch = CellHandle(i - 1);
+        if (is_deleted(ch)) {
+            cell_deleted_[ch] = false;
+            delete_cell_core(ch);
         }
     }
     n_deleted_cells_ = 0;
 
     for (int i = (int)n_faces(); i > 0; --i) {
-        if (is_deleted(FaceHandle(i - 1))) {
-            face_deleted_[i - 1] = false;
-            delete_face_core(FaceHandle(i - 1));
+        auto fh = FaceHandle(i - 1);
+        if (is_deleted(fh)) {
+            face_deleted_[fh] = false;
+            delete_face_core(fh);
         }
     }
     n_deleted_faces_ = 0;
 
     for (int i = (int)n_edges(); i > 0; --i) {
-        if (is_deleted(EdgeHandle(i - 1))) {
-            edge_deleted_[i - 1] = false;
-            delete_edge_core(EdgeHandle(i - 1));
+        auto eh = EdgeHandle(i - 1);
+        if (is_deleted(eh)) {
+            edge_deleted_[eh] = false;
+            delete_edge_core(eh);
         }
     }
     n_deleted_edges_ = 0;
 
     for (int i = (int)n_vertices(); i > 0; --i) {
-        if (is_deleted(VertexHandle(i - 1))) {
-            vertex_deleted_[i - 1] = false;
-            delete_vertex_core(VertexHandle(i - 1));
+        auto vh = VertexHandle(i - 1);
+        if (is_deleted(vh)) {
+            vertex_deleted_[vh] = false;
+            delete_vertex_core(vh);
         }
     }
     n_deleted_vertices_ = 0;
@@ -782,7 +801,7 @@ void TopologyKernel::get_incident_edges(const ContainerT& _vs,
         for(typename ContainerT::const_iterator v_it = _vs.begin(),
                 v_end = _vs.end(); v_it != v_end; ++v_it) {
 
-            const std::vector<HalfEdgeHandle>& inc_hes = outgoing_hes_per_vertex_[v_it->idx()];
+            const std::vector<HalfEdgeHandle>& inc_hes = outgoing_hes_per_vertex_[*v_it];
 
             for(std::vector<HalfEdgeHandle>::const_iterator he_it = inc_hes.begin(),
                     he_end = inc_hes.end(); he_it != he_end; ++he_it) {
@@ -923,7 +942,7 @@ VertexIter TopologyKernel::delete_vertex_core(VertexHandle _h) {
     if (fast_deletion_enabled() && !deferred_deletion_enabled()) // for fast deletion swap handle with last not deleted vertex
     {
         VertexHandle last_undeleted_vertex = VertexHandle((int)n_vertices()-1);
-        assert(!vertex_deleted_[last_undeleted_vertex.idx()]);
+        assert(!vertex_deleted_[last_undeleted_vertex]);
         swap_vertex_indices(h, last_undeleted_vertex);
         h = last_undeleted_vertex;
     }
@@ -931,7 +950,7 @@ VertexIter TopologyKernel::delete_vertex_core(VertexHandle _h) {
     if (deferred_deletion_enabled())
     {
         ++n_deleted_vertices_;
-        vertex_deleted_[h.idx()] = true;
+        vertex_deleted_[h] = true;
 //        deleted_vertices_.push_back(h);
 
         // Iterator to next element in vertex list
@@ -945,7 +964,7 @@ VertexIter TopologyKernel::delete_vertex_core(VertexHandle _h) {
 
             // Decrease all vertex handles >= _h in all edge definitions
             for(int i = h.idx(), end = (int)n_vertices(); i < end; ++i) {
-                const std::vector<HalfEdgeHandle>& hes = outgoing_hes_per_vertex_[i];
+                const std::vector<HalfEdgeHandle>& hes = outgoing_hes_per_vertex_[VertexHandle(i)];
                 for(std::vector<HalfEdgeHandle>::const_iterator he_it = hes.begin(),
                     he_end = hes.end(); he_it != he_end; ++he_it) {
 
@@ -1029,7 +1048,7 @@ EdgeIter TopologyKernel::delete_edge_core(EdgeHandle _h) {
     if (fast_deletion_enabled() && !deferred_deletion_enabled()) // for fast deletion swap handle with last one
     {
         EdgeHandle last_edge = EdgeHandle((int)edges_.size()-1);
-        assert(!edge_deleted_[last_edge.idx()]);
+        assert(!edge_deleted_[last_edge]);
         swap_edge_indices(h, last_edge);
         h = last_edge;
     }
@@ -1043,23 +1062,23 @@ EdgeIter TopologyKernel::delete_edge_core(EdgeHandle _h) {
         assert(v0.is_valid() && (size_t)v0.idx() < outgoing_hes_per_vertex_.size());
         assert(v1.is_valid() && (size_t)v1.idx() < outgoing_hes_per_vertex_.size());
 
-        outgoing_hes_per_vertex_[v0.idx()].erase(
-                std::remove(outgoing_hes_per_vertex_[v0.idx()].begin(),
-                            outgoing_hes_per_vertex_[v0.idx()].end(),
+        outgoing_hes_per_vertex_[v0].erase(
+                std::remove(outgoing_hes_per_vertex_[v0].begin(),
+                            outgoing_hes_per_vertex_[v0].end(),
                             halfedge_handle(h, 0)),
-                            outgoing_hes_per_vertex_[v0.idx()].end());
+                            outgoing_hes_per_vertex_[v0].end());
 
-        outgoing_hes_per_vertex_[v1.idx()].erase(
-                std::remove(outgoing_hes_per_vertex_[v1.idx()].begin(),
-                            outgoing_hes_per_vertex_[v1.idx()].end(),
+        outgoing_hes_per_vertex_[v1].erase(
+                std::remove(outgoing_hes_per_vertex_[v1].begin(),
+                            outgoing_hes_per_vertex_[v1].end(),
                             halfedge_handle(h, 1)),
-                            outgoing_hes_per_vertex_[v1.idx()].end());
+                            outgoing_hes_per_vertex_[v1].end());
     }
 
     if (deferred_deletion_enabled())
     {
         ++n_deleted_edges_;
-        edge_deleted_[h.idx()] = true;
+        edge_deleted_[h] = true;
 //        deleted_edges_.push_back(h);
 
         // Return iterator to next element in list
@@ -1214,7 +1233,7 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
     if (fast_deletion_enabled() && !deferred_deletion_enabled()) // for fast deletion swap handle with last one
     {
         FaceHandle last_face = FaceHandle((int)faces_.size()-1);
-        assert(!face_deleted_[last_face.idx()]);
+        assert(!face_deleted_[last_face]);
         swap_face_indices(h, last_face);
         h = last_face;
     }
@@ -1228,16 +1247,16 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
 
             assert((size_t)std::max(he_it->idx(), opposite_halfedge_handle(*he_it).idx()) < incident_hfs_per_he_.size());
 
-            incident_hfs_per_he_[he_it->idx()].erase(
-                    std::remove(incident_hfs_per_he_[he_it->idx()].begin(),
-                                incident_hfs_per_he_[he_it->idx()].end(),
-                                halfface_handle(h, 0)), incident_hfs_per_he_[he_it->idx()].end());
+            incident_hfs_per_he_[*he_it].erase(
+                    std::remove(incident_hfs_per_he_[*he_it].begin(),
+                                incident_hfs_per_he_[*he_it].end(),
+                                halfface_handle(h, 0)), incident_hfs_per_he_[*he_it].end());
 
 
-            incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].erase(
-                    std::remove(incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].begin(),
-                                incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].end(),
-                                halfface_handle(h, 1)), incident_hfs_per_he_[opposite_halfedge_handle(*he_it).idx()].end());
+            incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].erase(
+                    std::remove(incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].begin(),
+                                incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].end(),
+                                halfface_handle(h, 1)), incident_hfs_per_he_[opposite_halfedge_handle(*he_it)].end());
 
             reorder_incident_halffaces(edge_handle(*he_it));
         }
@@ -1246,7 +1265,7 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
     if (deferred_deletion_enabled())
     {
         ++n_deleted_faces_;
-        face_deleted_[h.idx()] = true;
+        face_deleted_[h] = true;
 //        deleted_faces_.push_back(h);
 
         // Return iterator to next element in list
@@ -1385,7 +1404,7 @@ CellIter TopologyKernel::delete_cell_core(CellHandle _h) {
     if (fast_deletion_enabled() && !deferred_deletion_enabled()) // for fast deletion swap handle with last not deleted cell
     {
         CellHandle last_undeleted_cell = CellHandle((int)cells_.size()-1);
-        assert(!cell_deleted_[last_undeleted_cell.idx()]);
+        assert(!cell_deleted_[last_undeleted_cell]);
         swap_cell_indices(h, last_undeleted_cell);
         h = last_undeleted_cell;
     }
@@ -1397,8 +1416,8 @@ CellIter TopologyKernel::delete_cell_core(CellHandle _h) {
         for(std::vector<HalfFaceHandle>::const_iterator hf_it = hfs.begin(),
                 hf_end = hfs.end(); hf_it != hf_end; ++hf_it) {
             assert((size_t)hf_it->idx() < incident_cell_per_hf_.size());
-            if (incident_cell_per_hf_[hf_it->idx()] == h)
-                incident_cell_per_hf_[hf_it->idx()] = InvalidCellHandle;
+            if (incident_cell_per_hf_[*hf_it] == h)
+                incident_cell_per_hf_[*hf_it] = InvalidCellHandle;
         }
         std::set<EdgeHandle> edges;
         for(std::vector<HalfFaceHandle>::const_iterator hf_it = hfs.begin(),
@@ -1414,7 +1433,7 @@ CellIter TopologyKernel::delete_cell_core(CellHandle _h) {
     if (deferred_deletion_enabled())
     {
         ++n_deleted_cells_;
-        cell_deleted_[h.idx()] = true;
+        cell_deleted_[h] = true;
 //        deleted_cells_.push_back(h);
 //        deleted_cells_set.insert(h);
 
@@ -1462,35 +1481,20 @@ void TopologyKernel::swap_cell_indices(CellHandle _h1, CellHandle _h2)
     if (_h1 == _h2)
         return;
 
-    int id1 = _h1.idx();
-    int id2 = _h2.idx();
-
-    Cell c1 = cells_[id1];
-    Cell c2 = cells_[id2];
-
     // correct pointers to those cells
-    std::vector<HalfFaceHandle> hfhs1 = c1.halffaces();
-    for (unsigned int i = 0; i < hfhs1.size(); ++i)
-    {
-        HalfFaceHandle hfh = hfhs1[i];
-        if (incident_cell_per_hf_[hfh.idx()] == _h1)
-            incident_cell_per_hf_[hfh.idx()] = _h2;
+    for (const auto hfh: cells_[_h1].halffaces()) {
+        if (incident_cell_per_hf_[hfh] == _h1)
+            incident_cell_per_hf_[hfh] = _h2;
     }
-
-    std::vector<HalfFaceHandle> hfhs2 = c2.halffaces();
-    for (unsigned int i = 0; i < hfhs2.size(); ++i)
-    {
-        HalfFaceHandle hfh = hfhs2[i];
-        if (incident_cell_per_hf_[hfh.idx()] == _h2)
-            incident_cell_per_hf_[hfh.idx()] = _h1;
+    for (const auto hfh: cells_[_h2].halffaces()) {
+        if (incident_cell_per_hf_[hfh] == _h2)
+            incident_cell_per_hf_[hfh] = _h1;
     }
 
     // swap vector entries
-    std::swap(cells_[id1], cells_[id2]);
-    bool tmp = cell_deleted_[id1];
-    cell_deleted_[id1] = cell_deleted_[id2];
-    cell_deleted_[id2] = tmp;
-    swap_cell_properties(_h1, _h2);
+    std::swap(cells_[_h1], cells_[_h2]);
+    detail::swap_bool(cell_deleted_[_h1], cell_deleted_[_h2]);
+    swap_property_elements(_h1, _h2);
 }
 
 void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
@@ -1521,7 +1525,7 @@ void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
             for (unsigned int j = 0; j < 2; ++j) // for both halffaces
             {
                 HalfFaceHandle hfh = HalfFaceHandle(2*id+j);
-                CellHandle ch = incident_cell_per_hf_[hfh.idx()];
+                CellHandle ch = incident_cell_per_hf_[hfh];
                 if (!ch.is_valid())
                     continue;
 
@@ -1530,7 +1534,7 @@ void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
                 if (processed_cells.find(ch.idx()) == processed_cells.end())
                 {
 
-                    Cell& c = cells_[ch.idx()];
+                    Cell& c = cells_[ch];
 
                     // replace old halffaces with new halffaces where the ids are swapped
 
@@ -1554,7 +1558,7 @@ void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
         // serach for all cells that contain a swapped face
         for (unsigned int i = 0; i < cells_.size(); ++i)
         {
-            Cell& c = cells_[i];
+            Cell& c = cells_[CellHandle(i)];
 
             // check if c contains a swapped face
             bool contains_swapped_face = false;
@@ -1604,7 +1608,7 @@ void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
                     if (processed_halfedges.find(heh) != processed_halfedges.end())
                         continue;
 
-                    std::vector<HalfFaceHandle>& incident_halffaces = incident_hfs_per_he_[heh.idx()];
+                    std::vector<HalfFaceHandle>& incident_halffaces = incident_hfs_per_he_[heh];
                     for (unsigned int l = 0; l < incident_halffaces.size(); ++l)
                     {
                         HalfFaceHandle& hfh2 = incident_halffaces[l];
@@ -1622,15 +1626,13 @@ void TopologyKernel::swap_face_indices(FaceHandle _h1, FaceHandle _h2)
     }
 
     // swap vector entries
-    std::swap(faces_[ids[0]], faces_[ids[1]]);
-    bool tmp = face_deleted_[ids[0]];
-    face_deleted_[ids[0]] = face_deleted_[ids[1]];
-    face_deleted_[ids[1]] = tmp;
-    std::swap(incident_cell_per_hf_[2*ids[0]+0], incident_cell_per_hf_[2*ids[1]+0]);
-    std::swap(incident_cell_per_hf_[2*ids[0]+1], incident_cell_per_hf_[2*ids[1]+1]);
-    swap_face_properties(_h1, _h2);
-    swap_halfface_properties(halfface_handle(_h1, 0), halfface_handle(_h2, 0));
-    swap_halfface_properties(halfface_handle(_h1, 1), halfface_handle(_h2, 1));
+    std::swap(faces_[_h1], faces_[_h2]);
+    detail::swap_bool(face_deleted_[_h1], face_deleted_[_h2]);
+    std::swap(incident_cell_per_hf_[_h1.halfface_handle(0)], incident_cell_per_hf_[_h2.halfface_handle(0)]);
+    std::swap(incident_cell_per_hf_[_h1.halfface_handle(1)], incident_cell_per_hf_[_h2.halfface_handle(1)]);
+    swap_property_elements(_h1, _h2);
+    swap_property_elements(halfface_handle(_h1, 0), halfface_handle(_h2, 0));
+    swap_property_elements(halfface_handle(_h1, 1), halfface_handle(_h2, 1));
 
 }
 
@@ -1658,7 +1660,7 @@ void TopologyKernel::swap_edge_indices(EdgeHandle _h1, EdgeHandle _h2)
             HalfEdgeHandle heh = HalfEdgeHandle(2*ids[i]);
 
 
-            std::vector<HalfFaceHandle>& incident_halffaces = incident_hfs_per_he_[heh.idx()];
+            std::vector<HalfFaceHandle>& incident_halffaces = incident_hfs_per_he_[heh];
             for (unsigned int j = 0; j < incident_halffaces.size(); ++j) // for each incident halfface
             {
                 HalfFaceHandle hfh = incident_halffaces[j];
@@ -1668,7 +1670,7 @@ void TopologyKernel::swap_edge_indices(EdgeHandle _h1, EdgeHandle _h2)
                 if (processed_faces.find(f_id) == processed_faces.end())
                 {
 
-                    Face& f = faces_[f_id];
+                    Face& f = faces_[FaceHandle(f_id)];
 
                     // replace old incident halfedges with new incident halfedges where the ids are swapped
                     std::vector<HalfEdgeHandle> new_halfedges;
@@ -1694,7 +1696,7 @@ void TopologyKernel::swap_edge_indices(EdgeHandle _h1, EdgeHandle _h2)
         // search for all faces that contain one of the swapped edges
         for (unsigned int i = 0; i < faces_.size(); ++i)
         {
-            Face& f = faces_[i];
+            Face& f = faces_[FaceHandle(i)];
 
             // check if f contains a swapped edge
             bool contains_swapped_edge = false;
@@ -1744,7 +1746,7 @@ void TopologyKernel::swap_edge_indices(EdgeHandle _h1, EdgeHandle _h2)
                 if (processed_vertices.find(vhs[j]) != processed_vertices.end())
                     continue;
 
-                std::vector<HalfEdgeHandle>& outgoing_hes = outgoing_hes_per_vertex_[vhs[j].idx()];
+                std::vector<HalfEdgeHandle>& outgoing_hes = outgoing_hes_per_vertex_[vhs[j]];
                 for (unsigned int k = 0; k < outgoing_hes.size(); ++k)
                 {
                     HalfEdgeHandle& heh = outgoing_hes[k];
@@ -1760,57 +1762,50 @@ void TopologyKernel::swap_edge_indices(EdgeHandle _h1, EdgeHandle _h2)
     }
 
     // swap vector entries
-    std::swap(edges_[ids[0]], edges_[ids[1]]);
-    bool tmp = edge_deleted_[ids[0]];
-    edge_deleted_[ids[0]] = edge_deleted_[ids[1]];
-    edge_deleted_[ids[1]] = tmp;
-    std::swap(incident_hfs_per_he_[2*ids[0]+0], incident_hfs_per_he_[2*ids[1]+0]);
-    std::swap(incident_hfs_per_he_[2*ids[0]+1], incident_hfs_per_he_[2*ids[1]+1]);
-    swap_edge_properties(_h1, _h2);
-    swap_halfedge_properties(halfedge_handle(_h1, 0), halfedge_handle(_h2, 0));
-    swap_halfedge_properties(halfedge_handle(_h1, 1), halfedge_handle(_h2, 1));
+    std::swap(edges_[_h1], edges_[_h2]);
+    detail::swap_bool(edge_deleted_[_h1], edge_deleted_[_h2]);
+    std::swap(incident_hfs_per_he_[_h1.halfedge_handle(0)], incident_hfs_per_he_[_h2.halfedge_handle(0)]);
+    std::swap(incident_hfs_per_he_[_h1.halfedge_handle(1)], incident_hfs_per_he_[_h2.halfedge_handle(1)]);
+    swap_property_elements(_h1, _h2);
+    swap_property_elements(halfedge_handle(_h1, 0), halfedge_handle(_h2, 0));
+    swap_property_elements(halfedge_handle(_h1, 1), halfedge_handle(_h2, 1));
 
 }
 
 void TopologyKernel::swap_vertex_indices(VertexHandle _h1, VertexHandle _h2)
 {
-    assert(_h1.idx() >= 0 && _h1.idx() < (int)n_vertices_);
-    assert(_h2.idx() >= 0 && _h2.idx() < (int)n_vertices_);
+    assert(is_valid(_h1));
+    assert(is_valid(_h2));
 
     if (_h1 == _h2)
         return;
 
-    std::vector<unsigned int> ids;
-    ids.push_back(_h1.idx());
-    ids.push_back(_h2.idx());
-
+    std::array<VH, 2> ids {_h1, _h2};
 
     // correct pointers to those vertices
 
     if (has_vertex_bottom_up_incidences())
     {
+        std::set<EH> processed_edges; // to ensure ids are only swapped once (in the case that the two swapped vertices are connected by an edge)
         for (unsigned int i = 0; i < 2; ++i) // For both swapped vertices
         {
-            std::set<unsigned int> processed_edges; // to ensure ids are only swapped once (in the case that the two swapped vertices are connected by an edge)
-            std::vector<HalfEdgeHandle>& outgoing_hes = outgoing_hes_per_vertex_[ids[i]];
-            for (unsigned int k = 0; k < outgoing_hes.size(); ++k) // for each outgoing halfedge
-            {
-                unsigned int e_id = outgoing_hes[k].idx() / 2;
+            for (const auto heh: outgoing_hes_per_vertex_[ids[i]]) {
+                const auto eh = heh.edge_handle();
 
-                if (processed_edges.find(e_id) == processed_edges.end())
+                if (processed_edges.find(eh) == processed_edges.end())
                 {
-                    Edge& e = edges_[e_id];
-                    if (e.from_vertex().idx() == (int)ids[0])
-                        e.set_from_vertex(VertexHandle(ids[1]));
-                    else if (e.from_vertex().idx() == (int)ids[1])
-                        e.set_from_vertex(VertexHandle(ids[0]));
+                    Edge& e = edges_[eh];
+                    if (e.from_vertex() == ids[0])
+                        e.set_from_vertex(ids[1]);
+                    else if (e.from_vertex() == ids[1])
+                        e.set_from_vertex(ids[0]);
 
-                    if (e.to_vertex().idx() == (int)ids[0])
-                        e.set_to_vertex(VertexHandle(ids[1]));
-                    else if (e.to_vertex().idx() == (int)ids[1])
-                        e.set_to_vertex(VertexHandle(ids[0]));
+                    if (e.to_vertex() == ids[0])
+                        e.set_to_vertex(ids[1]);
+                    else if (e.to_vertex() == ids[1])
+                        e.set_to_vertex(ids[0]);
 
-                    processed_edges.insert(e_id);
+                    processed_edges.insert(eh);
                 }
             }
         }
@@ -1820,177 +1815,26 @@ void TopologyKernel::swap_vertex_indices(VertexHandle _h1, VertexHandle _h2)
     {
         // search for all edges containing a swapped vertex
 
-        for (unsigned int i = 0; i < edges_.size(); ++i)
+        for (auto &e: edges_)
         {
-            Edge& e = edges_[i];
-            if (e.from_vertex().idx() == (int)ids[0])
-                e.set_from_vertex(VertexHandle(ids[1]));
-            else if (e.from_vertex().idx() == (int)ids[1])
-                e.set_from_vertex(VertexHandle(ids[0]));
+            if (e.from_vertex() == ids[0])
+                e.set_from_vertex(ids[1]);
+            else if (e.from_vertex() == ids[1])
+                e.set_from_vertex(ids[0]);
 
-            if (e.to_vertex().idx() == (int)ids[0])
-                e.set_to_vertex(VertexHandle(ids[1]));
-            else if (e.to_vertex().idx() == (int)ids[1])
-                e.set_to_vertex(VertexHandle(ids[0]));
+            if (e.to_vertex() == ids[0])
+                e.set_to_vertex(ids[1]);
+            else if (e.to_vertex() == ids[1])
+                e.set_to_vertex(ids[0]);
         }
     }
 
     // swap vector entries
-    bool tmp = vertex_deleted_[ids[0]];
-    vertex_deleted_[ids[0]] = vertex_deleted_[ids[1]];
-    vertex_deleted_[ids[1]] = tmp;
-    std::swap(outgoing_hes_per_vertex_[ids[0]], outgoing_hes_per_vertex_[ids[1]]);
-    swap_vertex_properties(_h1, _h2);
+    detail::swap_bool(vertex_deleted_[_h1], vertex_deleted_[_h2]);
+    std::swap(outgoing_hes_per_vertex_[_h1], outgoing_hes_per_vertex_[_h2]);
+    swap_property_elements(_h1, _h2);
 }
 
-//========================================================================================
-
-void TopologyKernel::delete_multiple_vertices(const std::vector<bool>& _tag) {
-
-    assert(_tag.size() == n_vertices());
-
-    std::vector<int> newIndices(n_vertices(), -1);
-    int curIdx = 0;
-
-    std::vector<int>::iterator idx_it = newIndices.begin();
-    for(std::vector<bool>::const_iterator t_it = _tag.begin(),
-            t_end = _tag.end(); t_it != t_end; ++t_it, ++idx_it) {
-
-        if(!(*t_it)) {
-            // Not marked as deleted
-            *idx_it = curIdx;
-            ++curIdx;
-        } else {
-            --n_vertices_;
-        }
-    }
-
-    // Delete properties accordingly
-    delete_multiple_vertex_props(_tag);
-
-    EdgeCorrector corrector(newIndices);
-    std::for_each(edges_.begin(), edges_.end(), corrector);
-}
-
-//========================================================================================
-
-void TopologyKernel::delete_multiple_edges(const std::vector<bool>& _tag) {
-
-    assert(_tag.size() == n_edges());
-
-    std::vector<int> newIndices(n_edges(), -1);
-    int curIdx = 0;
-
-    std::vector<Edge> newEdges;
-
-    std::vector<int>::iterator idx_it = newIndices.begin();
-    std::vector<Edge>::const_iterator e_it = edges_.begin();
-
-    for(std::vector<bool>::const_iterator t_it = _tag.begin(),
-            t_end = _tag.end(); t_it != t_end; ++t_it, ++idx_it, ++e_it) {
-
-        if(!(*t_it)) {
-            // Not marked as deleted
-
-            newEdges.push_back(*e_it);
-
-            *idx_it = curIdx;
-            ++curIdx;
-        }
-    }
-
-    // Swap edges
-    edges_.swap(newEdges);
-
-    // Delete properties accordingly
-    delete_multiple_edge_props(_tag);
-
-    FaceCorrector corrector(newIndices);
-    std::for_each(faces_.begin(), faces_.end(), corrector);
-}
-
-//========================================================================================
-
-void TopologyKernel::delete_multiple_faces(const std::vector<bool>& _tag) {
-
-    assert(_tag.size() == n_faces());
-
-    std::vector<int> newIndices(n_faces(), -1);
-    int curIdx = 0;
-
-    std::vector<Face> newFaces;
-
-    std::vector<int>::iterator idx_it = newIndices.begin();
-    std::vector<Face>::const_iterator f_it = faces_.begin();
-
-    for(std::vector<bool>::const_iterator t_it = _tag.begin(),
-            t_end = _tag.end(); t_it != t_end; ++t_it, ++idx_it, ++f_it) {
-
-        if(!(*t_it)) {
-            // Not marked as deleted
-
-            newFaces.push_back(*f_it);
-
-            *idx_it = curIdx;
-            ++curIdx;
-        }
-    }
-
-    // Swap faces
-    faces_.swap(newFaces);
-
-    // Delete properties accordingly
-    delete_multiple_face_props(_tag);
-
-    CellCorrector corrector(newIndices);
-    std::for_each(cells_.begin(), cells_.end(), corrector);
-}
-
-//========================================================================================
-
-void TopologyKernel::delete_multiple_cells(const std::vector<bool>& _tag) {
-
-    assert(_tag.size() == n_cells());
-
-    std::vector<Cell> newCells;
-
-    std::vector<Cell>::const_iterator c_it = cells_.begin();
-
-    for(std::vector<bool>::const_iterator t_it = _tag.begin(),
-            t_end = _tag.end(); t_it != t_end; ++t_it, ++c_it) {
-
-        if(!(*t_it)) {
-            // Not marked as deleted
-
-            newCells.push_back(*c_it);
-        }
-    }
-
-    // Swap cells
-    cells_.swap(newCells);
-
-    // Delete properties accordingly
-    delete_multiple_cell_props(_tag);
-}
-
-//========================================================================================
-
-// cppcheck-suppress unusedFunction ; public interface
-CellIter TopologyKernel::delete_cell_range(const CellIter& _first, const CellIter& _last) {
-
-    assert(_first >= cells_begin());
-    assert(_last <= cells_end());
-
-    std::vector<Cell>::iterator it = cells_.erase(cells_.begin() + _first->idx(), cells_.begin() + _last->idx());
-
-    // Re-compute face bottom-up incidences if necessary
-    if(has_face_bottom_up_incidences()) {
-        f_bottom_up_ = false;
-        enable_face_bottom_up_incidences(true);
-    }
-
-    return CellIter(this, CellHandle((int)(it - cells_.begin())));
-}
 
 void TopologyKernel::enable_deferred_deletion(bool _enable)
 {
@@ -2003,86 +1847,71 @@ void TopologyKernel::enable_deferred_deletion(bool _enable)
 //========================================================================================
 
 /// Get edge with handle _edgeHandle
-const OpenVolumeMeshEdge& TopologyKernel::edge(EdgeHandle _edgeHandle) const {
-
-    // Test if edge is valid
-    assert(_edgeHandle.is_valid() && (size_t)_edgeHandle.idx() < edges_.size());
-
-    return edges_[_edgeHandle.idx()];
+const OpenVolumeMeshEdge& TopologyKernel::edge(EdgeHandle _edgeHandle) const
+{
+    assert(is_valid(_edgeHandle));
+    return edges_[_edgeHandle];
 }
 
 //========================================================================================
 
 /// Get face with handle _faceHandle
-const OpenVolumeMeshFace& TopologyKernel::face(FaceHandle _faceHandle) const {
-
-    // Test if face is valid
-    assert(_faceHandle.is_valid() && (size_t)_faceHandle.idx() < faces_.size());
-
-    return faces_[_faceHandle.idx()];
+const OpenVolumeMeshFace& TopologyKernel::face(FaceHandle _faceHandle) const
+{
+    assert(is_valid(_faceHandle));
+    return faces_[_faceHandle];
 }
 
 //========================================================================================
 
 /// Get cell with handle _cellHandle
-const OpenVolumeMeshCell& TopologyKernel::cell(CellHandle _cellHandle) const {
-
-    // Test if cell is valid
-    assert(_cellHandle.is_valid() && (size_t)_cellHandle.idx() < cells_.size());
-
-    return cells_[_cellHandle.idx()];
+const OpenVolumeMeshCell& TopologyKernel::cell(CellHandle _cellHandle) const
+{
+    assert(is_valid(_cellHandle));
+    return cells_[_cellHandle];
 }
 
 //========================================================================================
 
 /// Get edge with handle _edgeHandle
-OpenVolumeMeshEdge& TopologyKernel::edge(EdgeHandle _edgeHandle) {
-
-    // Test if edge is valid
-    assert(_edgeHandle.is_valid() && (size_t)_edgeHandle.idx() < edges_.size());
-
-    return edges_[_edgeHandle.idx()];
+OpenVolumeMeshEdge& TopologyKernel::edge(EdgeHandle _edgeHandle)
+{
+    assert(is_valid(_edgeHandle));
+    return edges_[_edgeHandle];
 }
 
 //========================================================================================
 
 /// Get face with handle _faceHandle
-OpenVolumeMeshFace& TopologyKernel::face(FaceHandle _faceHandle) {
+OpenVolumeMeshFace& TopologyKernel::face(FaceHandle _faceHandle)
+{
 
-    // Test if face is valid
-    assert((size_t)_faceHandle.idx() < faces_.size());
-    assert(_faceHandle.idx() >= 0);
-
-    return faces_[_faceHandle.idx()];
+    assert(is_valid(_faceHandle));
+    return faces_[_faceHandle];
 }
 
 //========================================================================================
 
 /// Get cell with handle _cellHandle
-OpenVolumeMeshCell& TopologyKernel::cell(CellHandle _cellHandle) {
-
-    // Test if cell is valid
-    assert((size_t)_cellHandle.idx() < cells_.size());
-    assert(_cellHandle.idx() >= 0);
-
-    return cells_[_cellHandle.idx()];
+OpenVolumeMeshCell& TopologyKernel::cell(CellHandle _cellHandle)
+{
+    assert(is_valid(_cellHandle));
+    return cells_[_cellHandle];
 }
 
 //========================================================================================
 
 /// Get edge that corresponds to halfedge with handle _halfEdgeHandle
-OpenVolumeMeshEdge TopologyKernel::halfedge(HalfEdgeHandle _halfEdgeHandle) const {
-
-    // Is handle in range?
-    assert((size_t)_halfEdgeHandle.idx() < (edges_.size() * 2));
-    assert(_halfEdgeHandle.idx() >= 0);
+OpenVolumeMeshEdge TopologyKernel::halfedge(HalfEdgeHandle _halfEdgeHandle) const
+{
+    assert(is_valid(_halfEdgeHandle));
 
     // In case the handle is even, just return the corresponding edge
-    /// Otherwise return the opposite halfedge via opposite()
-    if(_halfEdgeHandle.idx() % 2 == 0)
-        return edges_[(int)(_halfEdgeHandle.idx() / 2)];
+    // Otherwise return the opposite halfedge via opposite()
+    if(_halfEdgeHandle.subidx() == 0)
+        return edges_[_halfEdgeHandle.edge_handle()];
     else
-        return opposite_halfedge(edges_[(int)(_halfEdgeHandle.idx() / 2)]);
+        return opposite_halfedge(edges_[_halfEdgeHandle.edge_handle()]);
 }
 
 //========================================================================================
@@ -2090,58 +1919,38 @@ OpenVolumeMeshEdge TopologyKernel::halfedge(HalfEdgeHandle _halfEdgeHandle) cons
 /// Get face that corresponds to halfface with handle _halfFaceHandle
 OpenVolumeMeshFace TopologyKernel::halfface(HalfFaceHandle _halfFaceHandle) const {
 
-    // Is handle in range?
-    assert((size_t)_halfFaceHandle.idx() < (faces_.size() * 2));
-    assert(_halfFaceHandle.idx() >= 0);
+    assert(is_valid(_halfFaceHandle));
 
     // In case the handle is even, just return the corresponding face
     // Otherwise return the opposite halfface via opposite()
     if(_halfFaceHandle.idx() % 2 == 0)
-        return faces_[(int)(_halfFaceHandle.idx() / 2)];
+        return faces_[_halfFaceHandle.face_handle()];
     else
-        return opposite_halfface(faces_[(int)(_halfFaceHandle.idx() / 2)]);
+        return opposite_halfface(faces_[_halfFaceHandle.face_handle()]);
 }
 
 //========================================================================================
 
 /// Get opposite halfedge that corresponds to halfedge with handle _halfEdgeHandle
-OpenVolumeMeshEdge TopologyKernel::opposite_halfedge(HalfEdgeHandle _halfEdgeHandle) const {
-
-    // Is handle in range?
-    assert(_halfEdgeHandle.idx() >= 0);
-    assert((size_t)_halfEdgeHandle.idx() < (edges_.size() * 2));
-
-    // In case the handle is not even, just return the corresponding edge
-    // Otherwise return the opposite halfedge via opposite()
-    if(_halfEdgeHandle.idx() % 2 != 0)
-        return edges_[(int)(_halfEdgeHandle.idx() / 2)];
-    else
-        return opposite_halfedge(edges_[(int)(_halfEdgeHandle.idx() / 2)]);
+OpenVolumeMeshEdge TopologyKernel::opposite_halfedge(HalfEdgeHandle _halfEdgeHandle) const
+{
+    return halfedge(_halfEdgeHandle.opposite_handle());
 }
 
 //========================================================================================
 
 /// Get opposite halfface that corresponds to halfface with handle _halfFaceHandle
-OpenVolumeMeshFace TopologyKernel::opposite_halfface(HalfFaceHandle _halfFaceHandle) const {
-
-    // Is handle in range?
-    assert(_halfFaceHandle.idx() >= 0);
-    assert((size_t)_halfFaceHandle.idx() < (faces_.size() * 2));
-
-    // In case the handle is not even, just return the corresponding face
-    // Otherwise return the opposite via the first face's opposite() function
-    if(_halfFaceHandle.idx() % 2 != 0)
-        return faces_[(int)(_halfFaceHandle.idx() / 2)];
-    else
-        return opposite_halfface(faces_[(int)(_halfFaceHandle.idx() / 2)]);
+OpenVolumeMeshFace TopologyKernel::opposite_halfface(HalfFaceHandle _halfFaceHandle) const
+{
+    return halfface(_halfFaceHandle.opposite_handle());
 }
 
 //========================================================================================
 
-HalfEdgeHandle TopologyKernel::halfedge(VertexHandle _vh1, VertexHandle _vh2) const {
-
-    assert(_vh1.idx() < (int)n_vertices());
-    assert(_vh2.idx() < (int)n_vertices());
+HalfEdgeHandle TopologyKernel::halfedge(VertexHandle _vh1, VertexHandle _vh2) const
+{
+    assert(is_valid(_vh1));
+    assert(is_valid(_vh2));
 
     for(VertexOHalfEdgeIter voh_it = voh_iter(_vh1); voh_it.valid(); ++voh_it) {
         if(halfedge(*voh_it).to_vertex() == _vh2) {
@@ -2287,7 +2096,6 @@ HalfFaceHandle
 TopologyKernel::adjacent_halfface_in_cell(HalfFaceHandle _halfFaceHandle,
                                           HalfEdgeHandle _halfEdgeHandle) const
 {
-
     assert(_halfFaceHandle.is_valid() && (size_t)_halfFaceHandle.idx() < faces_.size() * 2u);
     assert(_halfEdgeHandle.is_valid() && (size_t)_halfEdgeHandle.idx() < edges_.size() * 2u);
     assert(has_face_bottom_up_incidences());
@@ -2302,7 +2110,25 @@ TopologyKernel::adjacent_halfface_in_cell(HalfFaceHandle _halfFaceHandle,
     bool skipped = false;
     HalfFaceHandle idx = InvalidHalfFaceHandle;
 
-    const auto eh = edge_handle(_halfEdgeHandle);
+    // For face-selfadjacent cells, we have to ensure the actual halfedge information
+    // is used here, BUT...
+    // To support legacy code, we have to flip the halfedge if it's the wrong one
+    HalfEdgeHandle hehOpp = opposite_halfedge_handle(_halfEdgeHandle);
+    bool hasHalfedge = false;
+    bool hasOppHalfedge = false;
+    const auto hf = halfface(_halfFaceHandle);
+    for (HalfEdgeHandle heh: hf.halfedges()) {
+        if (heh == hehOpp)
+            hasOppHalfedge = true;
+        else if (heh == _halfEdgeHandle)
+            hasHalfedge = true;
+    }
+    if (!hasHalfedge) {
+        if (hasOppHalfedge)
+            _halfEdgeHandle = hehOpp;
+        else
+            return InvalidHalfFaceHandle;
+    }
 
     for(const auto &hfh: cell(ch).halffaces()) {
         if(hfh == _halfFaceHandle) {
@@ -2312,9 +2138,11 @@ TopologyKernel::adjacent_halfface_in_cell(HalfFaceHandle _halfFaceHandle,
                 return idx;
             }
         } else {
-            const auto &hfh_face = face(face_handle(hfh));
-            for (const auto heh: hfh_face.halfedges()) {
-                if(edge_handle(heh) == eh) {
+            const auto hf_cur = halfface(hfh);
+            for (const auto heh: hf_cur.halfedges()) {
+                // For face-selfadjacent cells, we look for a halfface that
+                // contains the opposite halfedge but isnt the opposite halfface
+                if(opposite_halfedge_handle(heh) == _halfEdgeHandle && hfh != opposite_halfface_handle(_halfFaceHandle)) {
                     if (idx.is_valid()) {
                         // we found two(!) other halffaces that contain the given edge.
                         // likely the given halfedge is not part of the given halfface
@@ -2341,7 +2169,7 @@ CellHandle TopologyKernel::incident_cell(HalfFaceHandle _halfFaceHandle) const
     assert((size_t)_halfFaceHandle.idx() < incident_cell_per_hf_.size() && _halfFaceHandle.is_valid());
     assert(has_face_bottom_up_incidences());
 
-    return incident_cell_per_hf_[_halfFaceHandle.idx()];
+    return incident_cell_per_hf_[_halfFaceHandle];
 }
 
 //========================================================================================
@@ -2351,15 +2179,15 @@ void TopologyKernel::compute_vertex_bottom_up_incidences() {
     // Clear incidences
     outgoing_hes_per_vertex_.clear();
     outgoing_hes_per_vertex_.resize(n_vertices());
-    std::vector<int> n_edges_per_vertex(n_vertices(), 0);
+    VertexVector<int> n_edges_per_vertex(n_vertices(), 0);
 
     for (const auto &eh: edges()) {
         const auto &e = edge(eh);
-        ++n_edges_per_vertex[e.from_vertex().idx()];
-        ++n_edges_per_vertex[e.to_vertex().idx()];
+        ++n_edges_per_vertex[e.from_vertex()];
+        ++n_edges_per_vertex[e.to_vertex()];
     }
     for (const auto &vh: vertices()) {
-        outgoing_hes_per_vertex_[vh.idx()].reserve(n_edges_per_vertex[vh.idx()]);
+        outgoing_hes_per_vertex_[vh].reserve(n_edges_per_vertex[vh]);
     }
 
     // Store outgoing halfedges per vertex
@@ -2370,13 +2198,13 @@ void TopologyKernel::compute_vertex_bottom_up_incidences() {
         // definitely our bug, therefore an assert
         assert((size_t)from.idx() < outgoing_hes_per_vertex_.size());
 
-        outgoing_hes_per_vertex_[from.idx()].push_back(halfedge_handle(eh, 0));
+        outgoing_hes_per_vertex_[from].push_back(halfedge_handle(eh, 0));
 
         VertexHandle to = e.to_vertex();
         assert((size_t)to.idx() < outgoing_hes_per_vertex_.size());
 
         // Store opposite halfedge handle
-        outgoing_hes_per_vertex_[to.idx()].push_back(halfedge_handle(eh, 1));
+        outgoing_hes_per_vertex_[to].push_back(halfedge_handle(eh, 1));
     }
 }
 
@@ -2388,22 +2216,22 @@ void TopologyKernel::compute_edge_bottom_up_incidences() {
     incident_hfs_per_he_.clear();
     incident_hfs_per_he_.resize(n_halfedges());
 
-    std::vector<int> n_faces_per_edge(n_edges(), 0);
+    EdgeVector<int> n_faces_per_edge(n_edges(), 0);
     for (const auto &fh: faces()) {
         for (const auto &heh: face_halfedges(fh)) {
-            ++n_faces_per_edge[edge_handle(heh).idx()];
+            ++n_faces_per_edge[edge_handle(heh)];
         }
     }
     for (const auto &eh: edges()) {
-        incident_hfs_per_he_[halfedge_handle(eh, 0).idx()].reserve(n_faces_per_edge[eh.idx()]);
-        incident_hfs_per_he_[halfedge_handle(eh, 1).idx()].reserve(n_faces_per_edge[eh.idx()]);
+        incident_hfs_per_he_[halfedge_handle(eh, 0)].reserve(n_faces_per_edge[eh]);
+        incident_hfs_per_he_[halfedge_handle(eh, 1)].reserve(n_faces_per_edge[eh]);
     }
     // Store incident halffaces per halfedge
     for (const auto &fh: faces()) {
         for (const auto &heh: face_halfedges(fh)) {
             auto opp = opposite_halfedge_handle(heh);
-            incident_hfs_per_he_[heh.idx()].push_back(halfface_handle(fh, 0));
-            incident_hfs_per_he_[opp.idx()].push_back(halfface_handle(fh, 1));
+            incident_hfs_per_he_[heh].push_back(halfface_handle(fh, 0));
+            incident_hfs_per_he_[opp].push_back(halfface_handle(fh, 1));
         }
     }
 }
@@ -2418,9 +2246,9 @@ void TopologyKernel::compute_face_bottom_up_incidences() {
 
     for (const auto ch: cells()) {
         for (const auto hfh: cell_halffaces(ch)) {
-            if(incident_cell_per_hf_[hfh.idx()] == InvalidCellHandle) {
+            if(incident_cell_per_hf_[hfh] == InvalidCellHandle) {
 
-                incident_cell_per_hf_[hfh.idx()] = ch;
+                incident_cell_per_hf_[hfh] = ch;
 
             } else {
 #ifndef NDEBUG

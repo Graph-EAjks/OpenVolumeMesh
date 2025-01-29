@@ -4,23 +4,40 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Attribs/InterfaceAttrib.cc
     OpenVolumeMesh/Attribs/OpenVolumeMeshStatus.cc
     OpenVolumeMesh/Attribs/StatusAttrib.cc
-    OpenVolumeMesh/Geometry/Vector.cc
     OpenVolumeMesh/FileManager/FileManager.cc
-    OpenVolumeMesh/Core/PropertyDefines.cc
-    OpenVolumeMesh/Core/OpenVolumeMeshHandle.cc
+    OpenVolumeMesh/FileManager/TypeNames.cc
+    OpenVolumeMesh/FileManager/Serializers.cc
+    OpenVolumeMesh/Core/Handles.cc
     OpenVolumeMesh/Core/ResourceManager.cc
     OpenVolumeMesh/Core/BaseEntities.cc
-    OpenVolumeMesh/Core/BaseProperty.cc
     OpenVolumeMesh/Core/TopologyKernel.cc
-    OpenVolumeMesh/Core/Serializers.cc
     OpenVolumeMesh/Core/Iterators.cc
-    OpenVolumeMesh/Core/OpenVolumeMeshBaseProperty.cc
-    OpenVolumeMesh/Core/TypeName.cc
+    OpenVolumeMesh/Core/detail/internal_type_name.cc
+    OpenVolumeMesh/Core/Properties/PropertyStorageBase.cc
+        OpenVolumeMesh/Core/detail/TopologicalFaceSet.cc
+        OpenVolumeMesh/Core/TopologyChecks.cc
+    OpenVolumeMesh/IO/enums.cc
+    OpenVolumeMesh/IO/PropertyCodecs.cc
+    OpenVolumeMesh/IO/detail/BinaryIStream.cc
+    OpenVolumeMesh/IO/detail/BinaryFileReader.cc
+    OpenVolumeMesh/IO/detail/BinaryFileWriter.cc
+    OpenVolumeMesh/IO/detail/GeometryWriter.cc
+    OpenVolumeMesh/IO/detail/GeometryReader.cc
+    OpenVolumeMesh/IO/detail/Decoder.cc
+    OpenVolumeMesh/IO/detail/Encoder.cc
+    OpenVolumeMesh/IO/detail/ovmb_format.cc
+    OpenVolumeMesh/IO/detail/ovmb_codec.cc
+    OpenVolumeMesh/IO/detail/WriteBuffer.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/HexahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.cc
     OpenVolumeMesh/Mesh/HexahedralMeshTopologyKernel.cc
-)
+        )
+# No Qt in any of our headers:
+file(GLOB_RECURSE HEADER_FILES OpenVolumeMesh/*.hh)
+set_property(SOURCE ${HEADER_FILES} PROPERTY SKIP_AUTOMOC ON)
+set_property(SOURCE ${HEADER_FILES} PROPERTY SKIP_AUTOUIC ON)
+set_property(SOURCE ${HEADER_FILES} PROPERTY SKIP_AUTOGEN ON)
 
 set(OVM_ENABLE_DEPRECATED_APIS OFF CACHE BOOL "Support deprecated OpenVolumeMesh APIs")
 
@@ -40,21 +57,9 @@ configure_file (
 include(VCICommon OPTIONAL RESULT_VARIABLE IN_VCI_BUILD)
 if(IN_VCI_BUILD)
     message("OVM is being built as part of an VCI project, using vci_add_library!")
-    if (WIN32 OR EMSCRIPTEN)
-        vci_add_library(OpenVolumeMesh STATIC ${SOURCE_FILES})
-    else()
-        vci_add_library(OpenVolumeMesh SHARED ${SOURCE_FILES})
-    endif()
+    vci_add_library(OpenVolumeMesh ${SOURCE_FILES})
 else(IN_VCI_BUILD)
-    if (WIN32)
-        # Windows .dll build is not supported yet.
-        # TODO: turn this on once we have OVM_EXPORT macros in all required places,
-        # cf CXX_VISIBILITY_PRESET:
-        add_library(OpenVolumeMesh STATIC ${SOURCE_FILES})
-    else()
-        option(BUILD_SHARED_LIBS "Build shared library (*.dll, *.so, *.dylib) instead of static library (*.a, *.lib)" ON)
-        add_library(OpenVolumeMesh ${SOURCE_FILES})
-    endif()
+    add_library(OpenVolumeMesh ${SOURCE_FILES})
 endif(IN_VCI_BUILD)
 
 add_library(OpenVolumeMesh::OpenVolumeMesh ALIAS OpenVolumeMesh)
@@ -71,8 +76,10 @@ set_target_properties (OpenVolumeMesh PROPERTIES
     VERSION ${OpenVolumeMesh_VERSION_MAJOR}.${OpenVolumeMesh_VERSION_MINOR}
     SOVERSION ${OpenVolumeMesh_VERSION_MAJOR}.${OpenVolumeMesh_VERSION_MINOR}
     POSITION_INDEPENDENT_CODE ON
-    # TODO: turn this on once we have OVM_EXPORT macros in all required places:
-     #CXX_VISIBILITY_PRESET hidden
+    AUTOMOC OFF
+    AUTOUIC OFF
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN TRUE
     )
 
 

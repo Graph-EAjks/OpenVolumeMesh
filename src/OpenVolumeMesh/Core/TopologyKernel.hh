@@ -39,13 +39,32 @@
 #include <vector>
 #include <array>
 
+#include <OpenVolumeMesh/Core/HandleIndexing.hh>
 #include <OpenVolumeMesh/Core/BaseEntities.hh>
-#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Core/ResourceManager.hh>
 #include <OpenVolumeMesh/Core/Iterators.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
+
+// provide begin() and end() for the iterator pairs provided in TopologyKernel,
+// so we can use range-for, e.g. for(const auto &vh: mesh.vertices()) works.
+template<class I>
+typename std::enable_if<is_ovm_iterator<I>::value, I>::type
+begin(const std::pair<I, I>& iterpair)
+{
+    return iterpair.first;
+}
+
+template<class I>
+typename std::enable_if<is_ovm_iterator<I>::value, I>::type
+end(const std::pair<I, I>& iterpair)
+{
+    return iterpair.second;
+}
+
+
 
 class OVM_EXPORT TopologyKernel : public ResourceManager {
 public:
@@ -53,12 +72,11 @@ public:
     TopologyKernel() = default;
     ~TopologyKernel() override = default;
 
-    TopologyKernel& operator=(const TopologyKernel&) = default;
+    TopologyKernel(TopologyKernel const& other) = default;
+    TopologyKernel(TopologyKernel      &&other) = delete;
 
-    void assign(const TopologyKernel *other) {
-        assert(other != nullptr);
-        *this = *other;
-    }
+    TopologyKernel& operator=(TopologyKernel const& other) = default;
+    TopologyKernel& operator=(TopologyKernel && other) = delete;
 
     /*
      * Defines and constants
@@ -106,6 +124,7 @@ public:
      */
 
 protected:
+
     template <class Circulator>
     static Circulator make_end_circulator(const Circulator& _circ)
     {
@@ -557,6 +576,7 @@ private:
     size_t n_vertices_ = 0u;
 
 public:
+    void add_n_vertices(size_t n);
     void reserve_vertices(size_t n);
     void reserve_edges(size_t n);
     void reserve_faces(size_t n);
@@ -670,31 +690,30 @@ public:
 
     /// Get valence of vertex (number of incident edges)
     inline size_t valence(VertexHandle _vh) const {
+        assert(is_valid(_vh));
         assert(has_vertex_bottom_up_incidences());
-        assert(_vh.is_valid() && _vh.uidx() < outgoing_hes_per_vertex_.size());
 
-        return outgoing_hes_per_vertex_[_vh.uidx()].size();
+        return outgoing_hes_per_vertex_[_vh].size();
     }
 
     /// Get valence of edge (number of incident faces)
     inline size_t valence(EdgeHandle _eh) const {
+        assert(is_valid(_eh));
         assert(has_edge_bottom_up_incidences());
-        assert(_eh.is_valid() && _eh.uidx() < edges_.size());
-        assert(halfedge_handle(_eh, 0).uidx() < incident_hfs_per_he_.size());
 
-        return incident_hfs_per_he_[halfedge_handle(_eh, 0).uidx()].size();
+        return incident_hfs_per_he_[halfedge_handle(_eh, 0)].size();
     }
 
     /// Get valence of face (number of incident edges)
     inline size_t valence(FaceHandle _fh) const {
-        assert(_fh.is_valid() && _fh.uidx() < faces_.size());
+        assert(is_valid(_fh));
 
         return face(_fh).halfedges().size();
     }
 
     /// Get valence of cell (number of incident faces)
     inline size_t valence(CellHandle _ch) const {
-        assert(_ch.is_valid() && _ch.uidx() < cells_.size());
+        assert(is_valid(_ch));
 
         return cell(_ch).halffaces().size();
     }
@@ -716,12 +735,12 @@ public:
     virtual void collect_garbage();
 
 
-    virtual bool is_deleted(VertexHandle _h)   const { return vertex_deleted_[_h.uidx()]; }
-    virtual bool is_deleted(EdgeHandle _h)     const { return edge_deleted_[_h.uidx()];   }
-    virtual bool is_deleted(HalfEdgeHandle _h) const { return edge_deleted_[_h.uidx()/2]; }
-    virtual bool is_deleted(FaceHandle _h)     const { return face_deleted_[_h.uidx()];   }
-    virtual bool is_deleted(HalfFaceHandle _h) const { return face_deleted_[_h.uidx()/2]; }
-    virtual bool is_deleted(CellHandle _h)     const { return cell_deleted_[_h.uidx()];   }
+    virtual bool is_deleted(VertexHandle _h)   const { return vertex_deleted_[_h]; }
+    virtual bool is_deleted(EdgeHandle _h)     const { return edge_deleted_[_h]; }
+    virtual bool is_deleted(HalfEdgeHandle _h) const { return edge_deleted_[_h.edge_handle()]; }
+    virtual bool is_deleted(FaceHandle _h)     const { return face_deleted_[_h]; }
+    virtual bool is_deleted(HalfFaceHandle _h) const { return face_deleted_[_h.face_handle()]; }
+    virtual bool is_deleted(CellHandle _h)     const { return cell_deleted_[_h]; }
 
 private:
 
@@ -757,14 +776,6 @@ public:
     virtual void swap_vertex_indices(VertexHandle _h1, VertexHandle _h2);
 
 protected:
-
-    virtual void delete_multiple_vertices(const std::vector<bool>& _tag);
-
-    virtual void delete_multiple_edges(const std::vector<bool>& _tag);
-
-    virtual void delete_multiple_faces(const std::vector<bool>& _tag);
-
-    virtual void delete_multiple_cells(const std::vector<bool>& _tag);
 
     class EdgeCorrector {
     public:
@@ -821,18 +832,6 @@ protected:
 
 public:
 
-    /** \brief Delete range of cells
-     *
-     * Deletes all cells in range [_first, _last].
-     *
-     * @param _first Iterator to first cell that is to be deleted
-     * @param _last Iterator to last cell that is to be deleted
-     * @return An iterator to the first cell after the deleted range
-     */
-    CellIter delete_cell_range(const CellIter& _first, const CellIter& _last);
-
-public:
-
     /// Clear whole mesh
     virtual void clear(bool _clearProps = true) {
 
@@ -853,16 +852,7 @@ public:
         n_vertices_ = 0;
 
         if(_clearProps) {
-
-            // Delete all property data
-            clear_vertex_props();
-            clear_edge_props();
-            clear_halfedge_props();
-            clear_face_props();
-            clear_halfface_props();
-            clear_cell_props();
-            clear_mesh_props();
-
+            clear_all_props();
         } else {
             // Resize props
             resize_vprops(0u);
@@ -979,13 +969,13 @@ protected:
     void reorder_incident_halffaces(EdgeHandle _eh);
 
     // Outgoing halfedges per vertex
-    std::vector<std::vector<HalfEdgeHandle> > outgoing_hes_per_vertex_;
+    VertexVector<std::vector<HalfEdgeHandle> > outgoing_hes_per_vertex_;
 
     // Incident halffaces per (directed) halfedge
-    std::vector<std::vector<HalfFaceHandle> > incident_hfs_per_he_;
+    HalfEdgeVector<std::vector<HalfFaceHandle> > incident_hfs_per_he_;
 
     // Incident cell (at most one) per halfface
-    std::vector<CellHandle> incident_cell_per_hf_;
+    HalfFaceVector<CellHandle> incident_cell_per_hf_;
 
 private:
     bool v_bottom_up_ = true;
@@ -1022,24 +1012,23 @@ public:
     /// Get cell that is incident to the given halfface
     CellHandle incident_cell(HalfFaceHandle _halfFaceHandle) const;
 
-    bool is_boundary(HalfFaceHandle _halfFaceHandle) const {
-
-        assert(_halfFaceHandle.is_valid() && _halfFaceHandle.uidx() < faces_.size() * 2u);
+    bool is_boundary(HalfFaceHandle _halfFaceHandle) const
+    {
+        assert(is_valid(_halfFaceHandle));
         assert(has_face_bottom_up_incidences());
-        assert(_halfFaceHandle.uidx() < incident_cell_per_hf_.size());
-        return incident_cell_per_hf_[_halfFaceHandle.uidx()] == InvalidCellHandle;
+        return incident_cell_per_hf_[_halfFaceHandle] == InvalidCellHandle;
     }
 
     bool is_boundary(FaceHandle _faceHandle) const {
-        assert(_faceHandle.is_valid() && _faceHandle.uidx() < faces_.size());
+        assert(is_valid(_faceHandle));
         assert(has_face_bottom_up_incidences());
         return  is_boundary(halfface_handle(_faceHandle, 0)) ||
                 is_boundary(halfface_handle(_faceHandle, 1));
     }
 
     bool is_boundary(EdgeHandle _edgeHandle) const {
+        assert(is_valid(_edgeHandle));
         assert(has_edge_bottom_up_incidences());
-        assert(_edgeHandle.is_valid() && _edgeHandle.uidx() < edges_.size());
 
         for(HalfEdgeHalfFaceIter hehf_it = hehf_iter(halfedge_handle(_edgeHandle, 0));
                 hehf_it.valid(); ++hehf_it) {
@@ -1051,8 +1040,8 @@ public:
     }
 
     bool is_boundary(HalfEdgeHandle _halfedgeHandle) const {
+        assert(is_valid(_halfedgeHandle));
         assert(has_edge_bottom_up_incidences());
-        assert(_halfedgeHandle.is_valid() && _halfedgeHandle.uidx() < edges_.size() * 2u);
 
         for(HalfEdgeHalfFaceIter hehf_it = hehf_iter(_halfedgeHandle);
                 hehf_it.valid(); ++hehf_it) {
@@ -1064,8 +1053,8 @@ public:
     }
 
     bool is_boundary(VertexHandle _vertexHandle) const {
+        assert(is_valid(_vertexHandle));
         assert(has_vertex_bottom_up_incidences());
-        assert(_vertexHandle.is_valid() && _vertexHandle.uidx() < n_vertices());
 
         for(VertexOHalfEdgeIter voh_it = voh_iter(_vertexHandle); voh_it.valid(); ++voh_it) {
             if(is_boundary(*voh_it)) return true;
@@ -1074,7 +1063,7 @@ public:
     }
 
     bool is_boundary(CellHandle _cellHandle) const {
-        assert(_cellHandle.is_valid() && (size_t)_cellHandle.idx() < n_cells());
+        assert(is_valid(_cellHandle));
 
         for(CellFaceIter cf_it = cf_iter(_cellHandle); cf_it.valid(); ++cf_it) {
             if(is_boundary(*cf_it)) return true;
@@ -1083,7 +1072,7 @@ public:
     }
 
     size_t n_vertices_in_cell(CellHandle _ch) const {
-        assert(_ch.is_valid() && _ch.uidx() < cells_.size());
+        assert(is_valid(_ch));
 
         std::set<VertexHandle> vhs;
         for(const auto hfh: cell_halffaces(_ch)) {
@@ -1161,28 +1150,31 @@ public:
         return n_deleted_vertices_ > 0 || n_deleted_edges_ > 0 || n_deleted_faces_ > 0 || n_deleted_cells_ > 0;
     }
 
-protected:
+    /// test is_valid and perform index range check
+    template<typename Handle>
+    bool is_valid(Handle _h) const {
+        static_assert(is_handle_v<Handle>);
+        return _h.is_valid() && _h.uidx() < n<typename Handle::EntityTag>();
+    }
 
-    // List of edges
-    std::vector<Edge> edges_;
+private:
 
-    // List of faces
-    std::vector<Face> faces_;
+    // top-down incidences:
+    EdgeVector<Edge> edges_;
+    FaceVector<Face> faces_;
+    CellVector<Cell> cells_;
 
-    // List of cells
-    std::vector<Cell> cells_;
-
-    std::vector<bool> vertex_deleted_;
-    std::vector<bool> edge_deleted_;
-    std::vector<bool> face_deleted_;
-    std::vector<bool> cell_deleted_;
+    // deferred deletion:
+    VertexVector<bool> vertex_deleted_;
+    EdgeVector<bool> edge_deleted_;
+    FaceVector<bool> face_deleted_;
+    CellVector<bool> cell_deleted_;
 
     // number of elements deleted, but not yet garbage collected
     size_t n_deleted_vertices_ = 0;
     size_t n_deleted_edges_ = 0;
     size_t n_deleted_faces_ = 0;
     size_t n_deleted_cells_ = 0;
-
 };
 
 }

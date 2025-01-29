@@ -34,11 +34,54 @@
 \*===========================================================================*/
 
 #include <OpenVolumeMesh/Core/ResourceManager.hh>
-#include <OpenVolumeMesh/Core/PropertyDefines.hh>
-#include <OpenVolumeMesh/Core/TypeName.hh>
+#include <OpenVolumeMesh/Core/Properties/PropertyPtr.hh>
+#include <OpenVolumeMesh/Core/detail/internal_type_name.hh>
 
 namespace OpenVolumeMesh {
 
+
+template<typename EntityTag>
+detail::Tracker<PropertyStorageBase> &
+ResourceManager::storage_tracker() const
+{
+    return storage_trackers_.get<EntityTag>();
+}
+
+
+// Change all properties to be private, such that they are
+// not visible anymore from the mesh API.
+// Crucially, this does not delete props that are in use,
+// i.e., they are kept in storage_tracker for index updates.
+template<typename EntityTag>
+void ResourceManager::clear_props()
+{
+    for (auto prop: persistent_props_.get<EntityTag>()) {
+        prop->set_persistent(false);
+    }
+    persistent_props_.get<EntityTag>().clear();
+
+    for (auto prop: storage_tracker<EntityTag>()) {
+        prop->set_shared(false);
+    }
+}
+
+template <typename Handle>
+void ResourceManager::swap_property_elements(Handle _idx_a, Handle _idx_b)
+{
+    static_assert(is_handle_v<Handle>);
+    for (auto &prop: storage_tracker<typename Handle::EntityTag>()) {
+        prop->swap(_idx_a.uidx(), _idx_b.uidx());
+    }
+}
+
+template <typename Handle>
+void ResourceManager::copy_property_elements(Handle _idx_a, Handle _idx_b)
+{
+    static_assert(is_handle_v<Handle>);
+    for (auto &prop: storage_tracker<typename Handle::EntityTag>()) {
+        prop->copy(_idx_a.uidx(), _idx_b.uidx());
+    }
+}
 
 template<class T>
 VertexPropertyT<T> ResourceManager::request_vertex_property(const std::string& _name, const T _def) {
@@ -82,132 +125,245 @@ MeshPropertyT<T> ResourceManager::request_mesh_property(const std::string& _name
 }
 
 template<typename T, typename EntityTag>
-PropertyTT<T, EntityTag>* ResourceManager::internal_find_property(const std::string& _name)
+std::optional<PropertyPtr<T, EntityTag>>
+ResourceManager::internal_find_property(const std::string& _name) const
 {
-    using PropT = PropertyTT<T, EntityTag>;
-    auto type_name = get_type_name(typeid(T));
-    auto &propVec = entity_props<EntityTag>();
+    if(_name.empty()) {
+        return {};
+    }
 
-    if(!_name.empty()) {
-        for(auto &prop: propVec)
-        {
-            if(prop->name() == _name
+    auto type_name = detail::internal_type_name<T>();
+
+    for(auto &prop: storage_tracker<EntityTag>())
+    {
+        if(prop->shared()
+                && prop->name() == _name
                 && prop->internal_type_name() == type_name)
-            {
-                return static_cast<PropT*>(prop);
-            }
+        {
+            return prop_ptr_from_storage<T, EntityTag>(prop);
         }
     }
-    return nullptr;
+    return {};
 }
 
 template<class T, class EntityTag>
-PropertyTT<T, EntityTag> ResourceManager::internal_create_property(const std::string& _name, const T _def)
+PropertyPtr<T, EntityTag> ResourceManager::internal_create_property(
+        std::string _name, const T _def, bool _shared) const
 {
-    auto type_name = get_type_name(typeid(T));
-    auto &propVec = entity_props<EntityTag>();
-    auto handle = PropHandleT<EntityTag>::from_unsigned(propVec.size());
-    auto prop = new PropertyTT<T, EntityTag>(_name, type_name, *this, handle, _def);
-    prop->resize(n<EntityTag>());
-    propVec.push_back(prop);
-    return *prop;
+    auto storage = std::make_shared<PropertyStorageT<T>>(
+                                     &storage_tracker<EntityTag>(),
+                                     std::move(_name),
+                                     EntityTag::type(),
+                                     std::move(_def),
+                                     _shared);
+    storage->resize(n<EntityTag>());
+    return PropertyPtr<T, EntityTag>(std::move(storage));
 }
 
 template<typename T, typename EntityTag>
-PropertyTT<T, EntityTag> ResourceManager::request_property(const std::string& _name, const T _def)
+PropertyPtr<T, EntityTag> ResourceManager::request_property(const std::string& _name, const T _def)
 {
-    auto *prop = internal_find_property<T, EntityTag>(_name);
+    auto prop = internal_find_property<T, EntityTag>(_name);
     if (prop)
         return *prop;
-    return internal_create_property<T, EntityTag>(_name, _def);
+    bool shared = !_name.empty();
+    return internal_create_property<T, EntityTag>(_name, _def, shared);
 }
 
-#if OVM_CXX_17
-
 template<typename T, typename EntityTag>
-std::optional<PropertyTT<T, EntityTag>>
-ResourceManager::create_property(const std::string& _name, const T _def)
+std::optional<PropertyPtr<T, EntityTag>>
+ResourceManager::create_persistent_property(const std::string& _name, const T _def)
 {
-    auto *prop = internal_find_property<T, EntityTag>(_name);
+    auto prop = internal_find_property<T, EntityTag>(_name);
     if (prop)
         return {};
-    return {*internal_create_property<T, EntityTag>(_name, _def)};
+    auto ptr =  internal_create_property<T, EntityTag>(_name, _def, true);
+    set_persistent(ptr);
+    return ptr;
 }
 
 template<typename T, typename EntityTag>
-std::optional<PropertyTT<T, EntityTag>>
+std::optional<PropertyPtr<T, EntityTag>>
+ResourceManager::create_shared_property(const std::string& _name, const T _def)
+{
+    auto prop = internal_find_property<T, EntityTag>(_name);
+    if (prop)
+        return {};
+    return internal_create_property<T, EntityTag>(_name, _def, true);
+}
+template<typename T, typename EntityTag>
+PropertyPtr<T, EntityTag>
+ResourceManager::create_private_property(std::string _name, const T _def) const
+{
+    return internal_create_property<T, EntityTag>(std::move(_name), _def, false);
+}
+
+template<typename T, typename EntityTag>
+std::optional<PropertyPtr<T, EntityTag>>
 ResourceManager::get_property(const std::string& _name)
 {
-    auto *prop = internal_find_property<T, EntityTag>(_name);
-    if (prop)
-        return {*prop};
-    return {};
+    return internal_find_property<T, EntityTag>(_name);
+}
+
+template<typename T, typename EntityTag>
+std::optional<const PropertyPtr<T, EntityTag>>
+ResourceManager::get_property(const std::string& _name) const
+{
+    return internal_find_property<T, EntityTag>(_name);
+}
+
+
+template<typename T, class EntityTag>
+void ResourceManager::set_shared(PropertyPtr<T, EntityTag>& _prop, bool _enable)
+{
+    if(_enable == _prop.shared()) return;
+
+    auto sptr = std::static_pointer_cast<PropertyStorageBase>(_prop.storage());
+    if (_enable) {
+        if (_prop.anonymous()) {
+            throw std::runtime_error("Shared properties must have a name!");
+        }
+        auto existing = internal_find_property<T, EntityTag>(_prop.name());
+        if (existing) {
+            throw std::runtime_error("A shared property with this name, type and entity type already exists.");
+        }
+    } else {
+        set_persistent(_prop, false);
+    }
+    sptr->set_shared(_enable);
+}
+
+template<typename T, class EntityTag>
+void ResourceManager::set_persistent(PropertyPtr<T, EntityTag>& _prop, bool _enable)
+{
+    if(_enable == _prop.persistent()) return;
+
+    auto sptr = std::static_pointer_cast<PropertyStorageBase>(_prop.storage());
+    if (_enable) {
+        if (!_prop.shared()) {
+            throw std::runtime_error("Persistent properties must be shared (set_shared).");
+        }
+        persistent_props_.get<EntityTag>().insert(sptr);
+    } else {
+        persistent_props_.get<EntityTag>().erase(sptr);
+    }
+    sptr->set_persistent(_enable);
+}
+
+
+template<class EntityTag>
+void ResourceManager::resize_props(size_t _n)
+{
+    static_assert(is_entity_v<EntityTag>);
+    for (auto &prop: storage_tracker<EntityTag>()) {
+        prop->resize(_n);
+    }
+}
+
+template<class EntityTag>
+void ResourceManager::reserve_props(size_t _n)
+{
+    static_assert(is_entity_v<EntityTag>);
+    for (auto &prop: storage_tracker<EntityTag>()) {
+        prop->reserve(_n);
+    }
+}
+
+
+template<typename  Handle>
+void ResourceManager::entity_deleted(Handle _h)
+{
+    static_assert(is_handle_v<Handle>);
+    for (auto &prop: storage_tracker<typename Handle::EntityTag>()) {
+        prop->delete_element(_h.uidx());
+    }
+}
+
+
+template<typename EntityTag>
+size_t ResourceManager::n_props() const {
+    return storage_tracker<EntityTag>().size();
+}
+
+template<typename EntityTag>
+size_t ResourceManager::n_persistent_props() const {
+    return persistent_props_.get<EntityTag>().size();
+}
+
+
+#if 0
+template<typename EntityTag>
+void ResourceManager::assignPropertiesFrom(ResourceManager const& _src)
+{
+    auto &src_all = _src.template storage_tracker<EntityTag>();
+    auto &dst_all = storage_tracker<EntityTag>();
+
+    // If possible, re-use existing properties instead of copying
+    // everything blindly.
+
+    auto &persistent = persistent_props_.get<EntityTag>();
+
+    // TODO OPT: this will be slow for many props (quadratic) - we could do this in nlogn.
+    //           sort both sets by key (name, type), then traverse in parallel
+    for (const auto &srcprop: src_all) {
+        bool found = false;
+        if (!srcprop->shared()) {
+            // it does not make sense to copy private props,
+            // noone could access them
+            return;
+        }
+        // try to find and update existing properties in dst
+        for (auto it = dst_all.begin(); it != dst_all.end(); ++it)
+        {
+            auto &dstprop = *it;
+            if (!dstprop->shared()) {
+                return;
+            }
+            if (dstprop->name() == srcprop->name()
+                    && dstprop->internal_type_name() == srcprop->internal_type_name())
+            {
+                // found a correspondence!
+                dstprop->assign_values_from(srcprop);
+                if (srcprop->persistent() && !dstprop->persistent()) {
+                    persistent.insert(dstprop->shared_from_this());
+                }
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            auto dstprop = srcprop->clone();
+            dstprop->set_tracker(&storage_tracker<EntityTag>());
+            if (srcprop->persistent()) {
+                persistent.insert(dstprop->shared_from_this());
+            }
+        }
+    }
 }
 #endif
 
 
-template<typename T, class EntityTag>
-void ResourceManager::set_persistent(PropertyTT<T, EntityTag>& _prop, bool _flag)
+
+// We define this here to avoid circular dependencies:
+
+template <class T, typename Entity>
+PropertyPtr<T, Entity>::PropertyPtr(ResourceManager *mesh, std::string _name, T const &_def)
 {
-    if(_flag == _prop->persistent()) return;
-    _prop->set_persistent(_flag);
-}
-
-template<class StdVecT>
-void ResourceManager::remove_property(StdVecT& _vec, size_t _idx) {
-
-    auto prop_ptr = _vec[_idx];
-    prop_ptr->setResMan(nullptr);
-    delete prop_ptr;
-    _vec.erase(_vec.begin() + _idx);
-    updatePropHandles(_vec);
-}
-
-template<class StdVecT>
-void ResourceManager::resize_props(StdVecT& _vec, size_t _n) {
-
-    for(typename StdVecT::iterator it = _vec.begin();
-            it != _vec.end(); ++it) {
-        (*it)->resize(_n);
-    }
-}
-
-template<class StdVecT>
-void ResourceManager::reserve_props(StdVecT& _vec, size_t _n) {
-
-    for(typename StdVecT::iterator it = _vec.begin();
-            it != _vec.end(); ++it) {
-        (*it)->reserve(_n);
-    }
+    *this = mesh->request_property<T, Entity>(_name, _def);
 }
 
 
-template<class StdVecT>
-void ResourceManager::entity_deleted(StdVecT& _vec, const OpenVolumeMeshHandle& _h) {
-
-    for(typename StdVecT::iterator it = _vec.begin();
-            it != _vec.end(); ++it) {
-        (*it)->delete_element(_h.uidx());
-    }
-}
-
-template<class StdVecT>
-void ResourceManager::clearVec(StdVecT& _vec) {
-
-    for (auto prop: _vec) {
-        prop->setResMan(nullptr);
-        delete prop;
-    }
-    _vec.clear();
-}
-
-template<class StdVecT>
-void ResourceManager::updatePropHandles(StdVecT &_vec)
+template <class T, typename EntityTag>
+PropertyPtr<T, EntityTag> ResourceManager::
+prop_ptr_from_storage(PropertyStorageBase *_prop)
 {
-    size_t n = _vec.size();
-    for(size_t i = 0; i < n; ++i) {
-        _vec[i]->set_handle(OpenVolumeMeshHandle(static_cast<int>(i)));
-    }
+    auto ps = std::static_pointer_cast<PropertyStorageT<T>>(
+            _prop->shared_from_this());
+    return PropertyPtr<T, EntityTag>(std::move(ps));
 }
+
+
 
 } // Namespace OpenVolumeMesh

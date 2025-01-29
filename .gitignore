@@ -4,6 +4,7 @@ CMakeLists.txt.user
 build*
 *.swp
 .settings
+.vs
 
 cppcheck.log
 
@@ -14,3 +15,5 @@ cppcheck.log
 .DS_Store
 .idea
 /cmake-build-*
+CMakeUserPresets.json
+*.orig

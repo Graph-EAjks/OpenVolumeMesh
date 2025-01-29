@@ -1209,9 +1209,9 @@ TEST_F(HexahedralMeshBase, SimpleHexMeshNavigation) {
             HalfFaceHandle(3), CellHandle(1)));
 
     EXPECT_HANDLE_EQ(HalfFaceHandle(20), mesh_.adjacent_halfface_on_sheet(
-            HalfFaceHandle(9), HalfEdgeHandle(12)));
+            HalfFaceHandle(10), HalfEdgeHandle(12)));
     EXPECT_HANDLE_EQ(HalfFaceHandle(21), mesh_.adjacent_halfface_on_sheet(
-            HalfFaceHandle(8), HalfEdgeHandle(12)));
+            HalfFaceHandle(11), HalfEdgeHandle(12)));
 
     HexahedralMesh::CellSheetCellIter csc_it = mesh_.csc_iter(CellHandle(0), HexahedralMesh::YF);
     EXPECT_HANDLE_EQ(CellHandle(1), *csc_it);
@@ -2036,3 +2036,33 @@ TEST_F(PolyhedralMeshBase, HandleDefaultConstructors) {
     ASSERT_FALSE(ch.is_valid());
 }
 
+#if 0
+TEST_F(PolyhedralMeshBase, AssignmentAndCopyConstruction) {
+
+  /*
+   * Add vertices
+   */
+
+  VertexHandle v0 = mesh_.add_vertex(Vec3d(1, 1, 1));
+
+  PolyhedralMesh copy{mesh_};
+  EXPECT_EQ(copy.n_vertices(), mesh_.n_vertices());
+  EXPECT_EQ(copy.vertex(v0)[0], 1);
+  mesh_.set_vertex(v0, Vec3d(2, 2, 2));
+  EXPECT_EQ(copy.vertex(v0)[0], 1);
+
+  PolyhedralMesh assigned;
+  assigned = mesh_;
+  EXPECT_EQ(assigned.vertex(v0)[0], 2);
+  assigned.set_vertex(v0, Vec3d(3, 3, 3));
+  EXPECT_EQ(mesh_.vertex(v0)[0], 2);
+
+  PolyhedralMesh moved;
+  moved = std::move(std::move(mesh_));
+  EXPECT_EQ(moved.vertex(v0)[0], 2);
+
+  PolyhedralMesh move_constructed{std::move(copy)};
+  EXPECT_EQ(move_constructed.vertex(v0)[0], 1);
+
+}
+#endif

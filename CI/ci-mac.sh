@@ -14,11 +14,11 @@ OPTIONS="${OPTIONS} -DGTEST_LIBRARY=${HOME}/sw/gtest-1.7.0/lib/libgtest.a"
 OPTIONS="${OPTIONS} -DGTEST_INCLUDE_DIR=${HOME}/sw/gtest-1.7.0/include/"
 OPTIONS="${OPTIONS} -DGTEST_MAIN_LIBRARY=${HOME}/sw/gtest-1.7.0/lib/libgtest_main.a"
 
-if [ "$LANGUAGE" == "C++98" ]; then
-  echo "Building with C++98";
-elif [ "$LANGUAGE" == "C++11" ]; then
-  echo "Building with C++11";
-  OPTIONS="$OPTIONS -DCMAKE_CXX_FLAGS='-std=c++11' "
+if [ "$LANGUAGE" == "C++17" ]; then
+  echo "Building with C++17";
+elif [ "$LANGUAGE" == "C++20" ]; then
+  echo "Building with C++20";
+  OPTIONS="$OPTIONS -DOVM_CXX_STANDARD=20"
 fi
 
 
@@ -47,7 +47,7 @@ make unittests
 cd Unittests
 
 #execute tests
-./unittests --gtest_color=yes --gtest_output=xml
+../Build/bin/unittests --gtest_color=yes --gtest_output=xml
 
 cd ..
 cd ..
@@ -77,4 +77,4 @@ make unittests
 cd Unittests
 
 # Run the unittests
-./unittests --gtest_color=yes --gtest_output=xml
+../Build/bin/unittests --gtest_color=yes --gtest_output=xml

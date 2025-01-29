@@ -33,14 +33,11 @@
  *                                                                           *
 \*===========================================================================*/
 
-
-
 #include <cassert>
 
-#include <OpenVolumeMesh/Core/OpenVolumeMeshProperty.hh>
-#include <OpenVolumeMesh/Core/OpenVolumeMeshHandle.hh>
+#include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Attribs/OpenVolumeMeshStatus.hh>
-#include <OpenVolumeMesh/Core/PropertyDefines.hh>
+#include <OpenVolumeMesh/Core/Properties/PropertyPtr.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
@@ -260,7 +257,7 @@ private:
 
     void mark_higher_dim_entities();
 
-    TopologyKernel& kernel_;
+    TopologyKernel* kernel_;
 
     VertexPropertyT<OpenVolumeMeshStatus> v_status_;
     EdgePropertyT<OpenVolumeMeshStatus> e_status_;
@@ -273,6 +270,4 @@ private:
 
 } // Namespace OpenVolumeMesh
 
-
 #include <OpenVolumeMesh/Attribs/StatusAttribT_impl.hh>
-
