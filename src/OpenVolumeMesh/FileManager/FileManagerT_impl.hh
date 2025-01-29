@@ -477,7 +477,11 @@ void FileManager::writeStream(std::ostream &_ostream, const MeshT &_mesh) const
     for(VertexIter v_it = _mesh.v_iter(); v_it; ++v_it) {
 
         Point v = _mesh.vertex(*v_it);
-        _ostream << v[0] << " " << v[1] << " " << v[2] << std::endl;
+        if(v.size() == 3) {
+            _ostream << v[0] << " " << v[1] << " " << v[2] << std::endl;
+        }else{
+            _ostream << v[0] << " " << v[1] << std::endl;
+        };
     }
 
     uint64_t n_edges(_mesh.n_edges());
