@@ -1,3 +1,5 @@
+#pragma once
+
 #include "TopologicalLink.hh"
 
 
