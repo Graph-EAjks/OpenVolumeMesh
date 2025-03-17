@@ -24,7 +24,7 @@ namespace OpenVolumeMesh {
  * This, however, only stores the first three because it's meant to be used to represent the
  * "Link" of a vertex or an edge (see TopologicalLink.hh)
  */
-    class TopologicalFaceSet {
+    class OVM_EXPORT TopologicalFaceSet {
     public:
 
         TopologicalFaceSet() = default;

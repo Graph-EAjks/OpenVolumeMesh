@@ -72,7 +72,7 @@ private:
 };
 
 // Stream operator for edges
-std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshEdge& _edge);
+std::ostream& OVM_EXPORT operator<<(std::ostream& _os, const OpenVolumeMeshEdge& _edge);
 
 //***************************************************************************
 
@@ -103,7 +103,7 @@ private:
 };
 
 // Stream operator for faces
-std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshFace& _face);
+std::ostream& OVM_EXPORT operator<<(std::ostream& _os, const OpenVolumeMeshFace& _face);
 
 //***************************************************************************
 
@@ -134,6 +134,6 @@ private:
 };
 
 // Stream operator for cells
-std::ostream& operator<<(std::ostream& _os, const OpenVolumeMeshCell& _cell);
+std::ostream& OVM_EXPORT operator<<(std::ostream& _os, const OpenVolumeMeshCell& _cell);
 
 } // namespace OpenVolumeMesh
