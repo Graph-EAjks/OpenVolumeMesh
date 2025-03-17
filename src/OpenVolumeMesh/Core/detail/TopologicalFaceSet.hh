@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "OpenVolumeMesh/Core/Handles.hh"
+#include "OpenVolumeMesh/Config/Export.hh"
 
 /**
  * See class TopologicalLink for a description of this class
