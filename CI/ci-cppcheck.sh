@@ -38,7 +38,7 @@ cppcheck \
     --suppress=missingIncludeSystem \
     --check-level=exhaustive \
     --inline-suppr \
-    -U_MSC_VER -DOVM_STATIC_DEFINE=1 -D__PIC__=1 \
+    -U_MSC_VER -DOVM_STATIC_DEFINE=1 -DIN_CPPCHECK=1 \
     --quiet \
     2>&1 | tee cppcheck.log
 

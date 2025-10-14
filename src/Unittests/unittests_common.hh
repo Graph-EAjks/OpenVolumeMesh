@@ -6,12 +6,14 @@
 #include <OpenVolumeMesh/FileManager/TypeNames.hh>
 #include <OpenVolumeMesh/Geometry/VectorT.hh>
 
+#ifndef IN_CPPCHECK
 #ifdef __clang__
 #  pragma GCC diagnostic ignored "-Weverything"
 #  pragma GCC diagnostic ignored "-Wundef"
 #  pragma GCC diagnostic ignored "-Wglobal-constructors"
 #  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #  pragma GCC diagnostic ignored "-Wmissing-noreturn"
+#endif
 #endif
 
 #include <gtest/gtest.h>
