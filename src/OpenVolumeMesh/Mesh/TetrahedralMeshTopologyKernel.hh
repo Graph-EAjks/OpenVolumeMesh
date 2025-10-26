@@ -34,13 +34,9 @@
 \*===========================================================================*/
 
 
-#ifndef NDEBUG
-#include <iostream>
-#endif
-#include <set>
-
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
 #include <OpenVolumeMesh/Mesh/TetrahedralMeshIterators.hh>
+#include <OpenVolumeMesh/Core/AddSmartIterators.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
@@ -52,7 +48,9 @@ namespace OpenVolumeMesh {
  *
  */
 
-class OVM_EXPORT TetrahedralMeshTopologyKernel : public TopologyKernel {
+class OVM_EXPORT TetrahedralMeshTopologyKernel
+    : public AddSmartIterators<TetrahedralMeshTopologyKernel, TopologyKernel>
+{
 public:
 
     TetrahedralMeshTopologyKernel() = default;
