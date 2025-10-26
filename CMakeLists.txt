@@ -18,6 +18,8 @@ endif()
 
 set(OVM_ENABLE_APPLICATIONS ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolumeMesh applications")
 set(OVM_ENABLE_UNITTESTS ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolumeMesh unit tests")
+set(OVM_WITH_EIGEN ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolumeMesh with Eigen support")
+set(OVM_DOWNLOAD_MISSING_EIGEN ${OVM_STANDALONE_BUILD} CACHE BOOL "Download Eigen if target is not supplied")
 set(OVM_ENABLE_EXAMPLES ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolumeMesh examples")
 set(OVM_BUILD_DOCUMENTATION ${OVM_STANDALONE_BUILD} CACHE BOOL "Build OpenVolumeMesh documentation")
 
