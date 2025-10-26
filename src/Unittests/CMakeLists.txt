@@ -11,6 +11,7 @@ SET(SOURCE_FILES
     unittests_iterators.cc
     unittests_mesh_copies.cc
     unittests_smart_tagger.cc
+    unittests_smart_handles.cc
     unittests_properties.cc
     unittests_tet_mesh_navigation.cc
 )

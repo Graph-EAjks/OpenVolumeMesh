@@ -34,7 +34,9 @@
 
 #include <OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.hh>
 
+#ifndef NDEBUG
 #include <iostream>
+#endif
 
 namespace OpenVolumeMesh {
 

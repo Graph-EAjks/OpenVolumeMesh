@@ -36,10 +36,10 @@
 #ifndef NDEBUG
 #include <iostream>
 #endif
-#include <set>
 
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
 #include <OpenVolumeMesh/Mesh/HexahedralMeshIterators.hh>
+#include <OpenVolumeMesh/Core/AddSmartIterators.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
@@ -74,7 +74,9 @@ namespace OpenVolumeMesh {
  * \li \c 6. ZB
  */
 
-class OVM_EXPORT HexahedralMeshTopologyKernel : public TopologyKernel {
+class OVM_EXPORT HexahedralMeshTopologyKernel
+    : public AddSmartIterators<HexahedralMeshTopologyKernel, TopologyKernel>
+    {
 public:
 
     // Orientation constants

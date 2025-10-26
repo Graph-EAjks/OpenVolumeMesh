@@ -4,11 +4,6 @@
 #include <OpenVolumeMesh/Config/Export.hh>
 #include <OpenVolumeMesh/Core/Iterators/BaseIterator.hh>
 
-#ifndef NDEBUG
-#include <iostream>
-#endif
-
-
 namespace OpenVolumeMesh {
 
 class OVM_EXPORT EdgeIter : public BaseIterator<EdgeHandle> {

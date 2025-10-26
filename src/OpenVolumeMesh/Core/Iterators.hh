@@ -33,16 +33,6 @@
  *                                                                           *
 \*===========================================================================*/
 
-
-#include <type_traits>
-#include <iterator>
-#include <set>
-#include <vector>
-
-#ifndef NDEBUG
-#include <iostream>
-#endif
-
 #include <OpenVolumeMesh/Core/Handles.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 #include <OpenVolumeMesh/Core/Iterators/BaseIterator.hh>

@@ -30,9 +30,11 @@ public:
     // STL compliance (needs to have default constructor)
     BaseIterator() : valid_(false), mesh_(nullptr) {}
     BaseIterator(const BaseIterator& _c) = default;
+    BaseIterator(BaseIterator&& _c) = default;
     virtual ~BaseIterator() = default;
 
     BaseIterator& operator=(const BaseIterator& _c) = default;
+    BaseIterator& operator=(BaseIterator&& _c) = default;
 
     bool operator== (const BaseIterator& _c) const {
         return (this->cur_handle_ == _c.cur_handle() &&

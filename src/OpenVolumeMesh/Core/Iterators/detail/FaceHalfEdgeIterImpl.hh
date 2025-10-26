@@ -20,7 +20,7 @@ public:
     FaceHalfEdgeIterImpl& operator--();
 
 private:
-    std::vector<HalfEdgeHandle> const& halfedges_;
+    std::vector<HalfEdgeHandle> const* halfedges_;
     size_t cur_index_ = 0;
 
 };
