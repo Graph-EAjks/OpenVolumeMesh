@@ -38,7 +38,6 @@
 #include <cassert>
 #include <istream>
 #include <ostream>
-#include <numeric>
 #include <string>
 #include <vector>
 #include <memory>
