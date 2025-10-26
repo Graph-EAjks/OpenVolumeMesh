@@ -1,6 +1,11 @@
 #include <OpenVolumeMesh/Core/Iterators/VertexVertexIter.hh>
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
 
+
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 namespace OpenVolumeMesh {
 
 VertexVertexIter::VertexVertexIter(const VertexHandle& _ref_h,

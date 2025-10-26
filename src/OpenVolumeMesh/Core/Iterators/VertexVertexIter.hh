@@ -4,9 +4,6 @@
 #include <OpenVolumeMesh/Config/Export.hh>
 #include <OpenVolumeMesh/Core/Iterators/BaseCirculator.hh>
 
-#ifndef NDEBUG
-#include <iostream>
-#endif
 
 namespace OpenVolumeMesh {
 

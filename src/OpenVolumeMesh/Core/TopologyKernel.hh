@@ -42,31 +42,18 @@
 #include <OpenVolumeMesh/Core/HandleIndexing.hh>
 #include <OpenVolumeMesh/Core/BaseEntities.hh>
 #include <OpenVolumeMesh/Core/Handles.hh>
+#include <OpenVolumeMesh/Core/AddSmartIterators.hh>
 #include <OpenVolumeMesh/Core/ResourceManager.hh>
 #include <OpenVolumeMesh/Core/Iterators.hh>
+#include <OpenVolumeMesh/Unstable/SmartHandles.hh>
 #include <OpenVolumeMesh/Config/Export.hh>
 
 namespace OpenVolumeMesh {
 
-// provide begin() and end() for the iterator pairs provided in TopologyKernel,
-// so we can use range-for, e.g. for(const auto &vh: mesh.vertices()) works.
-template<class I>
-typename std::enable_if<is_ovm_iterator<I>::value, I>::type
-begin(const std::pair<I, I>& iterpair)
+
+class OVM_EXPORT TopologyKernel
+    : public AddSmartIterators<TopologyKernel, ResourceManager>
 {
-    return iterpair.first;
-}
-
-template<class I>
-typename std::enable_if<is_ovm_iterator<I>::value, I>::type
-end(const std::pair<I, I>& iterpair)
-{
-    return iterpair.second;
-}
-
-
-
-class OVM_EXPORT TopologyKernel : public ResourceManager {
 public:
 
     TopologyKernel() = default;
@@ -123,253 +110,124 @@ public:
      * Circulators
      */
 
-protected:
-
-    template <class Circulator>
-    static Circulator make_end_circulator(const Circulator& _circ)
-    {
-        Circulator end = _circ;
-        if (end.valid()) {
-            end.lap(_circ.max_laps());
-            end.valid(false);
-        }
-        return end;
-    }
-
 public:
 
     VertexVertexIter vv_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexVertexIter(_h, this, _max_laps);
     }
 
-    std::pair<VertexVertexIter, VertexVertexIter> vertex_vertices(VertexHandle _h, int _max_laps = 1) const {
-        VertexVertexIter begin = vv_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     VertexOHalfEdgeIter voh_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexOHalfEdgeIter(_h, this, _max_laps);
     }
 
-    std::pair<VertexOHalfEdgeIter, VertexOHalfEdgeIter> outgoing_halfedges(VertexHandle _h, int _max_laps = 1) const {
-        VertexOHalfEdgeIter begin = voh_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     VertexIHalfEdgeIter vih_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexIHalfEdgeIter(_h, this, _max_laps);
-    }
-
-    std::pair<VertexIHalfEdgeIter, VertexIHalfEdgeIter> incoming_halfedges(VertexHandle _h, int _max_laps = 1) const {
-        VertexIHalfEdgeIter begin = vih_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     VertexEdgeIter ve_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexEdgeIter(_h, this, _max_laps);
     }
 
-    std::pair<VertexEdgeIter, VertexEdgeIter> vertex_edges(VertexHandle _h, int _max_laps = 1) const {
-        VertexEdgeIter begin = ve_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     VertexHalfFaceIter vhf_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexHalfFaceIter(_h, this, _max_laps);
-    }
-
-    std::pair<VertexHalfFaceIter, VertexHalfFaceIter> vertex_halffaces(VertexHandle _h, int _max_laps = 1) const {
-        VertexHalfFaceIter begin = vhf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     VertexFaceIter vf_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<VertexFaceIter, VertexFaceIter> vertex_faces(VertexHandle _h, int _max_laps = 1) const {
-        VertexFaceIter begin = vf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
-
     VertexCellIter vc_iter(VertexHandle _h, int _max_laps = 1) const {
         return VertexCellIter(_h, this, _max_laps);
     }
 
-    std::pair<VertexCellIter, VertexCellIter> vertex_cells(VertexHandle _h, int _max_laps = 1) const {
-        VertexCellIter begin = vc_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     HalfEdgeHalfFaceIter hehf_iter(HalfEdgeHandle _h, int _max_laps = 1) const {
         return HalfEdgeHalfFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<HalfEdgeHalfFaceIter, HalfEdgeHalfFaceIter> halfedge_halffaces(HalfEdgeHandle _h, int _max_laps = 1) const {
-        HalfEdgeHalfFaceIter begin = hehf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     HalfEdgeFaceIter hef_iter(HalfEdgeHandle _h, int _max_laps = 1) const {
         return HalfEdgeFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<HalfEdgeFaceIter, HalfEdgeFaceIter> halfedge_faces(HalfEdgeHandle _h, int _max_laps = 1) const {
-        HalfEdgeFaceIter begin = hef_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     HalfEdgeCellIter hec_iter(HalfEdgeHandle _h, int _max_laps = 1) const {
         return HalfEdgeCellIter(_h, this, _max_laps);
     }
 
-    std::pair<HalfEdgeCellIter, HalfEdgeCellIter> halfedge_cells(HalfEdgeHandle _h, int _max_laps = 1) const {
-        HalfEdgeCellIter begin = hec_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     EdgeHalfFaceIter ehf_iter(EdgeHandle _h, int _max_laps = 1) const {
         return EdgeHalfFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<EdgeHalfFaceIter, EdgeHalfFaceIter> edge_halffaces(EdgeHandle _h, int _max_laps = 1) const {
-        EdgeHalfFaceIter begin = ehf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     EdgeFaceIter ef_iter(EdgeHandle _h, int _max_laps = 1) const {
         return EdgeFaceIter(_h, this, _max_laps);
-    }
-
-    std::pair<EdgeFaceIter, EdgeFaceIter> edge_faces(EdgeHandle _h, int _max_laps = 1) const {
-        EdgeFaceIter begin = ef_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     EdgeCellIter ec_iter(EdgeHandle _h, int _max_laps = 1) const {
         return EdgeCellIter(_h, this, _max_laps);
     }
 
-    std::pair<EdgeCellIter, EdgeCellIter> edge_cells(EdgeHandle _h, int _max_laps = 1) const {
-        EdgeCellIter begin = ec_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
-
     HalfFaceHalfEdgeIter hfhe_iter(HalfFaceHandle _h, int _max_laps = 1) const {
         return HalfFaceHalfEdgeIter(_h, this, _max_laps);
-    }
-
-    std::pair<HalfFaceHalfEdgeIter, HalfFaceHalfEdgeIter> halfface_halfedges(HalfFaceHandle _h, int _max_laps = 1) const {
-        HalfFaceHalfEdgeIter begin = hfhe_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     HalfFaceEdgeIter hfe_iter(HalfFaceHandle _h, int _max_laps = 1) const {
         return HalfFaceEdgeIter(_h, this, _max_laps);
     }
 
-    std::pair<HalfFaceEdgeIter, HalfFaceEdgeIter> halfface_edges(HalfFaceHandle _h, int _max_laps = 1) const {
-        HalfFaceEdgeIter begin = hfe_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     FaceVertexIter fv_iter(FaceHandle _h, int _max_laps = 1) const {
         return FaceVertexIter(_h, this, _max_laps);
     }
 
-    std::pair<FaceVertexIter, FaceVertexIter> face_vertices(FaceHandle _h, int _max_laps = 1) const {
-        FaceVertexIter begin = fv_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     FaceHalfEdgeIter fhe_iter(FaceHandle _h, int _max_laps = 1) const {
         return FaceHalfEdgeIter(_h, this, _max_laps);
     }
 
-    std::pair<FaceHalfEdgeIter, FaceHalfEdgeIter> face_halfedges(FaceHandle _h, int _max_laps = 1) const {
-        FaceHalfEdgeIter begin = fhe_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     FaceEdgeIter fe_iter(FaceHandle _h, int _max_laps = 1) const {
         return FaceEdgeIter(_h, this, _max_laps);
-    }
-
-    std::pair<FaceEdgeIter, FaceEdgeIter> face_edges(FaceHandle _h, int _max_laps = 1) const {
-        FaceEdgeIter begin = fe_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     CellVertexIter cv_iter(CellHandle _h, int _max_laps = 1) const {
         return CellVertexIter(_h, this, _max_laps);
     }
 
-    std::pair<CellVertexIter, CellVertexIter> cell_vertices(CellHandle _h, int _max_laps = 1) const {
-        CellVertexIter begin = cv_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
-
     CellHalfEdgeIter che_iter(CellHandle _h, int _max_laps = 1) const {
         return CellHalfEdgeIter(_h, this, _max_laps);
-    }
-
-    std::pair<CellHalfEdgeIter, CellHalfEdgeIter> cell_halfedges(CellHandle _h, int _max_laps = 1) const {
-        CellHalfEdgeIter begin = che_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     CellEdgeIter ce_iter(CellHandle _h, int _max_laps = 1) const {
         return CellEdgeIter(_h, this, _max_laps);
     }
 
-    std::pair<CellEdgeIter, CellEdgeIter> cell_edges(CellHandle _h, int _max_laps = 1) const {
-        CellEdgeIter begin = ce_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
-
     CellHalfFaceIter chf_iter(CellHandle _h, int _max_laps = 1) const {
         return CellHalfFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<CellHalfFaceIter, CellHalfFaceIter> cell_halffaces(CellHandle _h, int _max_laps = 1) const {
-        CellHalfFaceIter begin = chf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     CellFaceIter cf_iter(CellHandle _h, int _max_laps = 1) const {
         return CellFaceIter(_h, this, _max_laps);
     }
 
-    std::pair<CellFaceIter, CellFaceIter> cell_faces(CellHandle _h, int _max_laps = 1) const {
-        CellFaceIter begin = cf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     CellCellIter cc_iter(CellHandle _h, int _max_laps = 1) const {
         return CellCellIter(_h, this, _max_laps);
     }
 
-    std::pair<CellCellIter, CellCellIter> cell_cells(CellHandle _h, int _max_laps = 1) const {
-        CellCellIter begin = cc_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
 
     HalfFaceVertexIter hfv_iter(HalfFaceHandle _h, int _max_laps = 1) const {
         return HalfFaceVertexIter(_h, this, _max_laps);
     }
 
-    std::pair<HalfFaceVertexIter, HalfFaceVertexIter> halfface_vertices(HalfFaceHandle _h, int _max_laps = 1) const {
-        HalfFaceVertexIter begin = hfv_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
-    }
-
     BoundaryHalfFaceHalfFaceIter bhfhf_iter(HalfFaceHandle _ref_h, int _max_laps = 1) const {
         return BoundaryHalfFaceHalfFaceIter(_ref_h, this, _max_laps);
-    }
-
-    std::pair<BoundaryHalfFaceHalfFaceIter, BoundaryHalfFaceHalfFaceIter> boundary_halfface_halffaces(HalfFaceHandle _h, int _max_laps = 1) const {
-        BoundaryHalfFaceHalfFaceIter begin = bhfhf_iter(_h, _max_laps);
-        return std::make_pair(begin, make_end_circulator(begin));
     }
 
     /*
@@ -412,10 +270,6 @@ public:
         return VertexIter(this, VertexHandle((int)n_vertices()));
     }
 
-    std::pair<VertexIter, VertexIter> vertices() const {
-        return std::make_pair(vertices_begin(), vertices_end());
-    }
-
     EdgeIter e_iter() const {
         return EdgeIter(this);
     }
@@ -426,10 +280,6 @@ public:
 
     EdgeIter edges_end() const {
         return EdgeIter(this, EdgeHandle((int)edges_.size()));
-    }
-
-    std::pair<EdgeIter, EdgeIter> edges() const {
-        return std::make_pair(edges_begin(), edges_end());
     }
 
     HalfEdgeIter he_iter() const {
@@ -444,10 +294,6 @@ public:
         return HalfEdgeIter(this, HalfEdgeHandle((int)edges_.size() * 2));
     }
 
-    std::pair<HalfEdgeIter, HalfEdgeIter> halfedges() const {
-        return std::make_pair(halfedges_begin(), halfedges_end());
-    }
-
     FaceIter f_iter() const {
         return FaceIter(this);
     }
@@ -458,10 +304,6 @@ public:
 
     FaceIter faces_end() const {
         return FaceIter(this, FaceHandle((int)faces_.size()));
-    }
-
-    std::pair<FaceIter, FaceIter> faces() const {
-        return std::make_pair(faces_begin(), faces_end());
     }
 
     HalfFaceIter hf_iter() const {
@@ -476,10 +318,6 @@ public:
         return HalfFaceIter(this, HalfFaceHandle((int)faces_.size() * 2));
     }
 
-    std::pair<HalfFaceIter, HalfFaceIter> halffaces() const {
-        return std::make_pair(halffaces_begin(), halffaces_end());
-    }
-
     CellIter c_iter() const {
         return CellIter(this);
     }
@@ -492,9 +330,7 @@ public:
         return CellIter(this, CellHandle((int)cells_.size()));
     }
 
-    std::pair<CellIter, CellIter> cells() const {
-        return std::make_pair(cells_begin(), cells_end());
-    }
+
 
     /*
      * Convenience functions
@@ -1201,5 +1037,4 @@ private:
     size_t n_deleted_cells_ = 0;
 };
 
-}
-
+} // namespace OpenVolumeMesh
