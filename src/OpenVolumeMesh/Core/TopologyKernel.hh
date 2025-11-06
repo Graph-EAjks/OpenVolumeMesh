@@ -558,10 +558,10 @@ public:
 
     int genus() const {
 
-        int g = (1 - (int)(n_vertices() -
-                           n_edges() +
-                           n_faces() -
-                           n_cells()));
+        int g = (1 - (int)(n_logical_vertices() -
+                           n_logical_edges() +
+                           n_logical_faces() -
+                           n_logical_cells()));
 
         if(g % 2 == 0) return (g / 2);
 
@@ -620,6 +620,9 @@ public:
     /// Set the half-faces of a cell
     void set_cell(CellHandle _ch, const std::vector<HalfFaceHandle>& _hfs);
 
+    /// Recompute cyclic ordering of (half)faces incident to an edge (used by iterators)
+    void reorder_incident_halffaces(EdgeHandle _eh);
+
     /*
      * Non-virtual functions
      */
@@ -655,22 +658,38 @@ public:
     Face opposite_halfface(HalfFaceHandle _halfFaceHandle) const;
 
     /// Get halfedge from vertex _vh1 to _vh2
-    HalfEdgeHandle halfedge(VertexHandle _vh1, VertexHandle _vh2) const;
+    HalfEdgeHandle find_halfedge(VertexHandle _vh1, VertexHandle _vh2) const;
+    [[deprecated("please use find_halfedge instead")]]
+    HalfEdgeHandle halfedge     (VertexHandle _vh1, VertexHandle _vh2) const; // deprecated, use the one above instead!!!
+
+    /// Get halfedge from vertex _vh1 to _vh2 but restricted to halfedges of cell _ch
+    HalfEdgeHandle find_halfedge_in_cell(VertexHandle _vh1, VertexHandle _vh2, CellHandle _ch) const;
 
     /// Get half-face from list of incident vertices (in connected order)
     ///
     /// \note Only the first three vertices are checked
-    HalfFaceHandle halfface(const std::vector<VertexHandle>& _vs) const;
+    HalfFaceHandle find_halfface(const std::vector<VertexHandle>& _vs) const;
+    [[deprecated("please use find_halfface instead")]]
+    HalfFaceHandle halfface     (const std::vector<VertexHandle>& _vs) const; // deprecated, use the one above instead!!!
 
     /// Get half-face from list of incident vertices (in connected order)
     ///
+    /// \note Only the first three vertices are checked
+    HalfFaceHandle find_halfface_in_cell(const std::vector<VertexHandle>& _vs, CellHandle _ch) const;
+
+  /// Get half-face from list of incident vertices (in connected order)
+    ///
     /// \note All vertices are checked
-    HalfFaceHandle halfface_extensive(const std::vector<VertexHandle>& _vs) const;
+    HalfFaceHandle find_halfface_extensive(const std::vector<VertexHandle>& _vs) const;
+    [[deprecated("please use find_halfface_extensive instead")]]
+    HalfFaceHandle halfface_extensive     (const std::vector<VertexHandle>& _vs) const; // deprecated, use the one above instead!!!
 
     /// Get half-face from list of incident half-edges
     ///
     /// \note Only the first two half-edges are checked
-    HalfFaceHandle halfface(const std::vector<HalfEdgeHandle>& _hes) const;
+    HalfFaceHandle find_halfface(const std::vector<HalfEdgeHandle>& _hes) const;
+    [[deprecated("please use find_halfface instead")]]
+    HalfFaceHandle halfface     (const std::vector<HalfEdgeHandle>& _hes) const; // deprecated, use the one above instead!!!
 
     /// Get next halfedge within a halfface
     HalfEdgeHandle next_halfedge_in_halfface(HalfEdgeHandle _heh, HalfFaceHandle _hfh) const;
@@ -717,6 +736,16 @@ public:
 
         return cell(_ch).halffaces().size();
     }
+
+    /// Get vertices of a halfface
+    std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh) const;
+    /// Get vertices of a halfface orderd to start from vh
+    std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh, VertexHandle vh) const;
+    /// Get vertices of a halfface orderd to start from from_vertex_handle(heh)
+    std::vector<VertexHandle> get_halfface_vertices(HalfFaceHandle hfh, HalfEdgeHandle heh) const;
+
+    /// check whether face _fh and edge _eh are incident
+    bool is_incident( FaceHandle _fh, EdgeHandle _eh) const;
 
     //=====================================================================
     // Delete entities
@@ -966,8 +995,6 @@ protected:
 
     void compute_face_bottom_up_incidences();
 
-    void reorder_incident_halffaces(EdgeHandle _eh);
-
     // Outgoing halfedges per vertex
     VertexVector<std::vector<HalfEdgeHandle> > outgoing_hes_per_vertex_;
 
@@ -994,19 +1021,16 @@ private:
 
 public:
 
-    // TODO: this should probably be "common edge", the halfedge direction is ignored,
-    // and existing code likly relies on this behaviour.
-    // We probably also want a "common halfedge" API that may assume he \in hf
-    //
-    /// \brief Get halfface that is adjacent (w.r.t. a common halfedge) within the same cell
-    ///
-    /// \param without_he_hf_incidences: for use when creating he-hf incidences
+    /// \brief Get halfface that is adjacent (w.r.t. a common halfedge) within the same cell.
+    ///        It correctly handles self-adjacent cells where the halfedge orientation matters.
+    ///        For legacy reasons the halfedge orientation can be arbitrary if there are no self-adjacencies in the cell.
     ///
     /// \return Handle of the adjacent half-face if \a _halfFaceHandle is not
     ///         at a boundary, \a InvalidHalfFaceHandle otherwise.
     ///
     /// \warning The mesh must have face bottom-up incidences.
 
+    // TODO: We might also want a "common halfedge" API that may assume he \in hf once the deprecated function is eliminated for good
     HalfFaceHandle adjacent_halfface_in_cell(HalfFaceHandle _halfFaceHandle, HalfEdgeHandle _halfEdgeHandle) const;
 
     /// Get cell that is incident to the given halfface

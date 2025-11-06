@@ -20,7 +20,7 @@
 namespace OpenVolumeMesh {
 
 template <class Iter, class Handle>
-class BoundaryItemIter : public BaseIterator<Handle> {
+class OVM_EXPORT BoundaryItemIter : public BaseIterator<Handle> {
 public:
     typedef BaseIterator<Handle> BaseIter;
 
@@ -129,6 +129,23 @@ typedef BoundaryItemIter<EdgeIter, EdgeHandle> BoundaryEdgeIter;
 typedef BoundaryItemIter<HalfFaceIter, HalfFaceHandle> BoundaryHalfFaceIter;
 typedef BoundaryItemIter<FaceIter, FaceHandle> BoundaryFaceIter;
 typedef BoundaryItemIter<CellIter, CellHandle> BoundaryCellIter;
+
+// declare specializations so we can declare explicit instantiations:
+//
+template<> bool BoundaryItemIter<VertexIter, VertexHandle>::has_incidences() const;
+template<> bool BoundaryItemIter<HalfEdgeIter, HalfEdgeHandle>::has_incidences() const;
+template<> bool BoundaryItemIter<EdgeIter, EdgeHandle>::has_incidences() const;
+template<> bool BoundaryItemIter<HalfFaceIter, HalfFaceHandle>::has_incidences() const;
+template<> bool BoundaryItemIter<FaceIter, FaceHandle>::has_incidences() const;
+template<> bool BoundaryItemIter<CellIter, CellHandle>::has_incidences() const;
+
+// explicit instantiations:
+extern template class OVM_EXPORT BoundaryItemIter<VertexIter, VertexHandle>;
+extern template class OVM_EXPORT BoundaryItemIter<HalfEdgeIter, HalfEdgeHandle>;
+extern template class OVM_EXPORT BoundaryItemIter<EdgeIter, EdgeHandle>;
+extern template class OVM_EXPORT BoundaryItemIter<HalfFaceIter, HalfFaceHandle>;
+extern template class OVM_EXPORT BoundaryItemIter<FaceIter, FaceHandle>;
+extern template class OVM_EXPORT BoundaryItemIter<CellIter, CellHandle>;
 
 
 } // namespace OpenVolumeMesh

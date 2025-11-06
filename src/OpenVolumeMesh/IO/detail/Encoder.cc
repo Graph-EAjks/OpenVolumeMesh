@@ -41,14 +41,24 @@ void Encoder::u64(uint64_t val)
 
 void Encoder::dbl(double val)
 {
-    uint8_t *out = buffer_.bytes_to_write(sizeof(double));
-    std::memcpy(out, &val, sizeof(double));
+    // assume that double endianness is the same as word endianness.
+    // in c++20, we will be able to use bit_cast
+    //
+    uint64_t tmp = 0;
+    static_assert(sizeof(tmp) == sizeof(val));
+    ::memcpy(&tmp, &val, sizeof(tmp));
+    u64(tmp);
 }
 
 void Encoder::flt(float val)
 {
-    uint8_t *out = buffer_.bytes_to_write(sizeof(float));
-    std::memcpy(out, &val, sizeof(float));
+    // assume that float endianness is the same as word endianness.
+    // in c++20, we will be able to use bit_cast
+
+    uint32_t tmp = 0;
+    static_assert(sizeof(tmp) == sizeof(val));
+    ::memcpy(&tmp, &val, sizeof(tmp));
+    u32(tmp);
 }
 
 void Encoder::write(const std::string &v)

@@ -15,6 +15,7 @@
  *                                                                           *
  *  If other files instantiate templates or use macros                       *
  *  or inline functions from this file, or you compile this file and         *
+ *  or inline functions from this file, or you compile this file and         *
  *  link it with other files to produce an executable, this file does        *
  *  not by itself cause the resulting executable to be covered by the        *
  *  GNU Lesser General Public License. This exception does not however       *
@@ -35,8 +36,6 @@
 #ifndef NDEBUG
 #include <iostream>
 #endif
-
-#include <queue>
 
 #include <OpenVolumeMesh/Core/TopologyKernel.hh>
 #include <OpenVolumeMesh/Core/detail/swap_bool.hh>
@@ -1118,15 +1117,9 @@ EdgeIter TopologyKernel::delete_edge_core(EdgeHandle _h) {
                     hes.erase(std::remove(hes.begin(), hes.end(), halfedge_handle(h, 0)), hes.end());
                     hes.erase(std::remove(hes.begin(), hes.end(), halfedge_handle(h, 1)), hes.end());
 
-    #if defined(__clang_major__) && (__clang_major__ >= 5)
-                    for(std::vector<HalfEdgeHandle>::iterator it = hes.begin(), end = hes.end();
-                        it != end; ++it) {
-                        cor.correctValue(*it);
+                    for (auto &it: hes) {
+                        cor.correctValue(it);
                     }
-    #else
-                    std::for_each(hes.begin(), hes.end(),
-                                  std::bind(&HEHandleCorrection::correctValue, &cor, std::placeholders::_1));
-    #endif
                     face(*f_it).set_halfedges(hes);
                 }
             } else {
@@ -1144,15 +1137,9 @@ EdgeIter TopologyKernel::delete_edge_core(EdgeHandle _h) {
 
                     // Decrease all half-edge handles greater than _h in face
                     HEHandleCorrection cor(halfedge_handle(h, 1));
-    #if defined(__clang_major__) && (__clang_major__ >= 5)
-                    for(std::vector<HalfEdgeHandle>::iterator it = hes.begin(), end = hes.end();
-                        it != end; ++it) {
-                        cor.correctValue(*it);
+                    for (auto &it: hes) {
+                        cor.correctValue(it);
                     }
-    #else
-                    std::for_each(hes.begin(), hes.end(),
-                                  std::bind(&HEHandleCorrection::correctValue, &cor, std::placeholders::_1));
-    #endif
                     face(*f_it).set_halfedges(hes);
                 }
             }
@@ -1172,16 +1159,9 @@ EdgeIter TopologyKernel::delete_edge_core(EdgeHandle _h) {
             // 4)
             if(has_vertex_bottom_up_incidences()) {
                 HEHandleCorrection cor(halfedge_handle(h, 1));
-    #if defined(__clang_major__) && (__clang_major__ >= 5)
-                for(std::vector<std::vector<HalfEdgeHandle> >::iterator it = outgoing_hes_per_vertex_.begin(),
-                    end = outgoing_hes_per_vertex_.end(); it != end; ++it) {
-                    cor.correctVecValue(*it);
+                for (auto &it: outgoing_hes_per_vertex_) {
+                    cor.correctVecValue(it);
                 }
-    #else
-                std::for_each(outgoing_hes_per_vertex_.begin(),
-                              outgoing_hes_per_vertex_.end(),
-                              std::bind(&HEHandleCorrection::correctVecValue, &cor, std::placeholders::_1));
-    #endif
             }
         }
 
@@ -1298,15 +1278,9 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
                     hfs.erase(std::remove(hfs.begin(), hfs.end(), halfface_handle(h, 1)), hfs.end());
 
                     HFHandleCorrection cor(halfface_handle(h, 1));
-#if defined(__clang_major__) && (__clang_major__ >= 5)
-                    for(std::vector<HalfFaceHandle>::iterator it = hfs.begin(),
-                        end = hfs.end(); it != end; ++it) {
-                        cor.correctValue(*it);
+                    for (auto &it: hfs) {
+                        cor.correctValue(it);
                     }
-#else
-                    std::for_each(hfs.begin(), hfs.end(),
-                                  std::bind(&HFHandleCorrection::correctValue, &cor, std::placeholders::_1));
-#endif
                     cell(*c_it).set_halffaces(hfs);
                 }
 
@@ -1322,15 +1296,9 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
                     hfs.erase(std::remove(hfs.begin(), hfs.end(), halfface_handle(h, 1)), hfs.end());
 
                     HFHandleCorrection cor(halfface_handle(h, 1));
-#if defined(__clang_major__) && (__clang_major__ >= 5)
-                    for(std::vector<HalfFaceHandle>::iterator it = hfs.begin(),
-                        end = hfs.end(); it != end; ++it) {
-                        cor.correctValue(*it);
+                    for (auto &it: hfs) {
+                        cor.correctValue(it);
                     }
-#else
-                    std::for_each(hfs.begin(), hfs.end(),
-                                  std::bind(&HFHandleCorrection::correctValue, &cor, std::placeholders::_1));
-#endif
                     cell(*c_it).set_halffaces(hfs);
                 }
             }
@@ -1351,15 +1319,9 @@ FaceIter TopologyKernel::delete_face_core(FaceHandle _h) {
             // 4)
             if(has_edge_bottom_up_incidences()) {
                 HFHandleCorrection cor(halfface_handle(h, 1));
-#if defined(__clang_major__) && (__clang_major__ >= 5)
-                for(std::vector<std::vector<HalfFaceHandle> >::iterator it = incident_hfs_per_he_.begin(), end = incident_hfs_per_he_.end(); it != end; ++it) {
-                    cor.correctVecValue(*it);
+                for (auto &it: incident_hfs_per_he_) {
+                    cor.correctVecValue(it);
                 }
-#else
-                std::for_each(incident_hfs_per_he_.begin(),
-                              incident_hfs_per_he_.end(),
-                              std::bind(&HFHandleCorrection::correctVecValue, &cor, std::placeholders::_1));
-#endif
             }
         }
 
@@ -1447,16 +1409,9 @@ CellIter TopologyKernel::delete_cell_core(CellHandle _h) {
         {
             if(has_face_bottom_up_incidences()) {
                 CHandleCorrection cor(h);
-#if defined(__clang_major__) && (__clang_major__ >= 5)
-                for(std::vector<CellHandle>::iterator it = incident_cell_per_hf_.begin(),
-                    end = incident_cell_per_hf_.end(); it != end; ++it) {
-                    cor.correctValue(*it);
+                for (auto &it: incident_cell_per_hf_) {
+                    cor.correctValue(it);
                 }
-#else
-                std::for_each(incident_cell_per_hf_.begin(),
-                              incident_cell_per_hf_.end(),
-                              std::bind(&CHandleCorrection::correctValue, &cor, std::placeholders::_1));
-#endif
             }
         }
 
@@ -1945,9 +1900,20 @@ OpenVolumeMeshFace TopologyKernel::opposite_halfface(HalfFaceHandle _halfFaceHan
     return halfface(_halfFaceHandle.opposite_handle());
 }
 
+
 //========================================================================================
 
+
 HalfEdgeHandle TopologyKernel::halfedge(VertexHandle _vh1, VertexHandle _vh2) const
+{
+  return find_halfedge(_vh1, _vh2);
+}
+
+
+//========================================================================================
+
+
+HalfEdgeHandle TopologyKernel::find_halfedge(VertexHandle _vh1, VertexHandle _vh2) const
 {
     assert(is_valid(_vh1));
     assert(is_valid(_vh2));
@@ -1963,27 +1929,100 @@ HalfEdgeHandle TopologyKernel::halfedge(VertexHandle _vh1, VertexHandle _vh2) co
 
 //========================================================================================
 
-HalfFaceHandle TopologyKernel::halfface(const std::vector<VertexHandle>& _vs) const {
+HalfEdgeHandle TopologyKernel::find_halfedge_in_cell(VertexHandle _vh1, VertexHandle _vh2, CellHandle _ch) const
+{
+  assert(is_valid(_vh1));
+  assert(is_valid(_vh2));
 
+  for( auto hfh : cell(_ch).halffaces())
+  {
+    for(auto heh : halfface(hfh).halfedges() )
+    {
+      if(from_vertex_handle(heh) == _vh1 && to_vertex_handle(heh) == _vh2)
+        return heh;
+      if(from_vertex_handle(heh) == _vh2 && to_vertex_handle(heh) == _vh1)
+        return opposite_halfedge_handle(heh);
+     }
+  }
+
+  return InvalidHalfEdgeHandle;
+}
+
+//========================================================================================
+
+HalfFaceHandle TopologyKernel::halfface(const std::vector<VertexHandle>& _vs) const
+{
+  return find_halfface(_vs);
+}
+
+//========================================================================================
+
+HalfFaceHandle TopologyKernel::find_halfface(const std::vector<VertexHandle>& _vs) const
+{
     assert(_vs.size() > 2);
 
     VertexHandle v0 = _vs[0], v1 = _vs[1], v2 = _vs[2];
 
     assert(v0.is_valid() && v1.is_valid() && v2.is_valid());
 
-    HalfEdgeHandle he0 = halfedge(v0, v1);
+    HalfEdgeHandle he0 = find_halfedge(v0, v1);
     if(!he0.is_valid()) return InvalidHalfFaceHandle;
-    HalfEdgeHandle he1 = halfedge(v1, v2);
+    HalfEdgeHandle he1 = find_halfedge(v1, v2);
     if(!he1.is_valid()) return InvalidHalfFaceHandle;
 
     std::vector<HalfEdgeHandle> hes;
     hes.push_back(he0);
     hes.push_back(he1);
 
-    return halfface(hes);
+    return find_halfface(hes);
 }
 
+//========================================================================================
+
+HalfFaceHandle TopologyKernel::find_halfface_in_cell(const std::vector<VertexHandle>& _vs, CellHandle _ch) const
+{
+  assert(_vs.size() > 2);
+
+  VertexHandle v0 = _vs[0], v1 = _vs[1], v2 = _vs[2];
+
+  assert(v0.is_valid() && v1.is_valid() && v2.is_valid());
+
+  // check all halfedges of cell until (v0 -> v1) is found and then verify (v0 -> v1 -> v2)
+  for( auto hfh : cell(_ch).halffaces())
+  {
+    for(auto heh : halfface(hfh).halfedges() )
+    {
+      if(from_vertex_handle(heh) == v0 && to_vertex_handle(heh) == v1)
+        if(to_vertex_handle(next_halfedge_in_halfface(heh,hfh)) == v2)
+          return hfh;
+
+      // check if opposite halfedge gives desired halfedge
+      if(from_vertex_handle(heh) == v1 && to_vertex_handle(heh) == v0)
+      {
+        HalfEdgeHandle heh_opp = opposite_halfedge_handle(heh);
+        HalfFaceHandle hfh_opp = adjacent_halfface_in_cell(hfh,heh);
+        if(to_vertex_handle(next_halfedge_in_halfface(heh_opp,hfh_opp)) == v2)
+          return hfh_opp;
+      }
+    }
+  }
+
+  return InvalidHalfFaceHandle;
+}
+
+
+//========================================================================================
+
+
 HalfFaceHandle TopologyKernel::halfface_extensive(const std::vector<VertexHandle>& _vs) const
+{
+  return find_halfface_extensive(_vs);
+}
+
+//========================================================================================
+
+
+HalfFaceHandle TopologyKernel::find_halfface_extensive(const std::vector<VertexHandle>& _vs) const
 {
   //TODO: schöner machen
 
@@ -1994,7 +2033,7 @@ HalfFaceHandle TopologyKernel::halfface_extensive(const std::vector<VertexHandle
 
   assert(v0.is_valid() && v1.is_valid());
 
-  HalfEdgeHandle he0 = halfedge(v0, v1);
+  HalfEdgeHandle he0 = find_halfedge(v0, v1);
   if(!he0.is_valid()) return InvalidHalfFaceHandle;
 
   for(HalfEdgeHalfFaceIter hehf_it = hehf_iter(he0); hehf_it.valid(); ++hehf_it)
@@ -2030,7 +2069,15 @@ HalfFaceHandle TopologyKernel::halfface_extensive(const std::vector<VertexHandle
 
 //========================================================================================
 
-HalfFaceHandle TopologyKernel::halfface(const std::vector<HalfEdgeHandle>& _hes) const {
+HalfFaceHandle TopologyKernel::halfface(const std::vector<HalfEdgeHandle>& _hes) const
+{
+  return find_halfface(_hes);
+}
+
+//========================================================================================
+
+HalfFaceHandle TopologyKernel::find_halfface(const std::vector<HalfEdgeHandle>& _hes) const
+{
 
     assert(_hes.size() >= 2);
 
@@ -2089,76 +2136,144 @@ HalfEdgeHandle TopologyKernel::prev_halfedge_in_halfface(HalfEdgeHandle _heh, Ha
     return InvalidHalfEdgeHandle;
 }
 
+
 //========================================================================================
-//
+
+
+std::vector<VertexHandle> TopologyKernel::get_halfface_vertices(HalfFaceHandle hfh) const
+{
+    std::vector<VertexHandle> vhs;
+    vhs.reserve(valence(hfh.face_handle()));
+    for (VertexHandle vh : halfface_vertices(hfh)) {
+        vhs.push_back(vh);
+    }
+    return vhs;
+}
+
+
+//========================================================================================
+
+
+std::vector<VertexHandle> TopologyKernel::get_halfface_vertices(HalfFaceHandle hfh, VertexHandle vh) const
+{
+    std::vector<VertexHandle> vertices;
+    const size_t n = valence(hfh.face_handle());
+    vertices.reserve(n);
+
+    // Circulate until we're at the vertex of interest
+    auto hfv_it = hfv_iter(hfh, 2);
+    for (size_t i = 0; i < n; ++i)
+    {
+        if (*hfv_it == vh) {break;}
+        ++hfv_it;
+    }
+
+    // Circulate n times to get all the vertices
+    for (size_t i = 0; i < n; ++i)
+    {
+        vertices.push_back(*hfv_it);
+        ++hfv_it;
+    }
+
+    return vertices;
+}
+
+
+//========================================================================================
+
+
+std::vector<VertexHandle> TopologyKernel::get_halfface_vertices(HalfFaceHandle hfh, HalfEdgeHandle heh) const
+{
+    return get_halfface_vertices(hfh, from_vertex_handle(heh));
+}
+
+
+//========================================================================================
+
+
+bool
+TopologyKernel::
+is_incident( FaceHandle _fh, EdgeHandle _eh) const
+{
+  const auto f = face(_fh);
+  for (HalfEdgeHandle heh: f.halfedges())
+    if(edge_handle(heh) == _eh)
+      return true;
+
+  return false;
+}
+
+
+//========================================================================================
+
 
 HalfFaceHandle
 TopologyKernel::adjacent_halfface_in_cell(HalfFaceHandle _halfFaceHandle,
                                           HalfEdgeHandle _halfEdgeHandle) const
 {
-    assert(_halfFaceHandle.is_valid() && (size_t)_halfFaceHandle.idx() < faces_.size() * 2u);
-    assert(_halfEdgeHandle.is_valid() && (size_t)_halfEdgeHandle.idx() < edges_.size() * 2u);
-    assert(has_face_bottom_up_incidences());
+  assert(_halfFaceHandle.is_valid() && (size_t)_halfFaceHandle.idx() < faces_.size() * 2u);
+  assert(_halfEdgeHandle.is_valid() && (size_t)_halfEdgeHandle.idx() < edges_.size() * 2u);
+  assert(has_face_bottom_up_incidences());
 
-    const auto ch = incident_cell(_halfFaceHandle);
-    if(!ch.is_valid()) {
-        // Specified halfface is on the outside of the complex
-        return InvalidHalfFaceHandle;
-    }
-
-    // Make sure that _halfFaceHandle is incident to _halfEdgeHandle
-    bool skipped = false;
-    HalfFaceHandle idx = InvalidHalfFaceHandle;
-
-    // For face-selfadjacent cells, we have to ensure the actual halfedge information
-    // is used here, BUT...
-    // To support legacy code, we have to flip the halfedge if it's the wrong one
-    HalfEdgeHandle hehOpp = opposite_halfedge_handle(_halfEdgeHandle);
-    bool hasHalfedge = false;
-    bool hasOppHalfedge = false;
-    const auto hf = halfface(_halfFaceHandle);
-    for (HalfEdgeHandle heh: hf.halfedges()) {
-        if (heh == hehOpp)
-            hasOppHalfedge = true;
-        else if (heh == _halfEdgeHandle)
-            hasHalfedge = true;
-    }
-    if (!hasHalfedge) {
-        if (hasOppHalfedge)
-            _halfEdgeHandle = hehOpp;
-        else
-            return InvalidHalfFaceHandle;
-    }
-
-    for(const auto &hfh: cell(ch).halffaces()) {
-        if(hfh == _halfFaceHandle) {
-            assert(!skipped); // a halfface may only appear once in a cell!
-            skipped = true;
-            if (idx.is_valid()) {
-                return idx;
-            }
-        } else {
-            const auto hf_cur = halfface(hfh);
-            for (const auto heh: hf_cur.halfedges()) {
-                // For face-selfadjacent cells, we look for a halfface that
-                // contains the opposite halfedge but isnt the opposite halfface
-                if(opposite_halfedge_handle(heh) == _halfEdgeHandle && hfh != opposite_halfface_handle(_halfFaceHandle)) {
-                    if (idx.is_valid()) {
-                        // we found two(!) other halffaces that contain the given edge.
-                        // likely the given halfedge is not part of the given halfface
-                        return InvalidHalfFaceHandle;
-                    }
-                    if (skipped) {
-                        return hfh;
-                    } else {
-                        idx = hfh;
-                        continue;
-                    }
-                }
-            }
-        }
-    }
+  const auto ch = incident_cell(_halfFaceHandle);
+  if(!ch.is_valid()) {
+    // Specified halfface is on the outside of the complex
     return InvalidHalfFaceHandle;
+  }
+
+  // Make sure that _halfFaceHandle is incident to _halfEdgeHandle
+  bool skipped = false;
+  HalfFaceHandle idx = InvalidHalfFaceHandle;
+
+  // For face-selfadjacent cells, we have to ensure the actual halfedge information
+  // is used here, BUT...
+  // To support legacy code, we have to flip the halfedge if it's the wrong one
+  HalfEdgeHandle hehOpp = opposite_halfedge_handle(_halfEdgeHandle);
+  bool hasHalfedge = false;
+  bool hasOppHalfedge = false;
+  const auto hf = halfface(_halfFaceHandle);
+  for (HalfEdgeHandle heh: hf.halfedges()) {
+    if (heh == hehOpp)
+      hasOppHalfedge = true;
+    else if (heh == _halfEdgeHandle)
+      hasHalfedge = true;
+  }
+  if (!hasHalfedge) {
+    if (hasOppHalfedge)
+      _halfEdgeHandle = hehOpp;
+    else
+      return InvalidHalfFaceHandle;
+  }
+
+  for(const auto &hfh: cell(ch).halffaces()) {
+    if(hfh == _halfFaceHandle) {
+      assert(!skipped); // a halfface may only appear once in a cell!
+      skipped = true;
+      if (idx.is_valid()) {
+        return idx;
+      }
+    } else {
+      const auto hf_cur = halfface(hfh);
+      for (const auto heh: hf_cur.halfedges()) {
+        // For face-selfadjacent cells, we look for a halfface that
+        // contains the opposite halfedge but isnt the opposite halfface
+        if(opposite_halfedge_handle(heh) == _halfEdgeHandle && hfh != opposite_halfface_handle(_halfFaceHandle)) {
+          if (idx.is_valid()) {
+            // we found two(!) other halffaces that contain the given edge.
+            // likely the given halfedge is not part of the given halfface
+            return InvalidHalfFaceHandle;
+          }
+          if (skipped) {
+            return hfh;
+          } else {
+            idx = hfh;
+            continue;
+          }
+        }
+      }
+    }
+  }
+  return InvalidHalfFaceHandle;
 }
 
 

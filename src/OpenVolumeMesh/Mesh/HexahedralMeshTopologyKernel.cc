@@ -82,8 +82,9 @@ HexahedralMeshTopologyKernel::add_cell(std::vector<HalfFaceHandle> _halffaces, b
         return TopologyKernel::InvalidCellHandle;
     }
     for(std::vector<HalfFaceHandle>::const_iterator it = _halffaces.begin();
-            it != _halffaces.end(); ++it) {
-        if(TopologyKernel::halfface(*it).halfedges().size() != 4) {
+            it != _halffaces.end(); ++it)
+    {
+        if (valence(it->face_handle()) != 4) {
 #ifndef NDEBUG
             std::cerr << "Incident face does not have valence four! Aborting." << std::endl;
 #endif
@@ -281,42 +282,42 @@ HexahedralMeshTopologyKernel::add_cell(const std::vector<VertexHandle>& _vertice
     vs.push_back(_vertices[2]);
     vs.push_back(_vertices[1]);
     vs.push_back(_vertices[0]);
-    hf0 = TopologyKernel::halfface_extensive(vs); vs.clear();
+    hf0 = TopologyKernel::find_halfface_extensive(vs); vs.clear();
 
     // Half-face XB
     vs.push_back(_vertices[7]);
     vs.push_back(_vertices[6]);
     vs.push_back(_vertices[5]);
     vs.push_back(_vertices[4]);
-    hf1 = TopologyKernel::halfface_extensive(vs); vs.clear();
+    hf1 = TopologyKernel::find_halfface_extensive(vs); vs.clear();
 
     // Half-face YF
     vs.push_back(_vertices[1]);
     vs.push_back(_vertices[2]);
     vs.push_back(_vertices[6]);
     vs.push_back(_vertices[7]);
-    hf2 = TopologyKernel::halfface_extensive(vs); vs.clear();
+    hf2 = TopologyKernel::find_halfface_extensive(vs); vs.clear();
 
     // Half-face YB
     vs.push_back(_vertices[4]);
     vs.push_back(_vertices[5]);
     vs.push_back(_vertices[3]);
     vs.push_back(_vertices[0]);
-    hf3 = TopologyKernel::halfface_extensive(vs); vs.clear();
+    hf3 = TopologyKernel::find_halfface_extensive(vs); vs.clear();
 
     // Half-face ZF
     vs.push_back(_vertices[1]);
     vs.push_back(_vertices[7]);
     vs.push_back(_vertices[4]);
     vs.push_back(_vertices[0]);
-    hf4 = TopologyKernel::halfface_extensive(vs); vs.clear();
+    hf4 = TopologyKernel::find_halfface_extensive(vs); vs.clear();
 
     // Half-face ZB
     vs.push_back(_vertices[2]);
     vs.push_back(_vertices[3]);
     vs.push_back(_vertices[5]);
     vs.push_back(_vertices[6]);
-    hf5 = TopologyKernel::halfface_extensive(vs);
+    hf5 = TopologyKernel::find_halfface_extensive(vs);
 
     if(!hf0.is_valid()) {
 

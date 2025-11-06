@@ -71,7 +71,7 @@ private:
     ReadOptions options_;
     PropertyCodecs const& prop_codecs_;
 
-    FileHeader file_header_ = {0};
+    FileHeader file_header_;
 
     ReadState state_ = ReadState::Init;
     std::string error_msg_;
@@ -84,6 +84,7 @@ private:
 
 
     struct Property {
+        // cppcheck-suppress uninitMemberVar
         Property() = default;
         Property(PropertyEntity _entity,
                  std::shared_ptr<PropertyStorageBase> _prop,

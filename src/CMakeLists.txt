@@ -32,7 +32,11 @@ SET(SOURCE_FILES
     OpenVolumeMesh/Mesh/HexahedralMeshIterators.cc
     OpenVolumeMesh/Mesh/TetrahedralMeshTopologyKernel.cc
     OpenVolumeMesh/Mesh/HexahedralMeshTopologyKernel.cc
-        )
+    OpenVolumeMesh/Unstable/Topology/TetTopology.cc
+    OpenVolumeMesh/Unstable/Topology/TriangleTopology.cc
+)
+
+
 # No Qt in any of our headers:
 file(GLOB_RECURSE HEADER_FILES OpenVolumeMesh/*.hh)
 set_property(SOURCE ${HEADER_FILES} PROPERTY SKIP_AUTOMOC ON)

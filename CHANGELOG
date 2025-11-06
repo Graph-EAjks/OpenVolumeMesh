@@ -1,8 +1,70 @@
-Version 3.1.0 (???):
+master:
+  -
+
+Version 3.4.1 (2025-07-31):
+  - ovmb_read now takes a std::filesystem::path instead of a const char *
+
+Version 3.4.0 (2025-07-29):
+  - TopologyKernel
+        - Improvements: get_halfface_vertices called with halfface uses HalfFaceVertexIter. Avoid using next_hafedge_in_halfface for get_halfface_vertices called with halfface and vertex/halfedge
+
+  - HalffaceHalfEdgeIter and HalffaceVertexIter
+        - Improvements: Avoid heap allocation for better performance.
+
+  - TetrahedralMeshTopologyKernel:
+    - Behaviour change: TetVertexIterator now starts with `from` vertex of first halfedge of first cell halfface (previously: `to` vertex of same halfedge) for consistency with get_cell_vertices().
+    - Feature: vertex_opposite_halfface(CellHandle, VertexHandle) as inverse of halfface_opposite_vertex
+    - Improvement: Optimized get_cell_vertices()
+  - ovmb_write now takes a std::filesystem::path instead of a const char *
+
+Version 3.3.2 (2025-04-25)
+  - Bugfix (behavioural change!): TopologyKernel::genus() would return wrong results if garbage collection is required (it used entity counts that included deleted elements)
+  - Fix SmartTagger bug that made reset() work in O(n) instead of (mostly) O(1) (thanks to Tobias Kohler)
+
+Version 3.3.1 (2024-01-18)
+  - Bugfix: n_logical_halffaces() count was incorrect (included deleted faces)
+  - Bugfix: n_logical_halffaces() count was incorrect (included deleted faces)
+
+Version 3.3.0 (2023-12-08)
+  - Bugfix: get_*_property() convenience functions were declared but not defined.
+  - New: Unstable/ for work-in-progress APIs
+  - New: local topology helper classes in Unstable/Topology/:
+        - Consistent local entity labeling
+        - TetTopology and TriangleTopology
+  - New: std::hash specialization for handle types, so they can be used in std::unordered_map
+  - Improvement: make TopologyKernel::reorder_incident_halffaces public to properly support existing 
+                 public methods that alter internal data
+  - VTK file reader now supports files without colors
+  - Small performance improvements
+
+Version 3.2.2 (2022-10-13):
+  - Add various convenience property convenience functions, e.g.
+        - `mesh.create_{shared, persistent, private}_{vertex, edge, ...}_property()`
+        - `mesh.get_{vertex, edge, ...}_property()`
+  - Un-deprecate other convenience functions, e.g. mesh.clear_{vertex, ...}_props()
+  - (Fix some compiler warnings)
+
+Version 3.2.1 (2022-08-18):
+  - Fix OVMB float endianness (#43)
+
+Version 3.2.0 (2022-07-29):
+  - Feature: add new `find_halfface_in_cell(VH,VH,CH)` function to TopologyKernel
+  - Feature: add new `find_halfedge_in_cell(vector<VH>,CH)` function to TopologyKernel
+  - Feature: Move get_halfface_vertices from Tet-TopoKernel to general TopologyKernel
+  - Improvement: Rename half{face,edge}*() to find_half{face,edge}*(), deprecate old APIs
+
+Version 3.1.1 (2022-07-29):
+  - Fix OVMB property codec names for Eigen float matrices (was "d" instead of "f").
+    Files that were saved with float matrices are unfortunately unreadable and need to be manually fixed.
+
+
+Version 3.1.0 (2022-06-28):
   - Features:
     - Implement mesh copy assignment
   - Improvements:
-    - Add basic tests for attributes, make InterfaceAttrib assignable as well.
+    - Add basic tests for attributes
+    - Make all Attribs assignable (use pointer instead of reference)
+    - Insert missing OVM_EXPORT in BoundaryItemIter
   - Bugfixes:
     - Fix CellFaceIter:operator--() wraparound bug
 
@@ -105,7 +167,7 @@ Version 2.1 (2019/09/09)
 - Renamed *T.cc into *T_impl.hh to avoid ugly problems ith several IDEs
 - Fix bug in halfface reordering
 - Track if garbage collection is necessary.
-- Ignore non-serializable datatypes when saving properties instead of throwing exception. 
+- Ignore non-serializable datatypes when saving properties instead of throwing exception.
 - Add support for C++11 range-for for iterator pairs
 - mark vertex_cells and halfedge_cells as const
 - Implement Property copy(src_idx, dst_idx) analogue of OpenMesh properties
