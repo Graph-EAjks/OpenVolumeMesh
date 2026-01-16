@@ -478,7 +478,7 @@ void FileManager::writeStream(std::ostream &_ostream, const MeshT &_mesh) const
 
         Point v = _mesh.vertex(*v_it);
         if(v.size() == 3) {
-            _ostream << v[0] << " " << v[1] << " " << v[2] << std::endl;
+            _ostream << std::setprecision(30) << v[0] << " " << v[1] << " " << v[2] << std::endl;
         }else{
             _ostream << v[0] << " " << v[1] << std::endl;
         };
