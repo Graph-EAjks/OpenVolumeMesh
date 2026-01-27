@@ -4,6 +4,8 @@
 #include <OpenVolumeMesh/Core/detail/internal_type_name.hh>
 #include <OpenVolumeMesh/IO/detail/WriteBuffer.hh>
 #include <OpenVolumeMesh/IO/detail/exceptions.hh>
+#include <OpenVolumeMesh/Geometry/VectorT.hh>
+#include <type_traits>
 
 
 namespace OpenVolumeMesh::IO {
@@ -24,7 +26,14 @@ void PropertyEncoderT<T, Codec>::serialize_default(
         WriteBuffer &_write_buffer) const
 {
     Encoder encoder(_write_buffer);
-    Codec::encode_one(encoder, prop->cast_to_StorageT<T>()->def());
+    const auto &def = prop->cast_to_StorageT<T>()->def();
+    // backwards compatibility: store a dummy element.
+    // A 0 byte buffer is a backward-incompatible change that
+    // will only be supported in new OVM versions.
+    // TODO: if ovmb format version is 2 or higher, save an empty buffer
+    // if def has no value.
+    Codec::encode_one(encoder, def.value_or(
+                Codecs::DefaultPropertyValue<T>::value));
 }
 
 template<typename T, typename Codec>
@@ -62,9 +71,13 @@ request_property(
         std::string const &name,
         const std::vector<uint8_t> &encoded_def) const
 {
-    T def;
-    Decoder decoder(encoded_def);
-    Codec::decode_one(decoder, def);
+    std::optional<T> def;
+    if (!encoded_def.empty()) {
+        Decoder decoder(encoded_def);
+        T val;
+        Codec::decode_one(decoder, val);
+        def = std::move(val);
+    }
 
     return entitytag_dispatch(type, [&](auto entity_tag)
     {

@@ -2,7 +2,7 @@
 
 #include <map>
 #include <string>
-#include <optional>
+#include <type_traits>
 #include <OpenVolumeMesh/IO/detail/ovmb_format.hh>
 #include <OpenVolumeMesh/IO/detail/Encoder.hh>
 #include <OpenVolumeMesh/IO/detail/Decoder.hh>
@@ -12,6 +12,55 @@
 #include <OpenVolumeMesh/Core/EntityUtils.hh>
 
 namespace OpenVolumeMesh::IO {
+
+namespace Codecs {
+template<typename T, typename Enable = void>
+struct DefaultPropertyValue {
+    static_assert(
+            false,
+            "DefaultPropertyValue<T> not specialized for this type.\n"
+            "You have to provide a default we can serialize to an ovmb file.\n"
+            "It can look something like this:\n\n"
+"template<>\n"
+"struct DefaultPropertyValue<YourType, void> {\n"
+"    inline static const YourType value = 0; // set appropriate value\n"
+"};\n"
+"\nSorry for the inconvenience, we're trying to avoid undefined behavior here.\n");
+};
+
+
+template<>
+struct DefaultPropertyValue<std::string, void> {
+    inline static const std::string value = "";
+};
+
+#if 0
+template<typename T>
+struct DefaultPropertyValue<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
+    static constexpr T value = T{0};
+};
+#endif
+
+template<typename HandleT>
+struct DefaultPropertyValue<HandleT, std::enable_if_t<is_handle_v<HandleT>>>
+{
+    inline static constexpr HandleT value = HandleT::invalid();
+};
+
+template<typename Scalar, size_t N>
+struct DefaultPropertyValue<VectorT<Scalar, N>, void>
+{
+    inline static const VectorT<Scalar, N> value = VectorT<Scalar, N>(DefaultPropertyValue<Scalar>::value);
+};
+
+template<typename T>
+struct DefaultPropertyValue<T,
+    std::enable_if_t<std::is_trivially_default_constructible_v<T>>
+>
+{
+    inline static constexpr T value = T{};
+};
+} // namespace Codecs
 
 class OVM_EXPORT PropertyDecoderBase {
 public:

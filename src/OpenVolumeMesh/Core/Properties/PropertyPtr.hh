@@ -68,7 +68,7 @@ class PropertyPtr : public HandleIndexing<EntityTag, PropertyStoragePtr<T>>
 public:
     using EntityTagT = EntityTag;
     // defined in ResourceManagerT_impl to avoid circular references
-    PropertyPtr(ResourceManager *mesh, std::string _name, T const &_def=T());
+    PropertyPtr(ResourceManager *mesh, std::string _name, std::optional<T> _def);
 
     std::string const& name() const& override {return PropertyStoragePtr<T>::name();};
 
