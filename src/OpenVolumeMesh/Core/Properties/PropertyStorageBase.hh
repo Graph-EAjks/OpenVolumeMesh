@@ -131,9 +131,6 @@ public:
     virtual void deserialize(std::istream& /*_istr*/) {}
 	// I/O support
 
-	void set_persistent(bool _persistent) { persistent_ = _persistent; }
-    void set_shared(bool _shared) { shared_ = _shared; }
-
 	bool persistent() const { return persistent_; }
     bool shared() const { return shared_; }
 
@@ -171,6 +168,10 @@ private:
     // it does not take much storage and is useful in debugging
     std::string internal_type_name_;
     EntityType entity_type_;
+
+    friend class ResourceManager;
+    void set_persistent(bool _persistent) { persistent_ = _persistent; }
+    void set_shared(bool _shared) { shared_ = _shared; }
 
     // TODO: an enum might be nicer for this:
     bool persistent_;
