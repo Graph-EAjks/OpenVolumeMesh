@@ -214,7 +214,7 @@ private:
         return *prop;
     }
     GeometryKernelT<VecT> make_prop() {
-        auto prop = this->template create_shared_property<VecT, Entity::Vertex>("ovm:position", VecT(0));
+        auto prop = this->template create_shared_property<VecT, Entity::Vertex>("ovm:position");
         assert(prop.has_value());
         return *prop;
     }
