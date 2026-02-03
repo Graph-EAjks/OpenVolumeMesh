@@ -37,7 +37,7 @@
 
 #include <istream>
 #include <ostream>
-#include <numeric>
+#include <optional>
 #include <string>
 #include <memory>
 
