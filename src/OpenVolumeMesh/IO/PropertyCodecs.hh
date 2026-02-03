@@ -2,7 +2,6 @@
 
 #include <map>
 #include <string>
-#include <type_traits>
 #include <OpenVolumeMesh/IO/detail/ovmb_format.hh>
 #include <OpenVolumeMesh/IO/detail/Encoder.hh>
 #include <OpenVolumeMesh/IO/detail/Decoder.hh>
@@ -12,48 +11,6 @@
 #include <OpenVolumeMesh/Core/EntityUtils.hh>
 
 namespace OpenVolumeMesh::IO {
-
-namespace Codecs {
-
-template<typename T, typename Enable = void>
-struct DefaultPropertyValue {
-    inline static constexpr T value = T{};
-    static_assert(std::is_trivially_default_constructible_v<T>,
-            "DefaultPropertyValue<T> not specialized for this type and it is not trivally default-constructible.\n"
-            "You have to provide a default we can serialize to an ovmb file.\n"
-            "It can look something like this:\n\n"
-"template<>\n"
-"struct DefaultPropertyValue<YourType, void> {\n"
-"    inline static const YourType value = 0; // set appropriate value\n"
-"};\n"
-"\nSorry for the inconvenience, we're trying to avoid undefined behavior here.\n");
-};
-
-
-template<>
-struct DefaultPropertyValue<std::string, void> {
-    inline static const std::string value = "";
-};
-
-#if 0
-template<typename T>
-struct DefaultPropertyValue<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
-    static constexpr T value = T{0};
-};
-#endif
-
-template<typename HandleT>
-struct DefaultPropertyValue<HandleT, std::enable_if_t<is_handle_v<HandleT>>>
-{
-    inline static constexpr HandleT value = HandleT::invalid();
-};
-
-template<typename Scalar, size_t N>
-struct DefaultPropertyValue<VectorT<Scalar, N>, void>
-{
-    inline static const VectorT<Scalar, N> value = VectorT<Scalar, N>(DefaultPropertyValue<Scalar>::value);
-};
-} // namespace Codecs
 
 class OVM_EXPORT PropertyDecoderBase {
 public:
@@ -91,12 +48,12 @@ public:
     /// \tparam Codec          a type with static {en,de}code_{one,n} methods
     /// \param ovmb_type_name  the name as used in the ovmb file format
     template<typename Codec>
-    void register_codec(std::string const &ovmb_type_name);
+    void register_codec(const std::string ovmb_type_name, typename Codec::T _def);
 
     template<typename T, size_t N = T::size()>
-    void register_arraylike(std::string const &ovmb_type_name);
+    void register_arraylike(std::string const ovmb_type_name, T _def);
     template<typename T, size_t Rows, size_t Cols>
-    void register_matrixlike(std::string const &ovmb_type_name);
+    void register_matrixlike(std::string const ovmb_type_name, T _def);
 
     const PropertyDecoderBase* get_decoder(std::string const &ovmb_type_name) const;
     const PropertyEncoderBase* get_encoder(std::string const &internal_type_name) const;

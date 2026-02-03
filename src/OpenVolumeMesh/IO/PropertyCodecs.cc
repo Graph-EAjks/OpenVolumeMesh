@@ -4,7 +4,6 @@
 #include <OpenVolumeMesh/Core/detail/internal_type_name.hh>
 #include <memory>
 #include <bitset>
-#include <array>
 #include <vector>
 
 #include <OpenVolumeMesh/IO/PropertyCodecsT_impl.hh>
@@ -63,45 +62,45 @@ PropertyCodecs PropertyCodecs::with_all_default_types() {
 void PropertyCodecs::add_default_types()
 {
     using namespace Codecs;
-    register_codec<BoolPropCodec>("b");
-    register_codec<SimplePropCodec<Primitive<uint8_t>>> ("u8");
-    register_codec<SimplePropCodec<Primitive<uint16_t>>>("u16");
-    register_codec<SimplePropCodec<Primitive<uint32_t>>>("u32");
-    register_codec<SimplePropCodec<Primitive<uint64_t>>>("u64");
-    register_codec<SimplePropCodec<Primitive<int8_t>>>  ("i8");
-    register_codec<SimplePropCodec<Primitive<int16_t>>> ("i16");
-    register_codec<SimplePropCodec<Primitive<int32_t>>> ("i32");
-    register_codec<SimplePropCodec<Primitive<int64_t >>>("i64");
-    register_codec<SimplePropCodec<Primitive<float>>>   ("f");
-    register_codec<SimplePropCodec<Primitive<double>>>  ("d");
+    register_codec<BoolPropCodec>("b", false);
+    register_codec<SimplePropCodec<Primitive<uint8_t>>> ("u8", 0);
+    register_codec<SimplePropCodec<Primitive<uint16_t>>>("u16", 0);
+    register_codec<SimplePropCodec<Primitive<uint32_t>>>("u32", 0);
+    register_codec<SimplePropCodec<Primitive<uint64_t>>>("u64", 0);
+    register_codec<SimplePropCodec<Primitive<int8_t>>>  ("i8", 0);
+    register_codec<SimplePropCodec<Primitive<int16_t>>> ("i16", 0);
+    register_codec<SimplePropCodec<Primitive<int32_t>>> ("i32", 0);
+    register_codec<SimplePropCodec<Primitive<int64_t >>>("i64", 0);
+    register_codec<SimplePropCodec<Primitive<float>>>   ("f", 0.f);
+    register_codec<SimplePropCodec<Primitive<double>>>  ("d", 0.);
 
-    register_codec<SimplePropCodec<Primitive<std::string>>>("s32");
+    register_codec<SimplePropCodec<Primitive<std::string>>>("s32", "");
 
-    register_codec<SimplePropCodec<OVMHandle<VH>>> ("vh");
-    register_codec<SimplePropCodec<OVMHandle<EH>>> ("eh");
-    register_codec<SimplePropCodec<OVMHandle<HEH>>>("heh");
-    register_codec<SimplePropCodec<OVMHandle<FH>>> ("fh");
-    register_codec<SimplePropCodec<OVMHandle<HFH>>>("hfh");
-    register_codec<SimplePropCodec<OVMHandle<CH>>> ("ch");
+    register_codec<SimplePropCodec<OVMHandle<VH>>> ("vh",  VH::invalid());
+    register_codec<SimplePropCodec<OVMHandle<EH>>> ("eh",  EH::invalid());
+    register_codec<SimplePropCodec<OVMHandle<HEH>>>("heh", HEH::invalid());
+    register_codec<SimplePropCodec<OVMHandle<FH>>> ("fh",  FH::invalid());
+    register_codec<SimplePropCodec<OVMHandle<HFH>>>("hfh", HFH::invalid());
+    register_codec<SimplePropCodec<OVMHandle<CH>>> ("ch",  CH::invalid());
 }
 
 void PropertyCodecs::add_ovm_vector_types()
 {
-    register_arraylike<VectorT<double, 2>>("2d");
-    register_arraylike<VectorT<double, 3>>("3d");
-    register_arraylike<VectorT<double, 4>>("4d");
+    register_arraylike<VectorT<double, 2>>("2d", {0., 0.});
+    register_arraylike<VectorT<double, 3>>("3d", {0., 0., 0.});
+    register_arraylike<VectorT<double, 4>>("4d", {0., 0., 0., 0.});
 
-    register_arraylike<VectorT<float, 2>>("2f");
-    register_arraylike<VectorT<float, 3>>("3f");
-    register_arraylike<VectorT<float, 4>>("4f");
+    register_arraylike<VectorT<float, 2>>("2f",  {0.f, 0.f});
+    register_arraylike<VectorT<float, 3>>("3f",  {0.f, 0.f, 0.f});
+    register_arraylike<VectorT<float, 4>>("4f",  {0.f, 0.f, 0.f, 0.f});
 
-    register_arraylike<VectorT<uint32_t, 2>>("2u32");
-    register_arraylike<VectorT<uint32_t, 3>>("3u32");
-    register_arraylike<VectorT<uint32_t, 4>>("4u32");
+    register_arraylike<VectorT<uint32_t, 2>>("2u32", {0, 0});
+    register_arraylike<VectorT<uint32_t, 3>>("3u32", {0, 0, 0});
+    register_arraylike<VectorT<uint32_t, 4>>("4u32", {0, 0, 0, 0});
 
-    register_arraylike<VectorT<int32_t, 2>>("2i32");
-    register_arraylike<VectorT<int32_t, 3>>("3i32");
-    register_arraylike<VectorT<int32_t, 4>>("4i32");
+    register_arraylike<VectorT<int32_t, 2>>("2i32", {0, 0});
+    register_arraylike<VectorT<int32_t, 3>>("3i32", {0, 0, 0});
+    register_arraylike<VectorT<int32_t, 4>>("4i32", {0, 0, 0, 0});
 }
 
 

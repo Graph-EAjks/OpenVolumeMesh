@@ -5,7 +5,7 @@
 #include <OpenVolumeMesh/IO/detail/WriteBuffer.hh>
 #include <OpenVolumeMesh/IO/detail/exceptions.hh>
 #include <OpenVolumeMesh/Geometry/VectorT.hh>
-#include <type_traits>
+#include <string>
 
 
 namespace OpenVolumeMesh::IO {
@@ -14,9 +14,16 @@ using namespace detail;
 template<typename T, typename Codec>
 class PropertyEncoderT : public PropertyEncoderBase {
 public:
-    using PropertyEncoderBase::PropertyEncoderBase;
+    PropertyEncoderT(std::string _ovmb_type_name, T _default_value)
+        : PropertyEncoderBase{std::move(_ovmb_type_name)}
+        , default_value_(_default_value)
+    {}
     void serialize_default(const PropertyStorageBase *prop, WriteBuffer&) const final;
     void serialize(const PropertyStorageBase *prop, WriteBuffer&, size_t idx_begin, size_t idx_end) const final;
+private:
+    /// Used to save a default (for backward-compatibility with OVMB 1 readers)
+    /// when a property as no default.
+    T default_value_;
 };
 
 
@@ -32,8 +39,7 @@ void PropertyEncoderT<T, Codec>::serialize_default(
     // will only be supported in new OVM versions.
     // TODO: if ovmb format version is 2 or higher, save an empty buffer
     // if def has no value.
-    Codec::encode_one(encoder, def.value_or(
-                Codecs::DefaultPropertyValue<T>::value));
+    Codec::encode_one(encoder, def.value_or(default_value_));
 }
 
 template<typename T, typename Codec>
@@ -130,7 +136,6 @@ struct SimplePropCodec {
             Codec::encode(enc, vec[i]);
         }
     }
-
 };
 
 template<typename _T>
@@ -199,25 +204,26 @@ struct MatrixLike {
 } // namespace Codecs
 
 template<typename T, size_t N>
-void PropertyCodecs::register_arraylike(const std::string &ovmb_type_name)
+void PropertyCodecs::register_arraylike(const std::string ovmb_type_name, T _def)
 {
     using namespace Codecs;
-    register_codec<SimplePropCodec<ArrayLike<T, N>>>(ovmb_type_name);
+    register_codec<SimplePropCodec<ArrayLike<T, N>>>(std::move(ovmb_type_name), std::move(_def));
 }
 
 template<typename T, size_t Rows, size_t Cols>
-void PropertyCodecs::register_matrixlike(const std::string &ovmb_type_name)
+void PropertyCodecs::register_matrixlike(const std::string ovmb_type_name, T _def)
 {
     using namespace Codecs;
-    register_codec<SimplePropCodec<MatrixLike<T, Rows, Cols>>>(ovmb_type_name);
+    register_codec<SimplePropCodec<MatrixLike<T, Rows, Cols>>>(std::move(ovmb_type_name), std::move(_def));
 }
 
 template<typename Codec>
-void PropertyCodecs::register_codec(const std::string &ovmb_type_name)
+void PropertyCodecs::register_codec(const std::string ovmb_type_name, typename Codec::T _def)
 {
     using T = typename Codec::T;
     // TODO: check if codec is already registered
-    encoders_[OpenVolumeMesh::detail::internal_type_name<T>()] = std::make_shared<PropertyEncoderT<T, Codec>>(ovmb_type_name);
+    encoders_[OpenVolumeMesh::detail::internal_type_name<T>()] = 
+        std::make_shared<PropertyEncoderT<T, Codec>>(std::move(ovmb_type_name), std::move(_def));
     decoders_[ovmb_type_name] = std::make_shared<PropertyDecoderT<T, Codec>>();
 }
 
