@@ -104,6 +104,7 @@ public:
 
     /// get default value.
     T const &def() const {return storage()->def();}
+    void set_default(std::optional<T> _def) const {storage()->def() = std::move(_def);}
 
     /// set all values to `val`.
     void fill(T const&val) { storage()->fill(val); }
