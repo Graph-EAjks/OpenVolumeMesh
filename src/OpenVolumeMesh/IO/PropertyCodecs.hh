@@ -14,11 +14,12 @@
 namespace OpenVolumeMesh::IO {
 
 namespace Codecs {
+
 template<typename T, typename Enable = void>
 struct DefaultPropertyValue {
-    static_assert(
-            false,
-            "DefaultPropertyValue<T> not specialized for this type.\n"
+    inline static constexpr T value = T{};
+    static_assert(std::is_trivially_default_constructible_v<T>,
+            "DefaultPropertyValue<T> not specialized for this type and it is not trivally default-constructible.\n"
             "You have to provide a default we can serialize to an ovmb file.\n"
             "It can look something like this:\n\n"
 "template<>\n"
@@ -51,14 +52,6 @@ template<typename Scalar, size_t N>
 struct DefaultPropertyValue<VectorT<Scalar, N>, void>
 {
     inline static const VectorT<Scalar, N> value = VectorT<Scalar, N>(DefaultPropertyValue<Scalar>::value);
-};
-
-template<typename T>
-struct DefaultPropertyValue<T,
-    std::enable_if_t<std::is_trivially_default_constructible_v<T>>
->
-{
-    inline static constexpr T value = T{};
 };
 } // namespace Codecs
 
