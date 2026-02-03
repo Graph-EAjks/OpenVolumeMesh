@@ -8,7 +8,25 @@
 #include <Eigen/Core>
 
 
+namespace OpenVolumeMesh::Geometry {
+template<typename _Scalar, int _Cols>
+struct vector_dim<Eigen::Matrix<_Scalar, 1, _Cols>> {
+    constexpr static int dim = _Cols;
+};
+template<typename _Scalar, int _Rows>
+struct vector_dim<Eigen::Matrix<_Scalar, _Rows, 1>> {
+    constexpr static int dim = _Rows;
+};
+}
+
 namespace OpenVolumeMesh::IO::Codecs {
+
+template<typename _Scalar, int _Rows, int _Cols>
+struct DefaultPropertyValue<Eigen::Matrix<_Scalar, _Rows, _Cols>, void>
+{
+    using type = Eigen::Matrix<_Scalar, _Rows, _Cols>;
+    inline static const type value = type::Zero();
+};
 
 template<typename _Scalar, int _Rows, int _Cols>
 struct EigenDenseFixedMatrix
