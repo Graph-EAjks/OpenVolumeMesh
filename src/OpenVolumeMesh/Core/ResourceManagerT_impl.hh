@@ -88,44 +88,44 @@ void ResourceManager::copy_property_elements(Handle _idx_a, Handle _idx_b)
 }
 
 template<class T>
-VertexPropertyT<T> ResourceManager::request_vertex_property(const std::string& _name, const T &_def) {
+VertexPropertyT<T> ResourceManager::request_vertex_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::Vertex>(_name, _def);
+    return request_property<T, Entity::Vertex>(_name, std::move(_def));
 }
 
 template<class T>
-EdgePropertyT<T> ResourceManager::request_edge_property(const std::string& _name, const T &_def) {
+EdgePropertyT<T> ResourceManager::request_edge_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::Edge>(_name, _def);
+    return request_property<T, Entity::Edge>(_name, std::move(_def));
 }
 
 template<class T>
-HalfEdgePropertyT<T> ResourceManager::request_halfedge_property(const std::string& _name, const T &_def) {
+HalfEdgePropertyT<T> ResourceManager::request_halfedge_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::HalfEdge>(_name, _def);
+    return request_property<T, Entity::HalfEdge>(_name, std::move(_def));
 }
 
 template<class T>
-FacePropertyT<T> ResourceManager::request_face_property(const std::string& _name, const T &_def) {
+FacePropertyT<T> ResourceManager::request_face_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::Face>(_name, _def);
+    return request_property<T, Entity::Face>(_name, std::move(_def));
 }
 
 template<class T>
-HalfFacePropertyT<T> ResourceManager::request_halfface_property(const std::string& _name, const T &_def) {
-    return request_property<T, Entity::HalfFace>(_name, _def);
+HalfFacePropertyT<T> ResourceManager::request_halfface_property(const std::string& _name, std::optional<T> _def) {
+    return request_property<T, Entity::HalfFace>(_name, std::move(_def));
 }
 
 template<class T>
-CellPropertyT<T> ResourceManager::request_cell_property(const std::string& _name, const T &_def) {
+CellPropertyT<T> ResourceManager::request_cell_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::Cell>(_name, _def);
+    return request_property<T, Entity::Cell>(_name, std::move(_def));
 }
 
 template<class T>
-MeshPropertyT<T> ResourceManager::request_mesh_property(const std::string& _name, const T &_def) {
+MeshPropertyT<T> ResourceManager::request_mesh_property(const std::string& _name, std::optional<T> _def) {
 
-    return request_property<T, Entity::Mesh>(_name, _def);
+    return request_property<T, Entity::Mesh>(_name, std::move(_def));
 }
 
 template<typename T, typename EntityTag>
@@ -151,12 +151,13 @@ ResourceManager::internal_find_property(const std::string& _name) const
 }
 
 template<class T, class EntityTag>
-PropertyPtr<T, EntityTag> ResourceManager::internal_create_property(std::string _name, const T &_def) const
+PropertyPtr<T, EntityTag> ResourceManager::internal_create_property(
+        std::string _name, std::optional<T> _def) const
 {
     auto storage = std::make_shared<PropertyStorageT<T>>(
                                      std::move(_name),
                                      EntityTag::type(),
-                                     _def);
+                                     std::move(_def));
     properties_.get<EntityTag>().push_back(storage);
     storage->resize(n<EntityTag>());
     auto ptr = PropertyPtr<T, EntityTag>(std::move(storage));
@@ -164,12 +165,12 @@ PropertyPtr<T, EntityTag> ResourceManager::internal_create_property(std::string 
 }
 
 template<typename T, typename EntityTag>
-PropertyPtr<T, EntityTag> ResourceManager::request_property(const std::string& _name, const T &_def)
+PropertyPtr<T, EntityTag> ResourceManager::request_property(const std::string& _name, std::optional<T> _def)
 {
     auto prop = internal_find_property<T, EntityTag>(_name);
     if (prop)
         return *prop;
-    auto ptr = internal_create_property<T, EntityTag>(_name, _def);
+    auto ptr = internal_create_property<T, EntityTag>(_name, std::move(_def));
     if(!_name.empty()) {
         set_shared(ptr);
     }
@@ -178,12 +179,12 @@ PropertyPtr<T, EntityTag> ResourceManager::request_property(const std::string& _
 
 template<typename T, typename EntityTag>
 std::optional<PropertyPtr<T, EntityTag>>
-ResourceManager::create_persistent_property(std::string _name, const T &_def)
+ResourceManager::create_persistent_property(std::string _name, std::optional<T> _def)
 {
     auto prop = internal_find_property<T, EntityTag>(_name);
     if (prop)
         return {};
-    auto ptr = internal_create_property<T, EntityTag>(std::move(_name), _def);
+    auto ptr = internal_create_property<T, EntityTag>(std::move(_name), std::move(_def));
     set_shared(ptr);
     set_persistent(ptr);
     return ptr;
@@ -191,20 +192,20 @@ ResourceManager::create_persistent_property(std::string _name, const T &_def)
 
 template<typename T, typename EntityTag>
 std::optional<PropertyPtr<T, EntityTag>>
-ResourceManager::create_shared_property(std::string _name, const T &_def)
+ResourceManager::create_shared_property(std::string _name, std::optional<T> _def)
 {
     auto prop = internal_find_property<T, EntityTag>(_name);
     if (prop)
         return {};
-    auto ptr = internal_create_property<T, EntityTag>(std::move(_name), _def);
+    auto ptr = internal_create_property<T, EntityTag>(std::move(_name), std::move(_def));
     set_shared(ptr);
     return ptr;
 }
 template<typename T, typename EntityTag>
 PropertyPtr<T, EntityTag>
-ResourceManager::create_private_property(std::string _name, const T &_def) const
+ResourceManager::create_private_property(std::string _name, std::optional<T> _def) const
 {
-    return internal_create_property<T, EntityTag>(std::move(_name), _def);
+    return internal_create_property<T, EntityTag>(std::move(_name), std::move(_def));
 }
 
 template<typename T, typename EntityTag>
@@ -358,9 +359,9 @@ void ResourceManager::assignPropertiesFrom(ResourceManager const& _src)
 // We define this here to avoid circular dependencies:
 
 template <class T, typename Entity>
-PropertyPtr<T, Entity>::PropertyPtr(ResourceManager *mesh, std::string _name, T const &_def)
+PropertyPtr<T, Entity>::PropertyPtr(ResourceManager *mesh, std::string _name, std::optional<T> _def)
 {
-    *this = mesh->request_property<T, Entity>(_name, _def);
+    *this = mesh->request_property<T, Entity>(_name, std::move(_def));
 }
 
 

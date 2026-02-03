@@ -37,7 +37,7 @@
 
 #include <istream>
 #include <ostream>
-#include <numeric>
+#include <optional>
 #include <string>
 #include <memory>
 
@@ -104,6 +104,9 @@ public:
 
     /// get default value.
     T const &def() const {return storage()->def();}
+    void set_default(std::optional<T> _def) {
+        storage()->set_default(std::move(_def));
+    }
 
     /// set all values to `val`.
     void fill(T const&val) { storage()->fill(val); }

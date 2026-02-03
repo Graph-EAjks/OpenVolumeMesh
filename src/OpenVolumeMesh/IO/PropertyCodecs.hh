@@ -2,7 +2,6 @@
 
 #include <map>
 #include <string>
-#include <optional>
 #include <OpenVolumeMesh/IO/detail/ovmb_format.hh>
 #include <OpenVolumeMesh/IO/detail/Encoder.hh>
 #include <OpenVolumeMesh/IO/detail/Decoder.hh>
@@ -49,12 +48,12 @@ public:
     /// \tparam Codec          a type with static {en,de}code_{one,n} methods
     /// \param ovmb_type_name  the name as used in the ovmb file format
     template<typename Codec>
-    void register_codec(std::string const &ovmb_type_name);
+    void register_codec(const std::string ovmb_type_name, typename Codec::T _def);
 
     template<typename T, size_t N = T::size()>
-    void register_arraylike(std::string const &ovmb_type_name);
+    void register_arraylike(std::string const ovmb_type_name, T _def);
     template<typename T, size_t Rows, size_t Cols>
-    void register_matrixlike(std::string const &ovmb_type_name);
+    void register_matrixlike(std::string const ovmb_type_name, T _def);
 
     const PropertyDecoderBase* get_decoder(std::string const &ovmb_type_name) const;
     const PropertyEncoderBase* get_encoder(std::string const &internal_type_name) const;

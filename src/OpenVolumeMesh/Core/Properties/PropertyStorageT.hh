@@ -49,6 +49,7 @@
 #include <OpenVolumeMesh/Core/Properties/PropertyStoragePtr.hh>
 
 #include <OpenVolumeMesh/Core/detail/internal_type_name.hh>
+#include <optional>
 
 namespace OpenVolumeMesh {
 
@@ -77,7 +78,7 @@ public:
     explicit PropertyStorageT(
             std::string _name,
             EntityType _entity_type,
-            const T _def)
+            const std::optional<T> _def)
         : PropertyStorageBase(std::move(_name), detail::internal_type_name<T>(), _entity_type),
           def_(std::move(_def))
     {}
@@ -87,7 +88,11 @@ public:
         data_.reserve(_n);
     }
     void resize(size_t _n) final  {
-        data_.resize(_n, def_);
+        if (def_.has_value()) {
+            data_.resize(_n, *def_);
+        } else {
+            data_.resize(_n);
+        }
     }
     size_t size() const final  {
         return data_.size();
@@ -96,7 +101,12 @@ public:
         data_.clear();
     }
     void push_back() final  {
-        data_.push_back(def_);
+        // avoid compiler warning from data_.push_back(def_.value_or(T()));
+        if (def_.has_value()) {
+            data_.push_back(*def_);
+        } else {
+            data_.emplace_back();
+        }
     }
     void swap(size_t _i0, size_t _i1) final  {
         std::swap(data_[_i0], data_[_i1]);
@@ -188,7 +198,11 @@ public:
     typename vector_type::iterator end() { return data_.end(); }
 
 
-    T const& def() const {return def_;}
+    std::optional<T> const& def() const {return def_;}
+
+    void set_default(std::optional<T> _def) {
+        def_ = std::move(_def);
+    }
 
     void fill(T const&val) {
         std::fill(data_.begin(), data_.end(), val);
@@ -200,7 +214,6 @@ public:
         const auto *other = _other->cast_to_StorageT<T>();
         data_ = other->data_;
         def_ = other->def_;
-
     }
 
     void move_values_from(PropertyStorageBase *_other) final
@@ -212,7 +225,7 @@ public:
 
 private:
     vector_type data_;
-    T def_;
+    std::optional<T> def_;
 };
 
 

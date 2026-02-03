@@ -50,28 +50,36 @@ struct EigenDenseFixedMatrix
 
 namespace OpenVolumeMesh::IO {
 
+template<typename _Scalar, int _Rows, int _Cols>
+inline void register_eigen_fixed_matrix_codec(PropertyCodecs &_codecs, std::string _name)
+{
+    using namespace Codecs;
+    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<_Scalar, _Rows, _Cols>>>(
+            std::move(_name),
+            Eigen::Matrix<_Scalar, _Rows, _Cols>::Zero());
+}
 inline void register_eigen_codecs(PropertyCodecs &_codecs)
 {
     using namespace Codecs;
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 2, 1>>>("2d");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 3, 1>>>("3d");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 4, 1>>>("4d");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 9, 1>>>("9d");
+    register_eigen_fixed_matrix_codec<double, 2, 1>(_codecs, "2d");
+    register_eigen_fixed_matrix_codec<double, 3, 1>(_codecs, "3d");
+    register_eigen_fixed_matrix_codec<double, 4, 1>(_codecs, "4d");
+    register_eigen_fixed_matrix_codec<double, 9, 1>(_codecs, "9d");
 
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 2, 1>>>("2f");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 3, 1>>>("3f");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 4, 1>>>("4f");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 9, 1>>>("9f");
+    register_eigen_fixed_matrix_codec<float, 2, 1>(_codecs, "2f");
+    register_eigen_fixed_matrix_codec<float, 3, 1>(_codecs, "3f");
+    register_eigen_fixed_matrix_codec<float, 4, 1>(_codecs, "4f");
+    register_eigen_fixed_matrix_codec<float, 9, 1>(_codecs, "9f");
 
     // matrices stored as column-major:
 
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 2, 2>>>("2x2d");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 3, 3>>>("3x3d");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<double, 4, 4>>>("4x4d");
+    register_eigen_fixed_matrix_codec<double, 2, 2>(_codecs, "2x2d");
+    register_eigen_fixed_matrix_codec<double, 3, 3>(_codecs, "3x3d");
+    register_eigen_fixed_matrix_codec<double, 4, 4>(_codecs, "4x4d");
 
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 2, 2>>>("2x2f");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 3, 3>>>("3x3f");
-    _codecs.register_codec<SimplePropCodec<EigenDenseFixedMatrix<float, 4, 4>>>("4x4f");
+    register_eigen_fixed_matrix_codec<float, 2, 2>(_codecs, "2x2f");
+    register_eigen_fixed_matrix_codec<float, 3, 3>(_codecs, "3x3f");
+    register_eigen_fixed_matrix_codec<float, 4, 4>(_codecs, "4x4f");
 
     // TODO: dynamic (dense/sparse) types
 }
