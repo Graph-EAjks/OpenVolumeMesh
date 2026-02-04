@@ -1,6 +1,22 @@
 master:
   -
 
+Version 3.5.0 (2026-02-05):
+  - Property default values are now an optional<T>. Before, a default value was default-constructed.
+      - Unfortunately in .ovmb serialization, we have to store a default value for every property
+        so that old OVM versions can read the files we produce. When you register custom
+        property types for serialization with register_{codec,arraylike,matrixlike}, you will
+        now have to supply an explicit default value.
+  - PropertyPtrT has lost its public set_shared() and set_persistent() member functions.
+    Those were not purposefully exposed and could cause invalid states. Use the corresponding
+    member functions on the Mesh class (ResourceKernel) to set shared/persistent status.
+  - Property handling has been simplified, Properties now do not have a pointer
+    to the ResourceManager anymore. In the process, the meaning of PropertyPtrT
+    `operator bool()` has changed to signify being attached to a PropertyStorage,
+    as opposed to being an "alive" property of a ResourceManager.
+  - Eigen vectors are now supported as point type in the geometry kernels.
+
+
 Version 3.4.1 (2025-07-31):
   - ovmb_read now takes a std::filesystem::path instead of a const char *
 
