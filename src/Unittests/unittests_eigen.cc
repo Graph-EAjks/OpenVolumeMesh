@@ -10,6 +10,14 @@ using namespace OpenVolumeMesh;
 
 using namespace Geometry;
 
+namespace OpenVolumeMesh {
+template<typename Scalar, int _Rows, int _Cols>
+struct default_prop<Eigen::Matrix<Scalar, _Rows, _Cols>> {
+    using MatrixT = Eigen::Matrix<Scalar, _Rows, _Cols>;
+    static inline const MatrixT value = MatrixT::Zero();
+};
+}
+
 class EigenTest : public testing::Test
 {
 };
