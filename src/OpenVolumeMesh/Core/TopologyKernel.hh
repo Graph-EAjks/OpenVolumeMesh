@@ -330,7 +330,21 @@ public:
         return CellIter(this, CellHandle((int)cells_.size()));
     }
 
+    template<typename EntityTag>
+    iterator_for_tag_t<EntityTag> entities_begin() const {
+        return iterator_for_tag_t<EntityTag>(
+            this,
+            handle_for_tag_t<EntityTag>(0)
+            );
+    }
 
+    template<typename EntityTag>
+    iterator_for_tag_t<EntityTag> entities_end() const {
+        return iterator_for_tag_t<EntityTag>(
+            this,
+            handle_for_tag_t<EntityTag>((int)n<EntityTag>())
+            );
+    }
 
     /*
      * Convenience functions

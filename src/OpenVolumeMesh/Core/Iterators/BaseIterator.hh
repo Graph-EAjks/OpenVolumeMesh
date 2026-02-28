@@ -91,4 +91,9 @@ private:
 template<class I>
 using is_ovm_iterator = std::is_base_of<BaseIterator<typename std::remove_const<typename I::value_type>::type>, I>;
 
+template<typename EntityTag>
+struct iterator_for_tag;
+template<typename EntityTag>
+using iterator_for_tag_t = typename iterator_for_tag<EntityTag>::type;
+
 } // namespace OpenVolumeMesh

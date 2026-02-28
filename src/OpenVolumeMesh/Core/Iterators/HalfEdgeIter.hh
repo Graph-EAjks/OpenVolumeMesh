@@ -62,5 +62,6 @@ private:
     int cur_index_;
 };
 
+template<> struct iterator_for_tag<Entity::HalfEdge> {using type = HalfEdgeIter;};
 
 } // namespace OpenVolumeMesh

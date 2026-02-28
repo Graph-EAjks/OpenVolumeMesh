@@ -244,7 +244,8 @@ constexpr inline FH HFH::face_handle() const {
 
 template<typename EntityTag>
 struct handle_for_tag;
-
+template<typename EntityTag>
+using handle_for_tag_t = typename handle_for_tag<EntityTag>::type;
 
 template<> struct handle_for_tag<Entity::Vertex>   { using type = VH;  };
 template<> struct handle_for_tag<Entity::Edge>     { using type = EH;  };

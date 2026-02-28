@@ -30,6 +30,14 @@ public:
         return OpenVolumeMesh::make_smart(_h, *derived());
     }
 
+    template<typename EntityTag>
+    SmartRange<const Derived, iterator_for_tag_t<EntityTag>> entities() const {
+        return make_smart_range(derived(),
+            derived()->template entities_begin<EntityTag>(),
+            derived()->template entities_end<EntityTag>()
+            );
+    }
+
     SmartRange<const Derived, VertexIter> vertices() const {
         return make_smart_range(derived(), derived()->vertices_begin(), derived()->vertices_end());
     }
